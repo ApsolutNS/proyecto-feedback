@@ -1,8 +1,9 @@
 [build]
-publish = "."
-functions = "netlify/functions"
+  publish = "."
+  command = ""
+
+[functions]
+  directory = "netlify/functions"
 
 [build.environment]
-NODE_VERSION = "18"
-
-
+  NODE_VERSION = "18"

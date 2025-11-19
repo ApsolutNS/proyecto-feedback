@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Portal del Agente</title>
+<style>
+  body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
+  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
+  h2{margin-top:0}
+  label{display:block;margin-top:10px;font-weight:600}
+  input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ef;margin-top:6px;box-sizing:border-box}
+  .row{display:flex;gap:10px}
+  canvas{border:1px solid #e6eef9;border-radius:6px}
+  .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:10px}
+  .btn.ghost{background:#fff;color:#0f4c81;border:1px solid #cbd5e1}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th,td{padding:8px;border-bottom:1px solid #eef2f7;text-align:left}
+  th{background:#fbfdff}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Portal del Agente</h2>
+
+  <label>Seleccionar Asesor</label>
+  <select id="selAgent" onchange="loadAgentList()">
+    <option value="">-- selecciona --</option>
+  </select>
+
+  <div style="margin-top:12px">
+    <strong>Feedbacks del agente</strong>
+    <table id="agentTable">
+      <thead><tr><th>ID</th><th>Fecha</th><th>Nota</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="detailBlock" style="display:none;margin-top:12px">
+    <h3>Completar Feedback</h3>
+    <div id="feedbackInfo"></div>
+
+    <label>Compromiso del agente</label>
+    <textarea id="compromiso" rows="4"></textarea>
+
+    <label>Firma (dibujar)</label>
+    <canvas id="canvas" width="700" height="140"></canvas>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="saveSignature()">Enviar Firma y Completar</button>
+      <button class="btn ghost" onclick="clearCanvas()">Limpiar Firma</button>
+    </div>
+
+    <div id="agentMsg" style="margin-top:10px;color:green"></div>
+  </div>
+
+</div>
+
+<script>
+// load advisors from localStorage DB
+function getDB(){ return JSON.parse(localStorage.getItem('fb_registros_v1') || '[]'); }
+
+function loadAdvisors(){
+  const db = getDB();
+  const names = [...new Set(db.map(r=>r.asesor).filter(Boolean))];
+  const sel = document.getElementById('selAgent');
+  sel.innerHTML = '<option value="">-- selecciona --</option>';
+  names.forEach(n=> sel.innerHTML += `<option>${n}</option>`);
+}
+loadAdvisors();
+
+function loadAgentList(){
+  const advisor = document.getElementById('selAgent').value;
+  const db = getDB();
+  const list = db.filter(r=> r.asesor === advisor).sort((a,b)=> new Date(b.fechaHora)-new Date(a.fechaHora));
+  const tbody = document.querySelector('#agentTable tbody');
+  tbody.innerHTML = list.map(r=>`<tr>
+    <td>${r.id}</td>
+    <td>${new Date(r.fechaHora).toLocaleString()}</td>
+    <td>${r.nota}%</td>
+    <td>${r.estado}</td>
+    <td><button onclick="openDetail('${r.id}')">Abrir</button></td>
+  </tr>`).join('') || '<tr><td colspan="5">Sin registros</td></tr>';
+}
+
+let currentRecordId = null;
+function openDetail(id){
+  const db = getDB();
+  const rec = db.find(x=>x.id===id);
+  if(!rec) return alert('Registro no encontrado');
+  currentRecordId = id;
+  document.getElementById('detailBlock').style.display = 'block';
+  // show summary
+  document.getElementById('feedbackInfo').innerHTML = `
+    <div><b>ID:</b> ${rec.id}</div>
+    <div><b>Fecha:</b> ${new Date(rec.fechaHora).toLocaleString()}</div>
+    <div><b>Asesor:</b> ${rec.asesor}</div>
+    <div><b>Tipo:</b> ${rec.tipo}</div>
+    <div style="margin-top:8px"><b>Resumen:</b> ${rec.resumen}</div>
+    <div style="margin-top:8px"><b>Items:</b> ${rec.items.map(it=>`${it.name} (${it.perc}%)`).join('; ')}</div>
+    <div style="margin-top:8px"><b>Evidencias:</b> ${rec.images.length} imagen(es)</div>
+  `;
+  // if already completed, show existing commitment and signature
+  if(rec.estado === 'COMPLETADO'){
+    document.getElementById('compromiso').value = rec.compromiso || '';
+    if(rec.firmaDataUrl){
+      const img = new Image(); img.src = rec.firmaDataUrl; img.style.maxWidth='320px';
+      document.getElementById('feedbackInfo').appendChild(img);
+    }
+  } else {
+    document.getElementById('compromiso').value = '';
+    clearCanvas();
+  }
+}
+
+// canvas signature
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let drawing=false;
+canvas.addEventListener('mousedown', ()=> drawing=true);
+canvas.addEventListener('mouseup', ()=> { drawing=false; ctx.beginPath(); });
+canvas.addEventListener('mouseleave', ()=> { drawing=false; ctx.beginPath(); });
+canvas.addEventListener('mousemove', (e)=>{
+  if(!drawing) return;
+  const rect = canvas.getBoundingClientRect();
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#000';
+  ctx.lineTo(e.clientX-rect.left, e.clientY-rect.top);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(e.clientX-rect.left, e.clientY-rect.top);
+});
+function clearCanvas(){ ctx.clearRect(0,0,canvas.width,canvas.height); document.getElementById('agentMsg').innerText=''; }
+
+// save signature + commitment
+function saveSignature(){
+  if(!currentRecordId) return alert('Abra un registro primero');
+  const db = getDB();
+  const rec = db.find(x=>x.id===currentRecordId);
+  if(!rec) return alert('Registro no encontrado');
+  const compromiso = document.getElementById('compromiso').value.trim();
+  if(!compromiso) return alert('El compromiso es obligatorio para completar');
+  const dataUrl = canvas.toDataURL('image/png');
+  rec.compromiso = compromiso;
+  rec.firmaDataUrl = dataUrl;
+  rec.estado = 'COMPLETADO';
+  // update DB
+  const idx = db.findIndex(x=>x.id===currentRecordId);
+  db[idx] = rec;
+  localStorage.setItem('fb_registros_v1', JSON.stringify(db));
+  document.getElementById('agentMsg').innerText = 'Firma y compromiso guardados. Registro completado.';
+  loadAgentList();
+  // optional: navigate to visualizacion
+}
+</script>
+</body>
+</html>

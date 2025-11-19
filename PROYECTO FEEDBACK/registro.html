@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Registro de Monitoreo</title>
+<style>
+  body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
+  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
+  h2{margin-top:0}
+  label{display:block;margin-top:10px;font-weight:600}
+  input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ef;margin-top:6px;box-sizing:border-box}
+  .row{display:flex;gap:10px}
+  .col{flex:1}
+  .items-list{margin-top:10px}
+  .item-block{border:1px solid #e6eef9;padding:8px;border-radius:6px;margin-top:8px;display:flex;gap:8px;align-items:flex-start}
+  .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:12px}
+  .btn.ghost{background:#fff;color:#0f4c81;border:1px solid #cbd5e1}
+  .small{font-size:13px;color:#64748b}
+  .img-preview{max-height:90px;margin-right:8px;border-radius:6px}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Registro del Monitoreo (Supervisor)</h2>
+
+  <label>ID LLAMADA</label>
+  <input id="idLlamada" placeholder="Ej: intefectiva_123">
+
+  <label>ID CONTACTO</label>
+  <input id="idContacto" placeholder="Ej: contacto_456">
+
+  <label>Tipo detectado</label>
+  <input id="tipoDetectado" readonly>
+
+  <div style="display:flex;gap:8px;margin-top:10px">
+    <div style="flex:1">
+      <label>Asesor</label>
+      <input id="asesor" placeholder="Nombre del asesor">
+    </div>
+    <div style="width:220px">
+      <label>Cargo</label>
+      <select id="cargo">
+        <option>ASESOR INBOUND</option>
+        <option>ASESOR CORREOS</option>
+        <option>ASESOR REDES</option>
+      </select>
+    </div>
+  </div>
+
+  <h3 class="small" style="margin-top:12px">Datos del cliente</h3>
+  <div class="row">
+    <div class="col">
+      <label>DNI cliente</label>
+      <input id="cliDni">
+    </div>
+    <div class="col">
+      <label>Nombre cliente</label>
+      <input id="cliNombre">
+    </div>
+    <div class="col">
+      <label>Teléfono</label>
+      <input id="cliTel">
+    </div>
+  </div>
+
+  <label>Tipificación</label>
+  <input id="cliTipif">
+
+  <label>Observación cliente</label>
+  <textarea id="cliObs"></textarea>
+
+  <label>Resumen de la llamada</label>
+  <textarea id="resumen" rows="4"></textarea>
+
+  <h3 style="margin-top:12px">Items observados</h3>
+  <div class="small">Agrega uno o varios items y escribe el detalle en cada uno.</div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn" onclick="addItemBlock()">+ Agregar ítem</button>
+    <button class="btn ghost" onclick="clearItems()" style="width:130px">Limpiar items</button>
+  </div>
+
+  <div id="itemsContainer" class="items-list"></div>
+
+  <label style="margin-top:12px">Reincidencia (auto)</label>
+  <input id="reincidencia" readonly placeholder="Se calculará al registrar">
+
+  <label style="margin-top:12px">Adjuntar imágenes (evidencias)</label>
+  <input id="imgs" type="file" multiple accept="image/*" />
+
+  <div id="imgPreview" style="display:flex;margin-top:8px;flex-wrap:wrap"></div>
+
+  <div style="display:flex;gap:8px">
+    <button class="btn" onclick="submitRecord()">Registrar y Generar (simulado)</button>
+    <button class="btn ghost" onclick="exportAll()" style="width:160px">Exportar JSON</button>
+  </div>
+
+  <div id="msg" style="margin-top:12px;color:green"></div>
+
+</div>
+
+<script>
+// shared ITEMS list (same as dashboard)
+const ITEMS = [
+  ["Corte de Gestión",5],["Insulto / Falta de Respeto",10],["Normativa Regulatoria",8],
+  ["Protección de datos",10],["Contestación sin demora",6],["Optimización de esperas",4],
+  ["Empatía e implicación",4],["Escucha Activa",4],["Sondeo",3],
+  ["Solicita datos de forma correcta y oportuna",3],["Herramientas de Gestión",3],
+  ["Codificación y Registro inConcert",2],["Codificación y Registro en Monitor Logístico",2],
+  ["Codificación y Registro en SmartSheet",2],["Presentación",2],["Personalización",2],
+  ["Despedida",2],["Encuesta de satisfacción",2],["Lenguaje",2],["Voz",2],
+  ["Redacta de forma Correcta",2],["Imagen trasladada",2],["Actitud comercial",3],
+  ["Operativa",3],["Tramita la gestión correspondiente",5],["Transferencia",4],
+  ["Cumple con devolución de llamado",4],["Actitud - Manejo de llamada",3],
+  ["Conocimientos para resolver la consulta",5],["Asesoramiento de Producto o Servicio",4],
+  ["Solución al primer contacto",12],["Verificación de datos",3],["Damos el número de Ticket",1],["Ninguno",0]
+];
+
+function detectarTipoTexto(text){
+  if(!text) return 'NO IDENTIFICADO';
+  text = text.toLowerCase();
+  if(text.includes('intefectivank') || text.includes('vank')) return 'EFECTIVANK';
+  if(text.includes('intefectiva')) return 'EFECTIVA';
+  if(text.includes('intxperto')) return 'XPERTO';
+  if(text.includes('facebook')) return 'FACEBOOK';
+  if(text.includes('instagram')) return 'INSTAGRAM';
+  if(text.includes('correo') || text.includes('mail')) return 'CORREO';
+  return 'OTRO';
+}
+
+document.getElementById('idLlamada').addEventListener('input', updateDetected);
+document.getElementById('idContacto').addEventListener('input', updateDetected);
+function updateDetected(){
+  const v = (document.getElementById('idLlamada').value + ' ' + document.getElementById('idContacto').value);
+  document.getElementById('tipoDetectado').value = detectarTipoTexto(v);
+}
+
+// dynamic items blocks
+let itemCounter = 0;
+function addItemBlock(prefillName, prefillDetail){
+  itemCounter++;
+  const id = 'itemblock_'+itemCounter;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'item-block';
+  wrapper.id = id;
+  const sel = document.createElement('select');
+  sel.style.width='40%';
+  ITEMS.forEach(it=>{
+    const opt = document.createElement('option');
+    opt.value = it[0] + '||' + it[1];
+    opt.textContent = `${it[0]} (${it[1]}%)`;
+    sel.appendChild(opt);
+  });
+  if(prefillName){
+    for(let i=0;i<sel.options.length;i++) if(sel.options[i].value.split('||')[0]===prefillName) sel.selectedIndex = i;
+  }
+  const txt = document.createElement('textarea');
+  txt.placeholder = 'Detalle del item (pequeño)';
+  txt.style.flex='1';
+  txt.style.height='54px';
+  if(prefillDetail) txt.value = prefillDetail;
+
+  const btnDel = document.createElement('button');
+  btnDel.textContent='Eliminar';
+  btnDel.className='btn ghost';
+  btnDel.style.width='90px';
+  btnDel.onclick = ()=> wrapper.remove();
+
+  wrapper.appendChild(sel);
+  wrapper.appendChild(txt);
+  wrapper.appendChild(btnDel);
+  document.getElementById('itemsContainer').appendChild(wrapper);
+  return wrapper;
+}
+function clearItems(){ document.getElementById('itemsContainer').innerHTML=''; itemCounter=0; }
+
+document.getElementById('imgs').addEventListener('change', function(){
+  const files = this.files;
+  const preview = document.getElementById('imgPreview');
+  preview.innerHTML='';
+  Array.from(files).forEach(f=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.className='img-preview';
+      img.style.maxWidth='120px';
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(f);
+  });
+});
+
+// store to localStorage
+function submitRecord(){
+  const db = JSON.parse(localStorage.getItem('fb_registros_v1')||'[]');
+  const items = [];
+  document.querySelectorAll('#itemsContainer .item-block').forEach(b=>{
+    const selv = b.querySelector('select').value.split('||');
+    items.push({name: selv[0], perc: parseFloat(selv[1]), detail: b.querySelector('textarea').value});
+  });
+  // compute note
+  const sum = items.reduce((s,i)=>s + (i.perc||0),0);
+  const nota = Math.max(0, Math.round((100 - sum)*10)/10); // one decimal
+  // type detection
+  const tipo = detectarTipoTexto(document.getElementById('idLlamada').value + ' ' + document.getElementById('idContacto').value);
+  // check reincidencia: any previous record in same month with same advisor and any matching item name?
+  const asesor = document.getElementById('asesor').value || 'NO_NOMBRE';
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  let reinc = 'NO';
+  db.forEach(r=>{
+    const d = new Date(r.fechaHora);
+    if(r.asesor===asesor && d.getMonth()===thisMonth){
+      // check items intersection
+      const prevNames = r.items.map(it=>it.name);
+      if(items.some(it=> prevNames.includes(it.name) )) reinc='SI';
+    }
+  });
+
+  // images -> convert to dataURLs
+  const fileInput = document.getElementById('imgs');
+  const files = fileInput.files;
+  const images = [];
+  const readAll = [];
+  for(let i=0;i<files.length;i++){
+    readAll.push(new Promise((res,rej)=>{
+      const fr = new FileReader();
+      fr.onload = e=>{ images.push({name:files[i].name, data:e.target.result}); res(); };
+      fr.onerror = rej;
+      fr.readAsDataURL(files[i]);
+    }));
+  }
+
+  Promise.all(readAll).then(()=>{
+    const id = 'FB-'+Date.now();
+    const rec = {
+      id,
+      fechaHora: new Date().toISOString(),
+      idLlamada: document.getElementById('idLlamada').value,
+      idContacto: document.getElementById('idContacto').value,
+      tipo,
+      asesor,
+      cargo: document.getElementById('cargo').value,
+      cliente: {dni: document.getElementById('cliDni').value, nombre: document.getElementById('cliNombre').value, tel: document.getElementById('cliTel').value},
+      tipificacion: document.getElementById('cliTipif').value,
+      observacionCliente: document.getElementById('cliObs').value,
+      resumen: document.getElementById('resumen').value,
+      items,
+      images,
+      nota,
+      reincidencia: reinc,
+      estado: 'PENDIENTE',
+      compromiso: '',
+      firmaDataUrl: ''
+    };
+    db.push(rec);
+    localStorage.setItem('fb_registros_v1', JSON.stringify(db));
+    document.getElementById('msg').innerText = 'Registro guardado. ID: ' + id;
+    // reset form partially
+    // clearItems(); document.getElementById('imgPreview').innerHTML='';
+    // update dashboard (if opened)
+  }).catch(err=>{
+    alert('Error leyendo imágenes: '+err);
+  });
+}
+
+function exportAll(){
+  const db = localStorage.getItem('fb_registros_v1') || '[]';
+  const blob = new Blob([db], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'registros_fb.json';
+  a.click();
+}
+</script>
+
+</body>
+</html>

@@ -87,31 +87,19 @@
 </div>
 
 <script>
-// --- Shared helper functions (localStorage DB simulation) ---
-const STORAGE_KEY = 'fb_registros_v1';
+// -------------- API URL ----------------
+const API = "/.netlify/functions/records";
 
-// common items (name, %)
-const ITEMS = [
-  ["Corte de Gestión",5],["Insulto / Falta de Respeto",10],["Normativa Regulatoria",8],
-  ["Protección de datos",10],["Contestación sin demora",6],["Optimización de esperas",4],
-  ["Empatía e implicación",4],["Escucha Activa",4],["Sondeo",3],
-  ["Solicita datos de forma correcta y oportuna",3],["Herramientas de Gestión",3],
-  ["Codificación y Registro inConcert",2],["Codificación y Registro en Monitor Logístico",2],
-  ["Codificación y Registro en SmartSheet",2],["Presentación",2],["Personalización",2],
-  ["Despedida",2],["Encuesta de satisfacción",2],["Lenguaje",2],["Voz",2],
-  ["Redacta de forma Correcta",2],["Imagen trasladada",2],["Actitud comercial",3],
-  ["Operativa",3],["Tramita la gestión correspondiente",5],["Transferencia",4],
-  ["Cumple con devolución de llamado",4],["Actitud - Manejo de llamada",3],
-  ["Conocimientos para resolver la consulta",5],["Asesoramiento de Producto o Servicio",4],
-  ["Solución al primer contacto",12],["Verificación de datos",3],["Damos el número de Ticket",1],["Ninguno",0]
-];
+// -------------- FETCH ALL RECORDS ------
+async function getAllRecords() {
+  const res = await fetch(API);
+  const data = await res.json();
+  return data.ok ? data.records : [];
+}
 
-function getDB(){ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-function setDB(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
-
-// detect type from ID strings
+// detect type
 function detectarTipo(text){
-  if(!text) return 'NO IDENTIFICADO';
+  if(!text) return 'OTRO';
   text = text.toLowerCase();
   if(text.includes('intefectivank') || text.includes('vank')) return 'EFECTIVANK';
   if(text.includes('intefectiva')) return 'EFECTIVA';
@@ -122,110 +110,22 @@ function detectarTipo(text){
   return 'OTRO';
 }
 
-// compute weeks for current month
+// weeks of month
 function getWeeksOfMonth(date = new Date()){
   const year = date.getFullYear(), month = date.getMonth();
-  const first = new Date(year, month, 1);
-  const last = new Date(year, month+1, 0);
+  const last = new Date(year, month+1, 0).getDate();
   const weeks = [];
-  let start = 1;
-  while(start <= last.getDate()){
-    const d1 = new Date(year, month, start);
-    const dayOfWeek = d1.getDay(); // 0..6 sun..sat
-    // week start = d1 minus dayOfWeek
-    const weekStart = new Date(year, month, start - dayOfWeek);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate()+6);
-    weeks.push({start: new Date(weekStart), end: new Date(weekEnd)});
-    start = weekStart.getDate() + 7;
-    // move start to next week boundary in month terms:
-    // ensure we progress by actual days
-    start = start + (month === weekStart.getMonth() ? 0 : 7);
-    // to avoid complexity, we instead generate 4 or 5 weeks by dividing days
-    break;
+  let day = 1;
+  while(day <= last){
+    const start = day;
+    const end = Math.min(day + 6, last);
+    weeks.push({startDay:start, endDay:end});
+    day = end + 1;
   }
-  // simpler approach: compute 4 or 5 weeks by day ranges
-  const totalDays = last.getDate();
-  const neededWeeks = Math.ceil((first.getDay()+ totalDays)/7);
-  const weeksArr = [];
-  let day=1;
-  for(let w=0; w<neededWeeks; w++){
-    const startDay = day;
-    const endDay = Math.min(day+6, totalDays);
-    weeksArr.push({startDay, endDay});
-    day = endDay+1;
-  }
-  return weeksArr;
+  return weeks;
 }
 
-// Build weekly header/table
-function buildWeeklyTable(){
-  const weeks = getWeeksOfMonth();
-  const head = ['<tr><th>ASESOR</th>'];
-  weeks.forEach((w,i)=> head.push(`<th>SEM ${i+1} (C1)</th><th>SEM ${i+1} (C2)</th>`));
-  head.push('</tr>');
-  document.getElementById('weeklyHead').innerHTML = head.join('');
-  // populate rows based on DB advisors
-  const db = getDB();
-  const advisors = [...new Set(db.map(r=>r.asesor).filter(Boolean))];
-  const tbody = [];
-  advisors.forEach(a=>{
-    let row = `<tr><td>${a}</td>`;
-    for(let i=0;i<weeks.length;i++){
-      // for demo show counts by type from stored records falling into that week's day-range
-      const w = weeks[i];
-      // count example: collect two random types from real records or placeholder
-      const recs = db.filter(r=>{
-        const d = new Date(r.fechaHora);
-        const day = d.getDate();
-        return r.asesor===a && day>=w.startDay && day<=w.endDay;
-      });
-      // prepare C1 and C2 as concatenated summary (short)
-      const c1 = recs.slice(0,1).map(r=>r.tipo).join(', ') || '-';
-      const c2 = recs.slice(1,2).map(r=>r.tipo).join(', ') || '-';
-      row += `<td>${c1}</td><td>${c2}</td>`;
-    }
-    row += '</tr>';
-    tbody.push(row);
-  });
-  document.getElementById('weeklyBody').innerHTML = tbody.join('') || '<tr><td colspan="'+(1+weeks.length*2)+'" class="small">No hay registros aún</td></tr>';
-}
-
-// update counters and recent table
-function refreshDashboard(){
-  const db = getDB();
-  const counts = {EFECTIVA:0,EFECTIVANK:0,XPERTO:0,FACEBOOK:0,INSTAGRAM:0,CORREO:0,OTRO:0};
-  db.forEach(r=> counts[r.tipo] = (counts[r.tipo]||0)+1);
-  document.getElementById('cntEfectiva').innerText = counts.EFECTIVA||0;
-  document.getElementById('cntEfectivank').innerText = counts.EFECTIVANK||0;
-  document.getElementById('cntXperto').innerText = counts.XPERTO||0;
-  document.getElementById('cntFb').innerText = counts.FACEBOOK||0;
-  document.getElementById('cntIg').innerText = counts.INSTAGRAM||0;
-  document.getElementById('cntMail').innerText = counts.CORREO||0;
-  // recent
-  const recent = db.slice().reverse().slice(0,8);
-  const tbody = recent.map(r=>`<tr><td>${new Date(r.fechaHora).toLocaleString()}</td><td>${r.asesor}</td><td>${r.nota}%</td><td>${r.tipo}</td></tr>`).join('');
-  document.querySelector('#recentTable tbody').innerHTML = tbody || '<tr><td colspan="4">Sin registros</td></tr>';
-  buildWeeklyTable();
-  // chart (simple average per week)
-  // compute averages per week to update chart
-  const weeks = getWeeksOfMonth();
-  const values = weeks.map(w=>{
-    const recs = db.filter(r=>{
-      const d = new Date(r.fechaHora);
-      const day = d.getDate();
-      return day>=w.startDay && day<=w.endDay;
-    });
-    if(recs.length===0) return 0;
-    const avg = recs.reduce((s,x)=>s + (typeof x.nota==='number'?x.nota:parseFloat(x.nota)||0),0)/recs.length;
-    return Math.round(avg);
-  });
-  // update chart
-  chart.data.labels = weeks.map((_,i)=>'S'+(i+1));
-  chart.data.datasets[0].data = values;
-  chart.update();
-}
-
+// CHART INIT
 const ctx = document.getElementById('chartMonth').getContext('2d');
 const chart = new Chart(ctx, {
   type: 'bar',
@@ -233,6 +133,77 @@ const chart = new Chart(ctx, {
   options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}}}
 });
 
+// ----------------- REFRESH DASHBOARD -----------------
+async function refreshDashboard(){
+  const db = await getAllRecords();
+
+  // fill type counts
+  const counts = {EFECTIVA:0,EFECTIVANK:0,XPERTO:0,FACEBOOK:0,INSTAGRAM:0,CORREO:0,OTRO:0};
+  db.forEach(r=> counts[r.tipo] = (counts[r.tipo]||0)+1 );
+  
+  document.getElementById('cntEfectiva').innerText = counts.EFECTIVA;
+  document.getElementById('cntEfectivank').innerText = counts.EFECTIVANK;
+  document.getElementById('cntXperto').innerText = counts.XPERTO;
+  document.getElementById('cntFb').innerText = counts.FACEBOOK;
+  document.getElementById('cntIg').innerText = counts.INSTAGRAM;
+  document.getElementById('cntMail').innerText = counts.CORREO;
+
+  // recent table
+  const recent = db.slice().reverse().slice(0,8);
+  document.querySelector('#recentTable tbody').innerHTML =
+    recent.map(r=>`
+      <tr>
+        <td>${new Date(r.fechaHora).toLocaleString()}</td>
+        <td>${r.asesor}</td>
+        <td>${r.nota}%</td>
+        <td>${r.tipo}</td>
+      </tr>
+    `).join("") || '<tr><td colspan="4">Sin registros</td></tr>';
+
+  // weekly table
+  const weeks = getWeeksOfMonth();
+  document.getElementById('weeklyHead').innerHTML =
+    `<tr><th>ASESOR</th>` +
+    weeks.map((_,i)=>`<th>SEM ${i+1} C1</th><th>SEM ${i+1} C2</th>`).join("") +
+    `</tr>`;
+
+  const advisors = [...new Set(db.map(r=>r.asesor).filter(Boolean))];
+  const tbody = advisors.map(a=>{
+    let row = `<tr><td>${a}</td>`;
+    for (let w=0; w<weeks.length; w++){
+      const recs = db.filter(r=>{
+        const d = new Date(r.fechaHora);
+        const day = d.getDate();
+        return r.asesor===a && day>=weeks[w].startDay && day<=weeks[w].endDay;
+      });
+      const c1 = recs[0]?.tipo || "-";
+      const c2 = recs[1]?.tipo || "-";
+      row += `<td>${c1}</td><td>${c2}</td>`;
+    }
+    return row + "</tr>";
+  }).join("");
+
+  document.getElementById('weeklyBody').innerHTML = tbody || 
+    `<tr><td colspan="${1 + weeks.length*2}">Sin registros</td></tr>`;
+
+  // chart averages
+  const values = weeks.map(w=>{
+    const recs = db.filter(r=>{
+      const d = new Date(r.fechaHora);
+      const day = d.getDate();
+      return day>=w.startDay && day<=w.endDay;
+    });
+    if (!recs.length) return 0;
+    const avg = recs.reduce((s,r)=>s+(parseFloat(r.nota)||0), 0) / recs.length;
+    return Math.round(avg);
+  });
+
+  chart.data.labels = weeks.map((_,i)=>'S'+(i+1));
+  chart.data.datasets[0].data = values;
+  chart.update();
+}
+
+// RUN
 refreshDashboard();
 </script>
 </body>

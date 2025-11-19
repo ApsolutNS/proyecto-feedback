@@ -108,13 +108,28 @@ const API_LIST = "/.netlify/functions/records";
 // ---------------- ASESORES DINÁMICOS ----------
 async function cargarAsesores() {
   try {
-    const res = await fetch("/data/asesores.json");
-    const json = await res.json();
+    const res = await fetch("/data/asesores.json", { cache: "no-store" });
+
+    if (!res.ok) {
+      console.error("❌ No se pudo cargar /data/asesores.json", res.status);
+      return;
+    }
+
+    const lista = await res.json();
+    console.log("ASESORES JSON = ", lista);
+
+    if (!Array.isArray(lista)) {
+      console.error("❌ El JSON no es un array:", lista);
+      return;
+    }
 
     const sel = document.getElementById("asesor");
-    sel.innerHTML = json.asesores.map(a => `<option>${a}</option>`).join("");
+    sel.innerHTML = lista.map(a => `<option>${a}</option>`).join("");
 
-  } catch(e){
+  } catch (err) {
+    console.error("❌ Error cargando asesores:", err);
+  }
+}catch(e){
     console.error("ERROR cargando asesores:", e);
   }
 }
@@ -257,3 +272,4 @@ async function submitRecord(){
 
 </body>
 </html>
+

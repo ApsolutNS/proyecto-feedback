@@ -1,11 +1,6 @@
 {
-  "name": "proyecto-feedback",
+  "name": "feedback",
   "version": "1.0.0",
-  "engines": {
-    "node": "18.x"
-  },
-  "dependencies": {
-    "@azure/msal-node": "^1.14.0",
-    "node-fetch": "^2.6.7"
-  }
+  "type": "module",
+  "dependencies": {}
 }

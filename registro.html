@@ -87,9 +87,6 @@
 
   <div id="itemsContainer" class="items-list"></div>
 
-  <label style="margin-top:12px">Reincidencia (auto)</label>
-  <input id="reincidencia" readonly>
-
   <label style="margin-top:12px">Adjuntar imágenes</label>
   <input id="imgs" type="file" multiple accept="image/*" />
 
@@ -101,38 +98,20 @@
 </div>
 
 <script>
-// ---------------- API BACKEND ----------------
 const API_POST = "/.netlify/functions/register";
-const API_LIST = "/.netlify/functions/records";
 
-// ---------------- ASESORES DINÁMICOS ----------
+// Cargar asesores
 async function cargarAsesores() {
   try {
     const res = await fetch("/data/asesores.json", { cache: "no-store" });
-
-    if (!res.ok) {
-      console.error("❌ No se pudo cargar /data/asesores.json", res.status);
-      return;
-    }
-
+    if (!res.ok) throw new Error('No se pudo cargar /data/asesores.json');
     const lista = await res.json();
-    console.log("ASESORES JSON = ", lista);
-
-    if (!Array.isArray(lista)) {
-      console.error("❌ El JSON no es un array:", lista);
-      return;
-    }
-
-    const sel = document.getElementById("asesor");
-    sel.innerHTML = lista.map(a => `<option>${a}</option>`).join("");
-
-  } catch (err) {
-    console.error("❌ Error cargando asesores:", err);
-  }
+    document.getElementById("asesor").innerHTML = lista.map(a => `<option>${a}</option>`).join("");
+  } catch (err) { console.error(err); }
 }
 cargarAsesores();
 
-// ---------------- TIPO DETECTADO -------------
+// Detectar tipo
 function detectarTipoTexto(text){
   if(!text) return 'NO IDENTIFICADO';
   text = text.toLowerCase();
@@ -144,16 +123,14 @@ function detectarTipoTexto(text){
   if(text.includes('correo') || text.includes('mail')) return 'CORREO';
   return 'OTRO';
 }
-
 document.getElementById('idLlamada').addEventListener('input', updateDetected);
 document.getElementById('idContacto').addEventListener('input', updateDetected);
-
 function updateDetected(){
   const v = idLlamada.value + " " + idContacto.value;
   tipoDetectado.value = detectarTipoTexto(v);
 }
 
-// --------------- ITEMS ----------------
+// ITEMS
 const ITEMS = [
   ["Corte de Gestión",5],["Insulto / Falta de Respeto",10],["Normativa Regulatoria",8],
   ["Protección de datos",10],["Contestación sin demora",6],["Optimización de esperas",4],
@@ -173,7 +150,6 @@ const ITEMS = [
 function addItemBlock(){
   const wrapper = document.createElement('div');
   wrapper.className = 'item-block';
-
   wrapper.innerHTML = `
     <select>
       ${ITEMS.map(it => `<option value="${it[0]}||${it[1]}">${it[0]} (${it[1]}%)</option>`).join("")}
@@ -181,94 +157,85 @@ function addItemBlock(){
     <textarea placeholder="Detalle del item"></textarea>
     <button class="btn ghost" style="width:90px" onclick="this.parentNode.remove()">Eliminar</button>
   `;
-
   document.getElementById("itemsContainer").appendChild(wrapper);
 }
+function clearItems(){ document.getElementById("itemsContainer").innerHTML = ""; }
 
-function clearItems(){
-  document.getElementById("itemsContainer").innerHTML = "";
-}
-
-// ------------- PREVIEW IMÁGENES -----------------
+// Preview imágenes
 document.getElementById('imgs').addEventListener('change', function(){
   const preview = document.getElementById('imgPreview');
   preview.innerHTML = "";
-
   Array.from(this.files).forEach(f=>{
-    const rd = new FileReader();
-    rd.onload = e=>{
+    const fr = new FileReader();
+    fr.onload = e=>{
       const img = document.createElement("img");
       img.src = e.target.result;
       img.className = "img-preview";
       img.style.maxWidth = "120px";
       preview.appendChild(img);
     };
-    rd.readAsDataURL(f);
+    fr.readAsDataURL(f);
   });
 });
 
-// ------------------ SUBMIT A BACKEND -----------------
+// Submit registro
 async function submitRecord(){
+  const msgEl = document.getElementById('msg');
+  msgEl.style.color = 'green';
+  msgEl.textContent = '⏳ Enviando...';
 
-  const items = [];
-  document.querySelectorAll("#itemsContainer .item-block").forEach(b=>{
-    const [name,perc] = b.querySelector("select").value.split("||");
-    items.push({
-      name,
-      perc: parseFloat(perc),
-      detail: b.querySelector("textarea").value
+  try{
+    const items = Array.from(document.querySelectorAll("#itemsContainer .item-block")).map(b=>{
+      const [name,perc] = b.querySelector("select").value.split("||");
+      return { name, perc: parseFloat(perc), detail: b.querySelector("textarea").value };
     });
-  });
 
-  const sum = items.reduce((s,i)=>s + i.perc, 0);
-  const nota = Math.max(0, Math.round((100 - sum) * 10) / 10);
-
-  const files = imgs.files;
-  const images = await Promise.all(
-    [...files].map(f=>{
+    const files = document.getElementById('imgs').files;
+    const images = await Promise.all([...files].map(f=>{
       return new Promise(res=>{
         const fr = new FileReader();
         fr.onload = e=>res({name:f.name, data:e.target.result});
         fr.readAsDataURL(f);
       });
-    })
-  );
+    }));
 
-  const body = {
-    idLlamada: idLlamada.value,
-    idContacto: idContacto.value,
-    tipo: tipoDetectado.value,
-    asesor: asesor.value,
-    cargo: cargo.value,
-    cliente: {
-      dni: cliDni.value,
-      nombre: cliNombre.value,
-      tel: cliTel.value
-    },
-    tipificacion: cliTipif.value,
-    observacionCliente: cliObs.value,
-    resumen: resumen.value,
-    items,
-    images, 
-    nota
-  };
+    const body = {
+      idLlamada: idLlamada.value,
+      idContacto: idContacto.value,
+      tipo: tipoDetectado.value,
+      asesor: asesor.value,
+      cargo: cargo.value,
+      cliente:{ dni: cliDni.value, nombre: cliNombre.value, tel: cliTel.value },
+      tipificacion: cliTipif.value,
+      observacionCliente: cliObs.value,
+      resumen: resumen.value,
+      items,
+      images
+    };
 
-  const res = await fetch(API_POST, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(body)
-  });
+    const res = await fetch(API_POST, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
 
-  const out = await res.json();
-
-  msg.innerHTML = out.ok 
-    ? "✔ Registro enviado correctamente"
-    : "❌ Error: " + out.error;
+    const out = await res.json();
+    if(out.ok){
+      msgEl.style.color = 'green';
+      msgEl.textContent = `✔ Registro enviado correctamente (ID: ${out.id})`;
+      clearItems();
+      document.getElementById('imgPreview').innerHTML = '';
+    } else {
+      msgEl.style.color = 'red';
+      msgEl.textContent = `❌ Error: ${out.message}`;
+    }
+  } catch(err){
+    msgEl.style.color = 'red';
+    msgEl.textContent = `❌ Error inesperado: ${err.message}`;
+    console.error(err);
+  }
 }
 </script>
 
 </body>
 </html>
-
-
-

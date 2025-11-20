@@ -1,63 +1,72 @@
-// record.js
-const { google } = require('googleapis');
+// record.js - GET ?id=... desde Google Sheets
+const { google } = require("googleapis");
 
-function getGoogleAuth() {
+function getAuth() {
   const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
   return new google.auth.GoogleAuth({
     credentials: creds,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"]
+    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
   });
 }
 
 exports.handler = async (event) => {
   try {
     const id = event.queryStringParameters?.id;
-    if (!id) return { statusCode: 400, body: "Falta id" };
+    if (!id) {
+      return { statusCode: 400, body: JSON.stringify({ ok: false, message: "Falta id" }) };
+    }
 
-    const auth = getGoogleAuth();
+    const auth = getAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Registros!A:T"
+    const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
+
+    if (!SPREADSHEET_ID) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ ok: false, message: "Falta GOOGLE_SHEET_ID" }),
+      };
+    }
+
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: "Registros!A2:T",
     });
 
-    const rows = res.data.values || [];
+    const rows = resp.data.values || [];
 
-    const row = rows.find(r => r[0] === id);
-    if (!row) return { statusCode: 404, body: "No encontrado" };
+    const v = rows.find((r) => r[0] === id);
+    if (!v) {
+      return { statusCode: 404, body: JSON.stringify({ ok: false, message: "No encontrado" }) };
+    }
 
     const record = {
-      id: row[0],
-      fechaHora: row[1],
-      asesor: row[2],
-      cargo: row[3],
-      idLlamada: row[4],
-      idContacto: row[5],
-      tipo: row[6],
-      cliente: {
-        dni: row[7],
-        nombre: row[8],
-        tel: row[9]
-      },
-      tipificacion: row[10],
-      observacionCliente: row[11],
-      resumen: row[12],
-      nota: row[13],
-      reincidencia: row[14],
-      items: JSON.parse(row[15] || "[]"),
-      images: JSON.parse(row[16] || "[]"),
-      estado: row[17],
-      compromiso: row[18],
-      firmaUrl: row[19]
+      id: v[0],
+      fechaHora: v[1],
+      asesor: v[2],
+      cargo: v[3],
+      idLlamada: v[4],
+      idContacto: v[5],
+      tipo: v[6],
+      cliente: { dni: v[7], nombre: v[8], tel: v[9] },
+      tipificacion: v[10],
+      observacionCliente: v[11],
+      resumen: v[12],
+      nota: v[13],
+      reincidencia: v[14],
+      items: JSON.parse(v[15] || "[]"),
+      images: JSON.parse(v[16] || "[]"),
+      estado: v[17],
+      compromiso: v[18],
+      firmaUrl: v[19],
     };
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ ok: true, record })
-    };
-
+    return { statusCode: 200, body: JSON.stringify({ ok: true, record }) };
   } catch (err) {
-    return { statusCode: 500, body: err.message };
+    console.error("ERROR en record.js", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ ok: false, message: err.message }),
+    };
   }
 };

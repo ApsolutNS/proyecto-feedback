@@ -1,11 +1,15 @@
-// register.js - Guarda registros en Google Sheets
+// register.js - Guarda registros en Google Sheets con ID corto UUIDv4
 const { google } = require("googleapis");
+const crypto = require("crypto");
+
+function uuidShort() {
+  return "id_" + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+}
 
 exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
 
-    // Validación mínima
     if (!body.asesor || !body.idLlamada) {
       return {
         statusCode: 400,
@@ -13,7 +17,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // Autenticación con service account
     const auth = new google.auth.GoogleAuth({
       credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
@@ -24,8 +27,33 @@ exports.handler = async (event) => {
     const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
     const RANGE = "Registros!A:Z";
 
-    // Preparar fila
+    // 🎯 Generar ID corto UUIDv4
+    const id = uuidShort();
+
+    // Preparar fila EXACTA para tus columnas:
+    // A: ID
+    // B: FechaHora
+    // C: Asesor
+    // D: Cargo
+    // E: ID Llamada
+    // F: ID Contacto
+    // G: Tipo
+    // H: DNI Cliente
+    // I: Nombre Cliente
+    // J: Tel Cliente
+    // K: Tipificación
+    // L: Observación
+    // M: Resumen
+    // N: Nota
+    // O: Reincidencia
+    // P: Items
+    // Q: Images
+    // R: Estado
+    // S: Compromiso
+    // T: FirmaUrl
+
     const row = [
+      id,
       new Date().toISOString(),
       body.asesor || "",
       body.cargo || "",
@@ -39,20 +67,24 @@ exports.handler = async (event) => {
       body.observacionCliente || "",
       body.resumen || "",
       body.nota || "",
+      body.reincidencia || "",
       JSON.stringify(body.items || []),
-      JSON.stringify(body.images || [])
+      JSON.stringify(body.images || []),
+      "",           // Estado (vacío al inicio)
+      "",           // Compromiso (vacío al inicio)
+      ""            // FirmaUrl (vacío al inicio)
     ];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: RANGE,
       valueInputOption: "USER_ENTERED",
-      requestBody: { values: [row] }
+      requestBody: { values: [row] },
     });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ ok: true }),
+      body: JSON.stringify({ ok: true, id }),
     };
 
   } catch (err) {

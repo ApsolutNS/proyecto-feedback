@@ -1,10 +1,9 @@
-// record.js - GET ?id=... desde Google Sheets
+// record.js - GET ?id=...
 const { google } = require("googleapis");
 
 function getAuth() {
-  const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
   return new google.auth.GoogleAuth({
-    credentials: creds,
+    credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
     scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
   });
 }
@@ -19,17 +18,10 @@ exports.handler = async (event) => {
     const auth = getAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
-
-    if (!SPREADSHEET_ID) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ ok: false, message: "Falta GOOGLE_SHEET_ID" }),
-      };
-    }
+    const sheetId = process.env.GOOGLE_SHEET_ID;
 
     const resp = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: sheetId,
       range: "Registros!A2:T",
     });
 
@@ -62,11 +54,9 @@ exports.handler = async (event) => {
     };
 
     return { statusCode: 200, body: JSON.stringify({ ok: true, record }) };
+
   } catch (err) {
     console.error("ERROR en record.js", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ ok: false, message: err.message }),
-    };
+    return { statusCode: 500, body: JSON.stringify({ ok: false, message: err.message }) };
   }
 };

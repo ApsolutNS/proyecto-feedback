@@ -1,4 +1,4 @@
-// records.js - Obtener todos los registros desde Google Sheets
+// records.js - Obtener todos
 const { google } = require("googleapis");
 
 exports.handler = async () => {
@@ -9,18 +9,18 @@ exports.handler = async () => {
     });
 
     const sheets = google.sheets({ version: "v4", auth });
-    const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
+    const sheetId = process.env.GOOGLE_SHEET_ID;
 
     const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: "Registros!A:Z"
+      spreadsheetId: sheetId,
+      range: "Registros!A:T"
     });
 
     const rows = res.data.values || [];
     const headers = rows[0];
-    const items = rows.slice(1).map(row => {
+    const items = rows.slice(1).map(r => {
       const obj = {};
-      headers.forEach((h, i) => obj[h] = row[i] || "");
+      headers.forEach((h, i) => obj[h] = r[i] || "");
       return obj;
     });
 

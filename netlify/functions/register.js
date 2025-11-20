@@ -25,32 +25,9 @@ exports.handler = async (event) => {
     const sheets = google.sheets({ version: "v4", auth });
 
     const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
-    const RANGE = "Registros!A:Z";
+    const RANGE = "Registros!A:T";
 
-    // 🎯 Generar ID corto UUIDv4
     const id = uuidShort();
-
-    // Preparar fila EXACTA para tus columnas:
-    // A: ID
-    // B: FechaHora
-    // C: Asesor
-    // D: Cargo
-    // E: ID Llamada
-    // F: ID Contacto
-    // G: Tipo
-    // H: DNI Cliente
-    // I: Nombre Cliente
-    // J: Tel Cliente
-    // K: Tipificación
-    // L: Observación
-    // M: Resumen
-    // N: Nota
-    // O: Reincidencia
-    // P: Items
-    // Q: Images
-    // R: Estado
-    // S: Compromiso
-    // T: FirmaUrl
 
     const row = [
       id,
@@ -70,9 +47,9 @@ exports.handler = async (event) => {
       body.reincidencia || "",
       JSON.stringify(body.items || []),
       JSON.stringify(body.images || []),
-      "",           // Estado (vacío al inicio)
-      "",           // Compromiso (vacío al inicio)
-      ""            // FirmaUrl (vacío al inicio)
+      "",
+      "",
+      ""
     ];
 
     await sheets.spreadsheets.values.append({
@@ -88,7 +65,6 @@ exports.handler = async (event) => {
     };
 
   } catch (err) {
-    console.error(err);
     return {
       statusCode: 500,
       body: JSON.stringify({ ok: false, error: err.message }),

@@ -11,14 +11,16 @@ function getGoogleAuth() {
 exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
-    const { id, estado, compromiso } = body;
+    const { id, estado, compromiso, firmaUrl } = body;
 
-    if (!id) return { statusCode: 400, body: "Falta id" };
+    if (!id) {
+      return { statusCode: 400, body: "Falta id" };
+    }
 
     const auth = getGoogleAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    // Obtener filas
+    // Leer todas las filas
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: "Registros!A:T"
@@ -26,17 +28,22 @@ exports.handler = async (event) => {
 
     const rows = res.data.values || [];
 
+    // Ubicar fila por ID en la columna A
     const rowIndex = rows.findIndex(r => r[0] === id);
-    if (rowIndex === -1) return { statusCode: 404, body: "No encontrado" };
+    if (rowIndex === -1) {
+      return { statusCode: 404, body: "No encontrado" };
+    }
 
-    // Actualizar columnas S y T (estado, compromiso)
     const rowNumber = rowIndex + 1;
 
+    // Actualizar R (estado), S (compromiso), T (firmaUrl)
     await sheets.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: `Registros!R${rowNumber}:T${rowNumber}`,
       valueInputOption: "RAW",
-      requestBody: { values: [[estado, compromiso]] }
+      requestBody: {
+        values: [[estado, compromiso, firmaUrl]]
+      }
     });
 
     return {

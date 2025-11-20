@@ -1,4 +1,4 @@
-// record.js - GET ?id=...
+// record.js - GET ?id=... desde Google Sheets
 const { google } = require("googleapis");
 
 function getAuth() {
@@ -18,16 +18,16 @@ exports.handler = async (event) => {
     const auth = getAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    const sheetId = process.env.GOOGLE_SHEET_ID;
+    const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 
     const resp = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
+      spreadsheetId: SPREADSHEET_ID,
       range: "Registros!A2:T",
     });
 
     const rows = resp.data.values || [];
-
     const v = rows.find((r) => r[0] === id);
+
     if (!v) {
       return { statusCode: 404, body: JSON.stringify({ ok: false, message: "No encontrado" }) };
     }
@@ -50,13 +50,15 @@ exports.handler = async (event) => {
       images: JSON.parse(v[16] || "[]"),
       estado: v[17],
       compromiso: v[18],
-      firmaUrl: v[19],
+      firmaUrl: v[19]
     };
 
     return { statusCode: 200, body: JSON.stringify({ ok: true, record }) };
 
   } catch (err) {
-    console.error("ERROR en record.js", err);
-    return { statusCode: 500, body: JSON.stringify({ ok: false, message: err.message }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ ok: false, message: err.message }),
+    };
   }
 };

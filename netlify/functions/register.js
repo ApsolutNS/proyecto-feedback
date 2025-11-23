@@ -17,6 +17,7 @@ exports.handler = async (event) => {
       };
     }
 
+    // AUTH GOOGLE
     const auth = new google.auth.GoogleAuth({
       credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
@@ -27,7 +28,15 @@ exports.handler = async (event) => {
     const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
     const RANGE = "Registros!A:T";
 
+    // Crear ID
     const id = uuidShort();
+
+    // CLIENTE — REENSAMBLADO
+    const cliente = {
+      dni: body.clienteDni || "",
+      nombre: body.clienteNombre || "",
+      tel: body.clienteTel || ""
+    };
 
     const row = [
       id,
@@ -37,9 +46,9 @@ exports.handler = async (event) => {
       body.idLlamada || "",
       body.idContacto || "",
       body.tipo || "",
-      body.cliente?.dni || "",
-      body.cliente?.nombre || "",
-      body.cliente?.tel || "",
+      cliente.dni,
+      cliente.nombre,
+      cliente.tel,
       body.tipificacion || "",
       body.observacionCliente || "",
       body.resumen || "",
@@ -47,9 +56,9 @@ exports.handler = async (event) => {
       body.reincidencia || "",
       JSON.stringify(body.items || []),
       JSON.stringify(body.images || []),
-      "",
-      "",
-      ""
+      body.compromiso || "",
+      body.firmaUrl || "",
+      body.fechaHora || ""
     ];
 
     await sheets.spreadsheets.values.append({

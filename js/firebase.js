@@ -1,7 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-export const firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
   projectId: "feedback-app-ac30e",
@@ -11,5 +12,7 @@ export const firebaseConfig = {
   measurementId: "G-X6MP0FFH9P"
 };
 
-export const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+
 export const db = getFirestore(app);
+export const storage = getStorage(app);

@@ -1,81 +1,83 @@
-// register.js - Guarda registros en Google Sheets con ID corto UUIDv4
-const { google } = require("googleapis");
-const crypto = require("crypto");
+import { GoogleSpreadsheet } from "google-spreadsheet";
+import { JWT } from "google-auth-library";
+import { v4 as uuidv4 } from "uuid";
 
-function uuidShort() {
-  return "id_" + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-}
-
-exports.handler = async (event) => {
+export const handler = async (event) => {
   try {
+
     const body = JSON.parse(event.body || "{}");
 
-    // Validación mínima
-    if (!body.asesor || !body.idLlamada) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ ok: false, error: "Faltan datos obligatorios" }),
-      };
-    }
+    // ID único requerido por visualización-feedback
+    const uid = uuidv4().split("-")[0].toUpperCase();
 
-    // Google Auth
-    const auth = new google.auth.GoogleAuth({
-      credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
-      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    // Formato fecha Perú correcto
+    const fechaPeru = new Intl.DateTimeFormat("es-PE", {
+      dateStyle: "short",
+      timeStyle: "medium",
+      hour12: false,
+      timeZone: "America/Lima"
+    }).format(new Date());
+
+    // Limpieza para Google Sheets
+    const fix = (v) => (v === undefined || v === null ? "" : v);
+
+    // Inicializar Google Sheets
+    const serviceAccountAuth = new JWT({
+      email: process.env.GOOGLE_SERVICE_EMAIL,
+      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"]
     });
 
-    const sheets = google.sheets({ version: "v4", auth });
+    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth);
+    await doc.loadInfo();
+    const sheet = doc.sheetsByTitle["Registros"];
 
-    const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
+    // Preparar items como texto plano
+    const itemsText = (body.items || [])
+      .map(i => `${i.name} (${i.perc}%): ${i.detail}`)
+      .join("\n");
 
-    // 🔥 Solo 1 range, el correcto:
-    const RANGE = "Registros!A:T";
+    // Insertar fila
+    await sheet.addRow({
+      UID: uid,
+      Fecha: fechaPeru,
+      Asesor: fix(body.asesor),
+      Cargo: fix(body.cargo),
 
-    // Generar ID único corto
-    const id = uuidShort();
+      ID_Llamada: fix(body.idLlamada),
+      ID_Contacto: fix(body.idContacto),
+      Tipo: fix(body.tipo),
 
-    // Armar fila EXACTA para columnas A–T (20 columnas)
-    const row = [
-      id,                              // A - ID
-      new Date().toISOString(),        // B - FechaHora
-      body.asesor || "",               // C - Asesor
-      body.cargo || "",                // D - Cargo
-      body.idLlamada || "",            // E - ID Llamada
-      body.idContacto || "",           // F - ID Contacto
-      body.tipo || "",                 // G - Tipo
-      body.cliente?.dni || "",         // H - DNI Cliente
-      body.cliente?.nombre || "",      // I - Nombre Cliente
-      body.cliente?.tel || "",         // J - Tel Cliente
-      body.tipificacion || "",         // K - Tipificación
-      body.observacionCliente || "",   // L - Observación
-      body.resumen || "",              // M - Resumen
-      body.nota || "",                 // N - Nota %
-      body.reincidencia || "",         // O - Reincidencia
-      JSON.stringify(body.items || []),// P - Items
-      JSON.stringify(body.images || []),// Q - Images
-      body.estado || "",               // R - Estado
-      body.compromiso || "",           // S - Compromiso
-      body.firmaUrl || ""              // T - FirmaUrl
-    ];
+      Cliente_DNI: fix(body.clienteDni),
+      Cliente_Nombre: fix(body.clienteNombre),
+      Cliente_Tel: fix(body.clienteTel),
 
-    // Escribir fila en Sheets
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: RANGE,
-      valueInputOption: "USER_ENTERED",
-      requestBody: { values: [row] },
+      Tipificación: fix(body.tipificacion),
+      Observación: fix(body.observacionCliente),
+      Resumen: fix(body.resumen),
+
+      Nota: fix(body.nota),
+      Compromiso: fix(body.compromiso),
+      Firma_URL: fix(body.firmaUrl),
+
+      Items: itemsText,
+      Imagenes: (body.images || []).map(i => i.name).join(", ")
     });
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ ok: true, id }),
+      body: JSON.stringify({
+        ok: true,
+        message: "Registro guardado correctamente",
+        uid
+      })
     };
 
   } catch (err) {
-    console.error("ERROR REGISTER:", err);
+    console.error("❌ Error en register:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ ok: false, error: err.message }),
+      body: JSON.stringify({ ok: false, message: err.message })
     };
   }
 };

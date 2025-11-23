@@ -96,28 +96,21 @@
 </div>
 
 <script type="module">
-
 /* --------------------- IMPORTS FIREBASE ------------------------- */
-
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
 import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
 /* --------------------- CONFIG FIREBASE ------------------------- */
-
 const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
   projectId: "feedback-app-ac30e",
-  storageBucket: "feedback-app-ac30e.firebasestorage.app",
+  storageBucket: "feedback-app-ac30e.appspot.com",
   messagingSenderId: "512179147778",
   appId: "1:512179147778:web:795e4a8b177fe766d3431b",
   measurementId: "G-X6MP0FFH9P"
@@ -128,7 +121,6 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 /* --------------------- CARGAR ASESORES ------------------------- */
-
 async function cargarAsesores() {
   const q = await getDocs(collection(db, "asesores"));
   const asesores = [];
@@ -137,11 +129,9 @@ async function cargarAsesores() {
   document.getElementById("asesor").innerHTML =
     asesores.map(a => `<option>${a}</option>`).join("");
 }
-
 cargarAsesores();
 
 /* --------------------- DETECTAR TIPO -------------------------- */
-
 function detectarTipoTexto(text){
   if(!text) return 'NO IDENTIFICADO';
   text = text.toLowerCase();
@@ -164,42 +154,82 @@ function updateDetected(){
   tipoDetectado.value = detectarTipoTexto(v);
 }
 
-/* --------------------- ITEMS DISPONIBLES ---------------------- */
-
+/* --------------------- ITEMS DISPONIBLES (ACTUALIZADO) --------
+   name  = descripción del ítem
+   perc  = peso dentro del grupo (se usa en PENCUF)
+   group = ERROR | PENCUF | PECNEG | PECUF | PECCUMP | NONE
+-----------------------------------------------------------------*/
 const ITEMS = [
-  ["Corte de Gestión",5],["Insulto / Falta de Respeto",10],["Normativa Regulatoria",8],
-  ["Protección de datos",10],["Contestación sin demora",6],["Optimización de esperas",4],
-  ["Empatía e implicación",4],["Escucha Activa",4],["Sondeo",3],
-  ["Solicita datos correctamente",3],["Herramientas de Gestión",3],
-  ["Codificación inConcert",2],["SmartSheet",2],
-  ["Presentación",2],["Personalización",2],
-  ["Despedida",2],["Encuesta",2],["Lenguaje",2],["Voz",2],
-  ["Actitud comercial",3],["Operativa",3],
-  ["Solución 1er Contacto",12],["Verificación",3],
-  ["Ticket entregado",1],["Ninguno",0]
+  // ERROR INEXCUSABLE (nota = 0)
+  { name: "Corte de Gestión", perc: 0, group: "ERROR" },
+  { name: "Insulto / Falta de Respeto", perc: 0, group: "ERROR" },
+  { name: "Normativa Regulatoria", perc: 0, group: "ERROR" },
+  { name: "Protección de datos", perc: 0, group: "ERROR" },
+
+  // PENCUF (grupo 25%, proporcional)
+  { name: "Contestación sin demora", perc: 5, group: "PENCUF" },
+  { name: "Optimización de esperas", perc: 5, group: "PENCUF" },
+  { name: "Empatía e implicación", perc: 7, group: "PENCUF" },
+  { name: "Escucha Activa", perc: 7, group: "PENCUF" },
+  { name: "Sondeo", perc: 7, group: "PENCUF" },
+  { name: "Solicita datos de forma correcta y oportuna", perc: 7, group: "PENCUF" },
+  { name: "Herramientas de Gestión", perc: 10, group: "PENCUF" },
+  { name: "Codificación y Registro inConcert", perc: 7, group: "PENCUF" },
+  { name: "Codificación y Registro en Monitor Logístico", perc: 7, group: "PENCUF" },
+  { name: "Codificación y Registro en SmartSheet", perc: 7, group: "PENCUF" },
+  { name: "Presentación", perc: 7, group: "PENCUF" },
+  { name: "Personalización", perc: 7, group: "PENCUF" },
+  { name: "Despedida", perc: 7, group: "PENCUF" },
+  { name: "Encuesta de satisfacción", perc: 10, group: "PENCUF" },
+
+  // PECNEG (grupo 30%, si hay ≥1 se descuenta 30)
+  { name: "Lenguaje", perc: 30, group: "PECNEG" },
+  { name: "Voz", perc: 30, group: "PECNEG" },
+  { name: "Redacta de forma Correcta", perc: 30, group: "PECNEG" },
+  { name: "Imagen trasladada", perc: 30, group: "PECNEG" },
+  { name: "Actitud comercial", perc: 30, group: "PECNEG" },
+  { name: "Operativa", perc: 30, group: "PECNEG" },
+  { name: "Tramita la gestión correspondiente", perc: 30, group: "PECNEG" },
+  { name: "Transferencia", perc: 30, group: "PECNEG" },
+
+  // PECUF (grupo 35%, si hay ≥1 se descuenta 35)
+  { name: "Cumple con devolución de llamado", perc: 35, group: "PECUF" },
+  { name: "Actitud - Manejo de llamada", perc: 35, group: "PECUF" },
+  { name: "Conocimientos para resolver la consulta", perc: 35, group: "PECUF" },
+  { name: "Asesoramiento de Producto o Servicio (Pagina Web | Posible Compra | Servicios)", perc: 35, group: "PECUF" },
+  { name: "Solución al primer contacto", perc: 35, group: "PECUF" },
+
+  // PECCUMP (grupo 10%, si hay ≥1 se descuenta 10)
+  { name: "Verificación de datos", perc: 10, group: "PECCUMP" },
+  { name: "Damos el número de Ticket", perc: 10, group: "PECCUMP" },
+
+  // Ninguno (no penaliza)
+  { name: "Ninguno", perc: 0, group: "NONE" }
 ];
 
 /* --------------------- AGREGAR ITEM ---------------------- */
-
 window.addItemBlock = function() {
   const w = document.createElement('div');
   w.className = 'item-block';
   w.innerHTML = `
     <select>
-      ${ITEMS.map(it => `<option value="${it[0]}||${it[1]}">${it[0]} (${it[1]}%)</option>`).join("")}
+      ${ITEMS.map(it => 
+        `<option value="${it.name}||${it.perc}||${it.group}">
+           ${it.name} (${it.perc}%)
+         </option>`
+      ).join("")}
     </select>
     <textarea placeholder="Detalle del item"></textarea>
     <button class="btn ghost" style="width:90px" onclick="this.parentNode.remove()">Eliminar</button>
   `;
   document.getElementById("itemsContainer").appendChild(w);
-}
+};
 
 window.clearItems = function(){
   document.getElementById("itemsContainer").innerHTML = "";
-}
+};
 
 /* --------------------- PREVIEW IMÁGENES ---------------------- */
-
 document.getElementById('imgs').addEventListener('change', function(){
   const preview = document.getElementById('imgPreview');
   preview.innerHTML = "";
@@ -217,23 +247,128 @@ document.getElementById('imgs').addEventListener('change', function(){
   });
 });
 
-/* --------------------- GUARDAR REGISTRO ---------------------- */
+/* --------------------- CÁLCULO DE NOTA ---------------------- */
+/*
+  Reglas:
+  - Si hay un ítem group === "ERROR" → nota = 0, tipo = "ERROR INEXCUSABLE"
+  - PENCUF (25%): descuento = (suma perc / 100) * 25
+  - PECNEG (30%): si hay ≥1 → descuento = 30
+  - PECUF (35%): si hay ≥1 → descuento = 35
+  - PECCUMP (10%): si hay ≥1 → descuento = 10
+  - Sólo NONE → nota = 100, tipo = "NINGUNO"
+*/
+function calcularNotaConDetalle(items) {
+  const detalle = {
+    ERROR: [],
+    PENCUF: [],
+    PECNEG: [],
+    PECUF: [],
+    PECCUMP: [],
+    NONE: []
+  };
 
+  for (const it of items) {
+    if (!detalle[it.group]) detalle[it.group] = [];
+    detalle[it.group].push(it);
+  }
+
+  const descuentos = {
+    PENCUF: 0,
+    PECNEG: 0,
+    PECUF: 0,
+    PECCUMP: 0
+  };
+
+  // Caso ERROR INEXCUSABLE
+  if (detalle.ERROR.length > 0) {
+    return {
+      nota: 0,
+      tipo: "ERROR INEXCUSABLE",
+      detalle,
+      descuentos
+    };
+  }
+
+  // Sólo "Ninguno" (o sin ítems) → 100%
+  const totalItems = items.length;
+  const nonNone = items.filter(i => i.group !== "NONE").length;
+  if (totalItems > 0 && nonNone === 0) {
+    return {
+      nota: 100,
+      tipo: "NINGUNO",
+      detalle,
+      descuentos
+    };
+  }
+
+  let nota = 100;
+  let tipo = "NINGUNO";
+
+  // PENCUF (25%) → proporcional
+  if (detalle.PENCUF && detalle.PENCUF.length > 0) {
+    const sumaPerc = detalle.PENCUF.reduce((acc, it) => acc + (it.perc || 0), 0);
+    descuentos.PENCUF = (sumaPerc / 100) * 25;
+    nota -= descuentos.PENCUF;
+    tipo = "PENCUF";
+  }
+
+  // PECNEG (30%)
+  if (detalle.PECNEG && detalle.PECNEG.length > 0) {
+    descuentos.PECNEG = 30;
+    nota -= descuentos.PECNEG;
+    tipo = "PECNEG";
+  }
+
+  // PECUF (35%)
+  if (detalle.PECUF && detalle.PECUF.length > 0) {
+    descuentos.PECUF = 35;
+    nota -= descuentos.PECUF;
+    tipo = "PECUF";
+  }
+
+  // PECCUMP (10%)
+  if (detalle.PECCUMP && detalle.PECCUMP.length > 0) {
+    descuentos.PECCUMP = 10;
+    nota -= descuentos.PECCUMP;
+    // Si no hay PENCUF/PECNEG/PECUF, tipo será PECCUMP
+    if (tipo === "NINGUNO") {
+      tipo = "PECCUMP";
+    }
+  }
+
+  // Redondear a 1 decimal, mínimo 0
+  nota = Math.max(0, Math.round(nota * 10) / 10);
+
+  return {
+    nota,
+    tipo,
+    detalle,
+    descuentos
+  };
+}
+
+/* --------------------- GUARDAR REGISTRO ---------------------- */
 window.submitRecord = async function() {
   const msgEl = document.getElementById('msg');
   msgEl.style.color = 'green';
   msgEl.textContent = "⏳ Subiendo...";
 
-  try{
+  try {
+    // ITEMS SELECCIONADOS
     const items = [...document.querySelectorAll(".item-block")].map(b=>{
-      const [name,perc] = b.querySelector("select").value.split("||");
+      const [name, percStr, group] = b.querySelector("select").value.split("||");
       return {
         name,
-        perc: Number(perc),
-        detail: b.querySelector("textarea").value
+        perc: Number(percStr),
+        group,
+        detail: b.querySelector("textarea").value || ""
       };
     });
 
+    // CÁLCULO NOTA + DETALLE
+    const calc = calcularNotaConDetalle(items);
+
+    // IMÁGENES
     const files = document.getElementById('imgs').files;
     const imageURLs = [];
 
@@ -244,6 +379,7 @@ window.submitRecord = async function() {
       imageURLs.push({name: f.name, url});
     }
 
+    // OBJETO FINAL A GUARDAR
     const data = {
       idLlamada: idLlamada.value,
       idContacto: idContacto.value,
@@ -260,7 +396,14 @@ window.submitRecord = async function() {
       resumen: resumen.value,
       items,
       imagenes: imageURLs,
-      fecha: new Date().toISOString()
+      nota: calc.nota,
+      calculo: {
+        tipo: calc.tipo,
+        detalle: calc.detalle,
+        descuentos: calc.descuentos
+      },
+      fecha: new Date().toISOString(),
+      estado: "PENDIENTE"
     };
 
     const newDoc = await addDoc(collection(db, "registros"), data);
@@ -270,6 +413,7 @@ window.submitRecord = async function() {
 
     clearItems();
     document.getElementById('imgPreview').innerHTML = "";
+    document.getElementById('imgs').value = "";
 
   } catch(err){
     msgEl.style.color = 'red';
@@ -277,9 +421,7 @@ window.submitRecord = async function() {
     console.error(err);
   }
 }
-
 </script>
 
 </body>
 </html>
-

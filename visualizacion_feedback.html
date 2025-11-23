@@ -5,32 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Visualización Feedback</title>
 
-<!-- Librería para exportar PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 
 <style>
   body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
-  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;
-        box-shadow:0 6px 18px rgba(10,20,30,0.06)}
+  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
   h2{margin-top:0}
   input{width:100%;padding:8px;border:1px solid #e6e9ef;border-radius:6px}
   .doc{border:1px solid #e6eef9;padding:20px;border-radius:6px;margin-top:12px;background:#fff}
-  .nota{background:#ffecec;border:1px solid #ffbdbd;color:#b30000;
-        padding:10px;border-radius:6px;font-weight:700;text-align:center}
+  .nota{background:#ffecec;border:1px solid #ffbdbd;color:#b30000;padding:10px;border-radius:6px;font-weight:700;text-align:center}
   .firma{border:1px solid #ddd;padding:6px;border-radius:6px;display:inline-block;margin-top:8px}
-  .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;
-       cursor:pointer;margin-top:12px}
-  
-  .pdf-header{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    margin-bottom:20px;
-  }
-  .pdf-header img{
-    width:200px;
-    object-fit:contain;
-  }
+  .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:12px}
 </style>
 </head>
 
@@ -53,20 +38,17 @@
 </div>
 
 <script type="module">
+
 import { db, storage } from "./js/firebase.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-/* Firestore */
-import { doc, getDoc } 
-  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+/* =========  LOGO BASE64  ========= */
+const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAH4AAAAsCAYAAACjZQx0AAAAAXNSR0IArs4c6QA...bLZ3PcdAiEQznAjHsh9CEVR0ar1AivV1gurtf3EHrZW235WvJAifopaLQiegOIB";
 
-/* Storage */
-import { ref, getDownloadURL } 
-  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
-
-
-/* ----------------------------------------------
-   BUSCAR FEEDBACK POR ID
----------------------------------------------- */
+/* ------------------------------------------ */
+/* 🔎 BUSCAR FEEDBACK POR ID                  */
+/* ------------------------------------------ */
 async function showFeedback() {
   const id = document.getElementById("searchId").value.trim();
   if (!id) return alert("Ingresa un ID");
@@ -77,7 +59,6 @@ async function showFeedback() {
 
     const rec = snap.data();
     rec.id = id;
-
     rec.imagenes = await loadImages(rec.imagenes || []);
 
     const html = buildTemplate(rec);
@@ -89,36 +70,28 @@ async function showFeedback() {
   }
 }
 
-
-/* ----------------------------------------------
-   CARGAR IMÁGENES DEL STORAGE
----------------------------------------------- */
+/* ------------------------------------------ */
+/* 📥 CARGAR IMÁGENES DEL STORAGE             */
+/* ------------------------------------------ */
 async function loadImages(list) {
   const arr = [];
-
   for (const img of list) {
     try {
       if (img.url?.startsWith("https://")) {
         arr.push({ data: img.url });
         continue;
       }
-      const storagePath = img.storagePath || img.url;
-      const url = await getDownloadURL(ref(storage, storagePath));
-
+      const path = img.storagePath || img.url;
+      const url = await getDownloadURL(ref(storage, path));
       arr.push({ data: url });
-
-    } catch (err) {
-      console.warn("No se pudo cargar imagen:", err);
-    }
+    } catch {}
   }
-
   return arr;
 }
 
-
-/* ----------------------------------------------
-   TEMPLATE COMPLETO DEL FEEDBACK + LOGO
----------------------------------------------- */
+/* ------------------------------------------ */
+/* 📄 TEMPLATE DEL DOCUMENTO                  */
+/* ------------------------------------------ */
 function buildTemplate(rec) {
 
   const fecha = rec.fecha
@@ -126,102 +99,83 @@ function buildTemplate(rec) {
     : "Fecha no registrada";
 
   const imgsHtml = rec.imagenes.length
-    ? rec.imagenes.map(im =>
-        `<img src="${im.data}" 
-              style="width:100%;max-width:600px;border-radius:8px;margin-top:10px">`
-      ).join("")
+    ? rec.imagenes.map(im => `<img src="${im.data}" style="width:100%;max-width:600px;border-radius:8px;margin-top:10px">`).join("")
     : "<em>Sin imágenes</em>";
 
   const itemsHtml = rec.items?.length
     ? rec.items.map(it => `
-      <div style="margin-bottom:6px">
-        <strong>${it.name}</strong> (${it.perc}%)
-        <div>${it.detail || ""}</div>
-      </div>
-    `).join("")
+        <div style="margin-bottom:6px">
+          <strong>${it.name}</strong> (${it.perc}%)
+          <div>${it.detail || ""}</div>
+        </div>`).join("")
     : "<em>Sin ítems</em>";
 
   const firmaHtml = rec.firmaUrl
     ? `<div class="firma"><img src="${rec.firmaUrl}" style="width:100%;max-width:260px"></div>`
-    : `<div class="firma" style="height:80px;display:flex;align-items:center;
-                               justify-content:center;color:#64748b">
-         SIN FIRMA
-       </div>`;
+    : `<div class="firma" style="height:80px;display:flex;align-items:center;justify-content:center;color:#64748b">SIN FIRMA</div>`;
 
   return `
-    <div>
+    <div style="display:flex;flex-direction:column;gap:20px">
 
-      <!-- HEADER CON LOGO -->
-      <div class="pdf-header">
-        <img src="/mnt/data/Imagen1.png" alt="GESCOB">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <img src="${LOGO_BASE64}" style="height:70px;">
+        <div style="font-size:22px;font-weight:bold;color:#0f4c81">REPORTE DE FEEDBACK</div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;justify-content:space-between;gap:16px">
+        <div style="flex:1">
 
-        <div style="display:flex;justify-content:space-between;gap:16px">
-          <div style="flex:1">
-            <h3 style="margin:0">RETROALIMENTACIÓN</h3>
-            <div style="color:#64748b">Fecha: ${fecha}</div>
+          <div><strong>Fecha:</strong> ${fecha}</div>
+          <div style="margin-top:10px"><strong>Asesor:</strong> ${rec.asesor}</div>
+          <div><strong>Cargo:</strong> ${rec.cargo}</div>
 
-            <div style="margin-top:10px"><strong>Asesor:</strong> ${rec.asesor}</div>
-            <div><strong>Cargo:</strong> ${rec.cargo}</div>
+          <div style="margin-top:10px">
+            <strong>Cliente:</strong> ${rec.cliente?.nombre || ""} (DNI: ${rec.cliente?.dni || ""})
+          </div>
 
-            <div style="margin-top:10px">
-              <strong>Cliente:</strong> ${rec.cliente?.nombre || ""} 
-              (DNI: ${rec.cliente?.dni || ""})
-            </div>
+          <div style="margin-top:10px">
+            <strong>Resumen:</strong>
+            <div style="padding:8px;background:#fbfdff;border-radius:6px">${rec.resumen}</div>
+          </div>
 
-            <div style="margin-top:10px">
-              <strong>Resumen:</strong>
-              <div style="padding:8px;background:#fbfdff;border-radius:6px">
-                ${rec.resumen}
-              </div>
-            </div>
+          <div style="margin-top:10px">
+            <strong>Items observados:</strong><br>${itemsHtml}
+          </div>
 
-            <div style="margin-top:10px">
-              <strong>Items observados:</strong><br>
-              ${itemsHtml}
-            </div>
+          <div style="margin-top:10px">
+            <strong>Evidencias:</strong><br>${imgsHtml}
+          </div>
 
-            <div style="margin-top:10px">
-              <strong>Evidencias:</strong>
-              <div>${imgsHtml}</div>
-            </div>
-
-            <div style="margin-top:10px">
-              <strong>Compromiso del agente:</strong>
-              <div style="padding:8px;border:1px dashed #e6eef9;border-radius:6px">
-                ${rec.compromiso || "<em>Vacío</em>"}
-              </div>
+          <div style="margin-top:10px">
+            <strong>Compromiso del agente:</strong>
+            <div style="padding:8px;border:1px dashed #e6eef9;border-radius:6px">
+              ${rec.compromiso || "<em>Vacío</em>"}
             </div>
           </div>
 
-          <div style="width:260px">
-            <div class="nota" style="font-size:28px">${rec.nota || 0}%</div>
-            <div style="margin-top:12px">${firmaHtml}</div>
-            <div style="margin-top:12px;color:#64748b">
-              ID de registro:<br><strong>${rec.id}</strong>
-            </div>
-          </div>
         </div>
 
+        <div style="width:260px;text-align:center">
+          <div class="nota" style="font-size:28px">${rec.nota || 0}%</div>
+          <div style="margin-top:12px">${firmaHtml}</div>
+          <div style="margin-top:12px;color:#64748b">
+            ID:<br><strong>${rec.id}</strong>
+          </div>
+        </div>
       </div>
 
     </div>
   `;
 }
 
-
-/* ----------------------------------------------
-   EXPORTAR PDF
----------------------------------------------- */
+/* ------------------------------------------ */
+/* 📎 EXPORTAR PDF                            */
+/* ------------------------------------------ */
 window.downloadPDF = function () {
-
   const elemento = document.getElementById("preview");
   const id = document.getElementById("searchId").value || "feedback";
 
-  if (!elemento.innerHTML.trim())
-    return alert("Primero genera la vista");
+  if (!elemento.innerHTML.trim()) return alert("Primero genera la vista");
 
   const opt = {
     margin: 10,
@@ -233,7 +187,6 @@ window.downloadPDF = function () {
 
   html2pdf().set(opt).from(elemento).save();
 };
-
 
 window.showFeedback = showFeedback;
 

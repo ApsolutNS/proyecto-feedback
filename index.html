@@ -1,97 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dashboard - Supervisión</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Firebase -->
+<script type="module" src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
+
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;background:#f4f6fb;margin:0;color:#0b1220}
+  header{background:#0f4c81;color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+  header h1{margin:0;font-size:18px}
+  .container{padding:18px;display:grid;grid-template-columns:260px 1fr;gap:16px}
+  .left{display:flex;flex-direction:column;gap:12px}
+  .card{background:#fff;border-radius:8px;padding:12px;box-shadow:0 4px 12px rgba(15,20,30,0.06)}
+  .btn{padding:12px;border-radius:8px;border:none;cursor:pointer;font-weight:700;width:100%}
+  .btn.primary{background:#0f4c81;color:#fff}
+  .btn.secondary{background:#fff;border:1px solid #cbd5e1}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:6px;border-bottom:1px solid #eef2f7;text-align:left}
+  th{background:#fbfdff;color:#334155}
+  .weekly{overflow:auto}
+  .small{font-size:13px;color:#64748b}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>Panel Principal - Calidad & Monitoreo</h1>
+  <div style="font-size:13px">Usuario: <strong>Supervisor</strong></div>
+</header>
+
+<div class="container">
+  
+  <!-- ASIDE -->
+  <aside class="left">
+    <div class="card">
+      <h3>Accesos rápidos</h3>
+      <button class="btn primary" onclick="location.href='registro.html'">1 · Registro</button>
+      <button class="btn secondary" onclick="location.href='portal_agente.html'">2 · Portal del Agente</button>
+      <button class="btn secondary" onclick="location.href='visualizacion_feedback.html'">3 · Visualización Feedback</button>
+    </div>
+
+    <div class="card">
+      <h3>Tipo monitoreo (conteo)</h3>
+      <p class="small"><b>EFECTIVA:</b> <span id="cntEfectiva">0</span></p>
+      <p class="small"><b>EFECTIVANK:</b> <span id="cntEfectivank">0</span></p>
+      <p class="small"><b>XPERTO:</b> <span id="cntXperto">0</span></p>
+      <p class="small"><b>FACEBOOK:</b> <span id="cntFb">0</span></p>
+      <p class="small"><b>INSTAGRAM:</b> <span id="cntIg">0</span></p>
+      <p class="small"><b>CORREO:</b> <span id="cntMail">0</span></p>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <div class="card">
+      <canvas id="chartMonth"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>Tabla semanal del mes</h3>
+      <div class="weekly">
+        <table id="weeklyTable">
+          <thead id="weeklyHead"></thead>
+          <tbody id="weeklyBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Últimos registros</h3>
+      <table id="recentTable">
+        <thead>
+          <tr><th>Fecha Hora</th><th>Asesor</th><th>Nota</th><th>Tipo</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============================ -->
+<!-- DASHBOARD FIREBASE VERSION   -->
+<!-- ============================ -->
+
 <script type="module">
-/* -------------------------------------------------
-   1. IMPORTAR FIREBASE
--------------------------------------------------- */
+/* ---------------------------
+   1. Importar Firebase
+--------------------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-/* -------------------------------------------------
-   2. CONFIGURACIÓN DE TU PROYECTO FIREBASE
--------------------------------------------------- */
+/* ---------------------------
+   2. Configuración Firebase
+--------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
   projectId: "feedback-app-ac30e",
   storageBucket: "feedback-app-ac30e.firebasestorage.app",
   messagingSenderId: "512179147778",
-  appId: "1:512179147778:web:795e4a8b177fe766d3431b",
-  measurementId: "G-X6MP0FFH9P"
+  appId: "1:512179147778:web:795e4a8b177fe766d3431b"
 };
 
-// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* -------------------------------------------------
-   3. FUNCIONES AUXILIARES
--------------------------------------------------- */
+/* ---------------------------
+   3. Funciones auxiliares
+--------------------------- */
 function parseFechaPeru(f) {
-  if (!f) return new Date("2000-01-01");
-  const [d, m, yRest] = f.split("/");
-  const [y, hora] = yRest.split(" ");
-  return new Date(`${y}-${m}-${d}T${hora}`);
+  const [d,m,yRest] = f.split("/");
+  const [y,h] = yRest.split(" ");
+  return new Date(`${y}-${m}-${d}T${h}`);
 }
 
-/* -------------------------------------------------
-   4. OBTENER REGISTROS DESDE FIRESTORE
--------------------------------------------------- */
 async function getAllRecords() {
-  const querySnapshot = await getDocs(collection(db, "registros"));
+  const q = await getDocs(collection(db, "registros"));
   const arr = [];
-  querySnapshot.forEach(doc => arr.push(doc.data()));
+  q.forEach(doc => arr.push(doc.data()));
   return arr;
 }
 
-/* -------------------------------------------------
-   5. TU DASHBOARD – ADAPTADO A FIREBASE
--------------------------------------------------- */
-
 function getWeeksOfMonth(date = new Date()) {
-  const year = date.getFullYear(),
-        month = date.getMonth();
-  const last = new Date(year, month + 1, 0).getDate();
+  const y = date.getFullYear(), m = date.getMonth();
+  const last = new Date(y, m+1, 0).getDate();
   const weeks = [];
-  let day = 1;
-  while (day <= last) {
-    const start = day;
-    const end = Math.min(day + 6, last);
-    weeks.push({ startDay: start, endDay: end });
-    day = end + 1;
+  let d = 1;
+  while (d <= last) {
+    weeks.push({ startDay: d, endDay: Math.min(d+6, last) });
+    d += 7;
   }
   return weeks;
 }
 
-/* ---------- CONFIGURAR GRÁFICO ---------- */
-const ctx = document.getElementById("chartMonth");
-const chart = new Chart(ctx, {
+/* ---------------------------
+   4. Configurar gráfico
+--------------------------- */
+const chart = new Chart(document.getElementById("chartMonth"), {
   type: "bar",
   data: { labels: [], datasets: [{ label: "Promedio %", data: [], backgroundColor: "#0f4c81" }] },
-  options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+  options: { scales:{ y:{ beginAtZero:true, max:100 }}}
 });
 
-/* -------------------------------------------------
-   6. FUNCIÓN PRINCIPAL DEL DASHBOARD
--------------------------------------------------- */
+/* ---------------------------
+   5. REFRESH DASHBOARD
+--------------------------- */
 async function refreshDashboard() {
-  let dbData = await getAllRecords();
 
-  dbData = dbData.sort((a, b) => parseFechaPeru(a.fechaHora) - parseFechaPeru(b.fechaHora));
+  let data = await getAllRecords();
 
+  // ordenar
+  data = data.sort((a,b)=>parseFechaPeru(a.fechaHora) - parseFechaPeru(b.fechaHora));
+
+  // Filtrar mes actual
   const hoy = new Date();
-  dbData = dbData.filter(r => {
+  data = data.filter(r=>{
     const f = parseFechaPeru(r.fechaHora);
     return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
   });
 
-  /* ---------- CONTADORES ---------- */
+  /* ---- CONTADORES ---- */
   const counts = {
-    EFECTIVA: 0, EFECTIVANK: 0, XPERTO: 0,
-    FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
+    EFECTIVA:0, EFECTIVANK:0, XPERTO:0,
+    FACEBOOK:0, INSTAGRAM:0, CORREO:0, OTRO:0
   };
-
-  dbData.forEach(r => {
-    counts[r.tipo] = (counts[r.tipo] || 0) + 1;
-  });
+  data.forEach(r => counts[r.tipo] = (counts[r.tipo]||0) + 1);
 
   document.getElementById("cntEfectiva").innerText = counts.EFECTIVA;
   document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
@@ -100,38 +180,34 @@ async function refreshDashboard() {
   document.getElementById("cntIg").innerText = counts.INSTAGRAM;
   document.getElementById("cntMail").innerText = counts.CORREO;
 
-  /* ---------- TABLA RECIENTES ---------- */
-  const recent = dbData.slice().reverse().slice(0, 8);
-
+  /* ---- RECIENTES ---- */
+  const recent = data.slice().reverse().slice(0,8);
   document.querySelector("#recentTable tbody").innerHTML =
-    recent.map(r => {
-      const fecha = parseFechaPeru(r.fechaHora).toLocaleString("es-PE");
+    recent.map(r=>{
       return `
         <tr>
-          <td>${fecha}</td>
+          <td>${parseFechaPeru(r.fechaHora).toLocaleString("es-PE")}</td>
           <td>${r.asesor}</td>
           <td>${r.nota || 0}%</td>
           <td>${r.tipo}</td>
         </tr>`;
     }).join("") || `<tr><td colspan="4">Sin registros</td></tr>`;
 
-  /* ---------- TABLA SEMANAL ---------- */
+  /* ---- TABLA SEMANAL ---- */
   const weeks = getWeeksOfMonth();
-
   document.getElementById("weeklyHead").innerHTML =
     `<tr><th>ASESOR</th>` +
-    weeks.map((_, i) => `<th>S${i + 1} C1</th><th>S${i + 1} C2</th>`).join("") +
+    weeks.map((_,i)=>`<th>S${i+1} C1</th><th>S${i+1} C2</th>`).join("") +
     `</tr>`;
 
-  const asesores = [...new Set(dbData.map(r => r.asesor))];
-
-  const rows = asesores.map(a => {
+  const asesores = [...new Set(data.map(r=>r.asesor))];
+  const rows = asesores.map(a=>{
     let row = `<tr><td>${a}</td>`;
-    for (let w = 0; w < weeks.length; w++) {
-      const recs = dbData.filter(r => {
+    for (let w=0; w<weeks.length; w++){
+      const recs = data.filter(r=>{
         const f = parseFechaPeru(r.fechaHora);
-        const day = f.getDate();
-        return r.asesor === a && day >= weeks[w].startDay && day <= weeks[w].endDay;
+        const d = f.getDate();
+        return r.asesor===a && d>=weeks[w].startDay && d<=weeks[w].endDay;
       });
       const c1 = recs[0]?.tipo || "-";
       const c2 = recs[1]?.tipo || "-";
@@ -141,25 +217,28 @@ async function refreshDashboard() {
   }).join("");
 
   document.getElementById("weeklyBody").innerHTML =
-    rows || `<tr><td colspan="${1 + weeks.length * 2}">Sin registros</td></tr>`;
+    rows || `<tr><td colspan="${1+weeks.length*2}">Sin registros</td></tr>`;
 
-  /* ---------- GRÁFICO ---------- */
-  const values = weeks.map(w => {
-    const recs = dbData.filter(r => {
+  /* ---- GRÁFICO ---- */
+  const values = weeks.map(w=>{
+    const recs = data.filter(r=>{
       const f = parseFechaPeru(r.fechaHora);
-      const day = f.getDate();
-      return day >= w.startDay && day <= w.endDay;
+      const d = f.getDate();
+      return d>=w.startDay && d<=w.endDay;
     });
     if (!recs.length) return 0;
-    const avg = recs.reduce((s, r) => s + (parseFloat(r.nota) || 0), 0) / recs.length;
+    const avg = recs.reduce((t,r)=>t+(parseFloat(r.nota)||0),0) / recs.length;
     return Math.round(avg);
   });
 
-  chart.data.labels = weeks.map((_, i) => `S${i + 1}`);
+  chart.data.labels = weeks.map((_,i)=>`S${i+1}`);
   chart.data.datasets[0].data = values;
   chart.update();
 }
 
-/* Ejecutar el dashboard */
 refreshDashboard();
+
 </script>
+
+</body>
+</html>

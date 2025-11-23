@@ -89,32 +89,54 @@
 
 <script type="module">
 
-/* ------------------------------
-   IMPORTAR FIREBASE DESDE ./js/firebase.js
------------------------------- */
+/* -----------------------------------
+   IMPORTAR FIREBASE 9 DESDE firebase.js
+------------------------------------- */
 import { db } from "./js/firebase.js";
 
 import {
   collection,
   getDocs
-} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-/* ---------------------------
-   FUNCIONES AUXILIARES
---------------------------- */
-function parseFechaPeru(f) {
-  const [d,m,yRest] = f.split("/");
-  const [y,h] = yRest.split(" ");
-  return new Date(`${y}-${m}-${d}T${h}`);
+/* -----------------------------------
+   PARSE FECHA - ACEPTA ISO Y STRING
+------------------------------------- */
+function parseFecha(rec) {
+  if (!rec) return new Date();
+
+  // Caso ISO (2025-01-27T03:14:00.000Z)
+  if (rec.includes("T")) return new Date(rec);
+
+  // Caso viejo tipo 22/11/2024 09:05
+  if (rec.includes("/")) {
+    const [d,m,yH] = rec.split("/");
+    const [y,h] = yH.split(" ");
+    return new Date(`${y}-${m}-${d}T${h}`);
+  }
+
+  return new Date(rec);
 }
 
+/* ---------------------------
+   OBTENER TODOS LOS REGISTROS
+--------------------------- */
 async function getAllRecords() {
-  const q = await getDocs(collection(db, "registros"));
+  const snap = await getDocs(collection(db, "registros"));
   const arr = [];
-  q.forEach(doc => arr.push(doc.data()));
+
+  snap.forEach(doc => {
+    const data = doc.data();
+    data.id = doc.id;
+    arr.push(data);
+  });
+
   return arr;
 }
 
+/* ---------------------------
+   SEMANAS DEL MES
+--------------------------- */
 function getWeeksOfMonth(date = new Date()) {
   const y = date.getFullYear(), m = date.getMonth();
   const last = new Date(y, m+1, 0).getDate();
@@ -152,14 +174,103 @@ async function refreshDashboard() {
 
   let data = await getAllRecords();
 
-  data = data.sort((a,b)=>parseFechaPeru(a.fechaHora) - parseFechaPeru(b.fechaHora));
+  // Ordenar por fecha
+  data = data.sort((a,b)=> parseFecha(a.fecha) - parseFecha(b.fecha));
 
+  // Filtrar mes actual
   const hoy = new Date();
   data = data.filter(r=>{
-    const f = parseFechaPeru(r.fechaHora);
+    const f = parseFecha(r.fecha);
     return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
   });
 
   /* ---- CONTADORES ---- */
   const counts = {
     EFECTIVA:0,
+    EFECTIVANK:0,
+    XPERTO:0,
+    FACEBOOK:0,
+    INSTAGRAM:0,
+    CORREO:0,
+    OTRO:0
+  };
+
+  data.forEach(r => {
+    counts[r.tipo] = (counts[r.tipo] || 0) + 1;
+  });
+
+  document.getElementById("cntEfectiva").innerText = counts.EFECTIVA;
+  document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
+  document.getElementById("cntXperto").innerText = counts.XPERTO;
+  document.getElementById("cntFb").innerText = counts.FACEBOOK;
+  document.getElementById("cntIg").innerText = counts.INSTAGRAM;
+  document.getElementById("cntMail").innerText = counts.CORREO;
+
+  /* ---- RECIENTES ---- */
+  const recent = data.slice().reverse().slice(0,8);
+
+  document.querySelector("#recentTable tbody").innerHTML =
+    recent.map(r=>{
+      const fecha = parseFecha(r.fecha).toLocaleString("es-PE");
+      return `
+        <tr>
+          <td>${fecha}</td>
+          <td>${r.asesor}</td>
+          <td>${r.nota || 0}%</td>
+          <td>${r.tipo}</td>
+        </tr>`;
+    }).join("") || `<tr><td colspan="4">Sin registros</td></tr>`;
+
+  /* ---- TABLA SEMANAL ---- */
+  const weeks = getWeeksOfMonth();
+
+  document.getElementById("weeklyHead").innerHTML =
+    `<tr><th>ASESOR</th>` +
+    weeks.map((_,i)=>`<th>S${i+1} C1</th><th>S${i+1} C2</th>`).join("") +
+    `</tr>`;
+
+  const asesores = [...new Set(data.map(r=>r.asesor))];
+
+  const rows = asesores.map(a=>{
+    let row = `<tr><td>${a}</td>`;
+
+    for (let w=0; w<weeks.length; w++){
+      const recs = data.filter(r=>{
+        const f = parseFecha(r.fecha);
+        const d = f.getDate();
+        return r.asesor===a && d>=weeks[w].startDay && d<=weeks[w].endDay;
+      });
+
+      const c1 = recs[0]?.tipo || "-";
+      const c2 = recs[1]?.tipo || "-";
+
+      row += `<td>${c1}</td><td>${c2}</td>`;
+    }
+
+    return row + "</tr>";
+  }).join("");
+
+  document.getElementById("weeklyBody").innerHTML =
+    rows || `<tr><td colspan="${1+weeks.length*2}">Sin registros</td></tr>`;
+
+  /* ---- GRÁFICO ---- */
+  const values = weeks.map(w=>{
+    const recs = data.filter(r=>{
+      const f = parseFecha(r.fecha);
+      const d = f.getDate();
+      return d>=w.startDay && d<=w.endDay;
+    });
+
+    if (!recs.length) return 0;
+    const avg = recs.reduce((t,r)=>t+(parseFloat(r.nota)||0),0) / recs.length;
+    return Math.round(avg);
+  });
+
+  chart.data.labels = weeks.map((_,i)=>`S${i+1}`);
+  chart.data.datasets[0].data = values;
+  chart.update();
+}
+
+refreshDashboard();
+
+</script>

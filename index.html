@@ -1,73 +1,111 @@
-<script>
-const API = "/.netlify/functions/records";
+<script type="module">
+/* -------------------------------------------------
+   1. IMPORTAR FIREBASE
+-------------------------------------------------- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// Convierte "24/11/2025 10:33:22" → Date válido
-function parseFechaPeru(f){
-  if(!f) return new Date("2000-01-01");
-  const [d,m,yRest] = f.split('/');
-  const [y,hora] = yRest.split(' ');
+/* -------------------------------------------------
+   2. CONFIGURACIÓN DE TU PROYECTO FIREBASE
+-------------------------------------------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
+  authDomain: "feedback-app-ac30e.firebaseapp.com",
+  projectId: "feedback-app-ac30e",
+  storageBucket: "feedback-app-ac30e.firebasestorage.app",
+  messagingSenderId: "512179147778",
+  appId: "1:512179147778:web:795e4a8b177fe766d3431b",
+  measurementId: "G-X6MP0FFH9P"
+};
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* -------------------------------------------------
+   3. FUNCIONES AUXILIARES
+-------------------------------------------------- */
+function parseFechaPeru(f) {
+  if (!f) return new Date("2000-01-01");
+  const [d, m, yRest] = f.split("/");
+  const [y, hora] = yRest.split(" ");
   return new Date(`${y}-${m}-${d}T${hora}`);
 }
 
+/* -------------------------------------------------
+   4. OBTENER REGISTROS DESDE FIRESTORE
+-------------------------------------------------- */
 async function getAllRecords() {
-  const res = await fetch(API);
-  const data = await res.json();
-  return data.ok ? data.records : [];
+  const querySnapshot = await getDocs(collection(db, "registros"));
+  const arr = [];
+  querySnapshot.forEach(doc => arr.push(doc.data()));
+  return arr;
 }
 
-function getWeeksOfMonth(date=new Date()){
-  const year=date.getFullYear(), month=date.getMonth();
-  const last=new Date(year,month+1,0).getDate();
-  const weeks=[];
-  let day=1;
-  while(day<=last){
-    const start=day;
-    const end=Math.min(day+6,last);
-    weeks.push({startDay:start,endDay:end});
-    day=end+1;
+/* -------------------------------------------------
+   5. TU DASHBOARD – ADAPTADO A FIREBASE
+-------------------------------------------------- */
+
+function getWeeksOfMonth(date = new Date()) {
+  const year = date.getFullYear(),
+        month = date.getMonth();
+  const last = new Date(year, month + 1, 0).getDate();
+  const weeks = [];
+  let day = 1;
+  while (day <= last) {
+    const start = day;
+    const end = Math.min(day + 6, last);
+    weeks.push({ startDay: start, endDay: end });
+    day = end + 1;
   }
   return weeks;
 }
 
-const ctx=document.getElementById('chartMonth');
-const chart=new Chart(ctx,{
-  type:'bar',
-  data:{labels:[],datasets:[{label:'Promedio %',data:[],backgroundColor:'#0f4c81'}]},
-  options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100}}}
+/* ---------- CONFIGURAR GRÁFICO ---------- */
+const ctx = document.getElementById("chartMonth");
+const chart = new Chart(ctx, {
+  type: "bar",
+  data: { labels: [], datasets: [{ label: "Promedio %", data: [], backgroundColor: "#0f4c81" }] },
+  options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
 });
 
-async function refreshDashboard(){
-  let db=await getAllRecords();
+/* -------------------------------------------------
+   6. FUNCIÓN PRINCIPAL DEL DASHBOARD
+-------------------------------------------------- */
+async function refreshDashboard() {
+  let dbData = await getAllRecords();
 
-  // ordenar por fecha
-  db=db.sort((a,b)=>parseFechaPeru(a.fechaHora)-parseFechaPeru(b.fechaHora));
+  dbData = dbData.sort((a, b) => parseFechaPeru(a.fechaHora) - parseFechaPeru(b.fechaHora));
 
-  // filtrar solo mes actual
-  const hoy=new Date();
-  db=db.filter(r=>{
-    const f=parseFechaPeru(r.fechaHora);
-    return f.getMonth()===hoy.getMonth() && f.getFullYear()===hoy.getFullYear();
+  const hoy = new Date();
+  dbData = dbData.filter(r => {
+    const f = parseFechaPeru(r.fechaHora);
+    return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
   });
 
-  // -------- CONTADORES --------
-  const counts={EFECTIVA:0,EFECTIVANK:0,XPERTO:0,FACEBOOK:0,INSTAGRAM:0,CORREO:0,OTRO:0};
-  db.forEach(r=>{
-    counts[r.tipo]=(counts[r.tipo]||0)+1;
+  /* ---------- CONTADORES ---------- */
+  const counts = {
+    EFECTIVA: 0, EFECTIVANK: 0, XPERTO: 0,
+    FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
+  };
+
+  dbData.forEach(r => {
+    counts[r.tipo] = (counts[r.tipo] || 0) + 1;
   });
 
-  document.getElementById('cntEfectiva').innerText = counts.EFECTIVA;
-  document.getElementById('cntEfectivank').innerText = counts.EFECTIVANK;
-  document.getElementById('cntXperto').innerText = counts.XPERTO;
-  document.getElementById('cntFb').innerText = counts.FACEBOOK;
-  document.getElementById('cntIg').innerText = counts.INSTAGRAM;
-  document.getElementById('cntMail').innerText = counts.CORREO;
+  document.getElementById("cntEfectiva").innerText = counts.EFECTIVA;
+  document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
+  document.getElementById("cntXperto").innerText = counts.XPERTO;
+  document.getElementById("cntFb").innerText = counts.FACEBOOK;
+  document.getElementById("cntIg").innerText = counts.INSTAGRAM;
+  document.getElementById("cntMail").innerText = counts.CORREO;
 
-  // -------- TABLA RECIENTES --------
-  const recent=db.slice().reverse().slice(0,8);
+  /* ---------- TABLA RECIENTES ---------- */
+  const recent = dbData.slice().reverse().slice(0, 8);
 
-  document.querySelector('#recentTable tbody').innerHTML =
-    recent.map(r=>{
-      const fecha=parseFechaPeru(r.fechaHora).toLocaleString('es-PE');
+  document.querySelector("#recentTable tbody").innerHTML =
+    recent.map(r => {
+      const fecha = parseFechaPeru(r.fechaHora).toLocaleString("es-PE");
       return `
         <tr>
           <td>${fecha}</td>
@@ -77,49 +115,51 @@ async function refreshDashboard(){
         </tr>`;
     }).join("") || `<tr><td colspan="4">Sin registros</td></tr>`;
 
-  // -------- TABLA SEMANAL --------
-  const weeks=getWeeksOfMonth();
-  document.getElementById('weeklyHead').innerHTML =
+  /* ---------- TABLA SEMANAL ---------- */
+  const weeks = getWeeksOfMonth();
+
+  document.getElementById("weeklyHead").innerHTML =
     `<tr><th>ASESOR</th>` +
-    weeks.map((_,i)=>`<th>S${i+1} C1</th><th>S${i+1} C2</th>`).join('') +
+    weeks.map((_, i) => `<th>S${i + 1} C1</th><th>S${i + 1} C2</th>`).join("") +
     `</tr>`;
 
-  const asesores=[...new Set(db.map(r=>r.asesor))];
+  const asesores = [...new Set(dbData.map(r => r.asesor))];
 
-  const rows = asesores.map(a=>{
-    let row=`<tr><td>${a}</td>`;
-    for(let w=0; w<weeks.length; w++){
-      const recs = db.filter(r=>{
-        const f=parseFechaPeru(r.fechaHora);
-        const day=f.getDate();
-        return r.asesor===a && day>=weeks[w].startDay && day<=weeks[w].endDay;
+  const rows = asesores.map(a => {
+    let row = `<tr><td>${a}</td>`;
+    for (let w = 0; w < weeks.length; w++) {
+      const recs = dbData.filter(r => {
+        const f = parseFechaPeru(r.fechaHora);
+        const day = f.getDate();
+        return r.asesor === a && day >= weeks[w].startDay && day <= weeks[w].endDay;
       });
-      const c1=recs[0]?.tipo || '-';
-      const c2=recs[1]?.tipo || '-';
-      row+=`<td>${c1}</td><td>${c2}</td>`;
+      const c1 = recs[0]?.tipo || "-";
+      const c2 = recs[1]?.tipo || "-";
+      row += `<td>${c1}</td><td>${c2}</td>`;
     }
-    return row+"</tr>";
+    return row + "</tr>";
   }).join("");
 
-  document.getElementById('weeklyBody').innerHTML =
-    rows || `<tr><td colspan="${1+weeks.length*2}">Sin registros</td></tr>`;
+  document.getElementById("weeklyBody").innerHTML =
+    rows || `<tr><td colspan="${1 + weeks.length * 2}">Sin registros</td></tr>`;
 
-  // -------- GRÁFICO --------
-  const values=weeks.map(w=>{
-    const recs=db.filter(r=>{
-      const f=parseFechaPeru(r.fechaHora);
-      const day=f.getDate();
-      return day>=w.startDay && day<=w.endDay;
+  /* ---------- GRÁFICO ---------- */
+  const values = weeks.map(w => {
+    const recs = dbData.filter(r => {
+      const f = parseFechaPeru(r.fechaHora);
+      const day = f.getDate();
+      return day >= w.startDay && day <= w.endDay;
     });
-    if(!recs.length) return 0;
-    const avg=recs.reduce((s,r)=>s+(parseFloat(r.nota)||0),0)/recs.length;
+    if (!recs.length) return 0;
+    const avg = recs.reduce((s, r) => s + (parseFloat(r.nota) || 0), 0) / recs.length;
     return Math.round(avg);
   });
 
-  chart.data.labels = weeks.map((_,i)=>'S'+(i+1));
+  chart.data.labels = weeks.map((_, i) => `S${i + 1}`);
   chart.data.datasets[0].data = values;
   chart.update();
 }
 
+/* Ejecutar el dashboard */
 refreshDashboard();
 </script>

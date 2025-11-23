@@ -34,25 +34,25 @@
   </div>
 </div>
 
-<!-- FIREBASE -->
+<!-- ========================================= -->
+<!--   FIREBASE + LÓGICA PRINCIPAL CONECTADA  -->
+<!-- ========================================= -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-/* CONFIG FIREBASE — PÉGALO AQUÍ */
-const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_BUCKET",
-  messagingSenderId: "TU_SENDER",
-  appId: "TU_APP_ID"
-};
+/* IMPORTAR FIREBASE DESDE firebase.js */
+import { db, storage } from "./js/firebase.js";
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import {
+  ref,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 /* ===========================================================
    🔍 BUSCAR FEEDBACK EN COLECCIÓN "registros"
@@ -65,7 +65,8 @@ async function showFeedback(){
     const docRef = doc(db, "registros", id);
     const snap = await getDoc(docRef);
 
-    if(!snap.exists()) return alert("❌ No existe un registro con ese ID");
+    if(!snap.exists())
+      return alert("❌ No existe un registro con ese ID");
 
     const rec = snap.data();
 
@@ -198,4 +199,3 @@ window.showFeedback = showFeedback;
 </script>
 </body>
 </html>
-

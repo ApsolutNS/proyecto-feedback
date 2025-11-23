@@ -7,9 +7,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Firebase -->
-<script type="module" src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js"></script>
-
 <style>
   body{font-family:Arial,Helvetica,sans-serif;background:#f4f6fb;margin:0;color:#0b1220}
   header{background:#0f4c81;color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
@@ -91,29 +88,19 @@
 <!-- ============================ -->
 
 <script type="module">
-/* ---------------------------
-   1. Importar Firebase
---------------------------- */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+/* ------------------------------
+   IMPORTAR FIREBASE DESDE ./js/firebase.js
+------------------------------ */
+import { db } from "./js/firebase.js";
+
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 /* ---------------------------
-   2. Configuración Firebase
---------------------------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
-  authDomain: "feedback-app-ac30e.firebaseapp.com",
-  projectId: "feedback-app-ac30e",
-  storageBucket: "feedback-app-ac30e.firebasestorage.app",
-  messagingSenderId: "512179147778",
-  appId: "1:512179147778:web:795e4a8b177fe766d3431b"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-/* ---------------------------
-   3. Funciones auxiliares
+   FUNCIONES AUXILIARES
 --------------------------- */
 function parseFechaPeru(f) {
   const [d,m,yRest] = f.split("/");
@@ -141,25 +128,32 @@ function getWeeksOfMonth(date = new Date()) {
 }
 
 /* ---------------------------
-   4. Configurar gráfico
+   CONFIGURAR GRÁFICO
 --------------------------- */
 const chart = new Chart(document.getElementById("chartMonth"), {
   type: "bar",
-  data: { labels: [], datasets: [{ label: "Promedio %", data: [], backgroundColor: "#0f4c81" }] },
-  options: { scales:{ y:{ beginAtZero:true, max:100 }}}
+  data: {
+    labels: [],
+    datasets: [{
+      label: "Promedio %",
+      data: [],
+      backgroundColor: "#0f4c81"
+    }]
+  },
+  options: {
+    scales:{ y:{ beginAtZero:true, max:100 }}
+  }
 });
 
 /* ---------------------------
-   5. REFRESH DASHBOARD
+   REFRESH DASHBOARD
 --------------------------- */
 async function refreshDashboard() {
 
   let data = await getAllRecords();
 
-  // ordenar
   data = data.sort((a,b)=>parseFechaPeru(a.fechaHora) - parseFechaPeru(b.fechaHora));
 
-  // Filtrar mes actual
   const hoy = new Date();
   data = data.filter(r=>{
     const f = parseFechaPeru(r.fechaHora);
@@ -168,77 +162,4 @@ async function refreshDashboard() {
 
   /* ---- CONTADORES ---- */
   const counts = {
-    EFECTIVA:0, EFECTIVANK:0, XPERTO:0,
-    FACEBOOK:0, INSTAGRAM:0, CORREO:0, OTRO:0
-  };
-  data.forEach(r => counts[r.tipo] = (counts[r.tipo]||0) + 1);
-
-  document.getElementById("cntEfectiva").innerText = counts.EFECTIVA;
-  document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
-  document.getElementById("cntXperto").innerText = counts.XPERTO;
-  document.getElementById("cntFb").innerText = counts.FACEBOOK;
-  document.getElementById("cntIg").innerText = counts.INSTAGRAM;
-  document.getElementById("cntMail").innerText = counts.CORREO;
-
-  /* ---- RECIENTES ---- */
-  const recent = data.slice().reverse().slice(0,8);
-  document.querySelector("#recentTable tbody").innerHTML =
-    recent.map(r=>{
-      return `
-        <tr>
-          <td>${parseFechaPeru(r.fechaHora).toLocaleString("es-PE")}</td>
-          <td>${r.asesor}</td>
-          <td>${r.nota || 0}%</td>
-          <td>${r.tipo}</td>
-        </tr>`;
-    }).join("") || `<tr><td colspan="4">Sin registros</td></tr>`;
-
-  /* ---- TABLA SEMANAL ---- */
-  const weeks = getWeeksOfMonth();
-  document.getElementById("weeklyHead").innerHTML =
-    `<tr><th>ASESOR</th>` +
-    weeks.map((_,i)=>`<th>S${i+1} C1</th><th>S${i+1} C2</th>`).join("") +
-    `</tr>`;
-
-  const asesores = [...new Set(data.map(r=>r.asesor))];
-  const rows = asesores.map(a=>{
-    let row = `<tr><td>${a}</td>`;
-    for (let w=0; w<weeks.length; w++){
-      const recs = data.filter(r=>{
-        const f = parseFechaPeru(r.fechaHora);
-        const d = f.getDate();
-        return r.asesor===a && d>=weeks[w].startDay && d<=weeks[w].endDay;
-      });
-      const c1 = recs[0]?.tipo || "-";
-      const c2 = recs[1]?.tipo || "-";
-      row += `<td>${c1}</td><td>${c2}</td>`;
-    }
-    return row + "</tr>";
-  }).join("");
-
-  document.getElementById("weeklyBody").innerHTML =
-    rows || `<tr><td colspan="${1+weeks.length*2}">Sin registros</td></tr>`;
-
-  /* ---- GRÁFICO ---- */
-  const values = weeks.map(w=>{
-    const recs = data.filter(r=>{
-      const f = parseFechaPeru(r.fechaHora);
-      const d = f.getDate();
-      return d>=w.startDay && d<=w.endDay;
-    });
-    if (!recs.length) return 0;
-    const avg = recs.reduce((t,r)=>t+(parseFloat(r.nota)||0),0) / recs.length;
-    return Math.round(avg);
-  });
-
-  chart.data.labels = weeks.map((_,i)=>`S${i+1}`);
-  chart.data.datasets[0].data = values;
-  chart.update();
-}
-
-refreshDashboard();
-
-</script>
-
-</body>
-</html>
+    EFECTIVA:0,

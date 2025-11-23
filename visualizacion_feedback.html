@@ -20,6 +20,17 @@
   .firma{border:1px solid #ddd;padding:6px;border-radius:6px;display:inline-block;margin-top:8px}
   .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;
        cursor:pointer;margin-top:12px}
+  
+  .pdf-header{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin-bottom:20px;
+  }
+  .pdf-header img{
+    width:200px;
+    object-fit:contain;
+  }
 </style>
 </head>
 
@@ -41,31 +52,21 @@
   </div>
 </div>
 
-<!-- ========================================= -->
-<!--   FIREBASE + LÓGICA PRINCIPAL CONECTADA  -->
-<!-- ========================================= -->
 <script type="module">
-
-/* === IMPORTAR FIREBASE DESDE firebase.js === */
 import { db, storage } from "./js/firebase.js";
 
 /* Firestore */
-import {
-  doc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { doc, getDoc } 
+  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 /* Storage */
-import {
-  ref,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+import { ref, getDownloadURL } 
+  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
 
-
-/* ===========================================================
-   🔍 BUSCAR FEEDBACK EN FIRESTORE POR ID
-=========================================================== */
+/* ----------------------------------------------
+   BUSCAR FEEDBACK POR ID
+---------------------------------------------- */
 async function showFeedback() {
   const id = document.getElementById("searchId").value.trim();
   if (!id) return alert("Ingresa un ID");
@@ -77,7 +78,6 @@ async function showFeedback() {
     const rec = snap.data();
     rec.id = id;
 
-    // cargar imágenes del Storage
     rec.imagenes = await loadImages(rec.imagenes || []);
 
     const html = buildTemplate(rec);
@@ -90,22 +90,18 @@ async function showFeedback() {
 }
 
 
-/* ===========================================================
-   📥 CARGAR IMÁGENES DESDE FIREBASE STORAGE
-=========================================================== */
+/* ----------------------------------------------
+   CARGAR IMÁGENES DEL STORAGE
+---------------------------------------------- */
 async function loadImages(list) {
   const arr = [];
 
   for (const img of list) {
     try {
-
-      // Caso: ya viene como URL completa
       if (img.url?.startsWith("https://")) {
         arr.push({ data: img.url });
         continue;
       }
-
-      // Caso: viene como storagePath
       const storagePath = img.storagePath || img.url;
       const url = await getDownloadURL(ref(storage, storagePath));
 
@@ -120,10 +116,9 @@ async function loadImages(list) {
 }
 
 
-
-/* ===========================================================
-   📄 TEMPLATE HTML DEL FEEDBACK (CON IMÁGENES GRANDES)
-=========================================================== */
+/* ----------------------------------------------
+   TEMPLATE COMPLETO DEL FEEDBACK + LOGO
+---------------------------------------------- */
 function buildTemplate(rec) {
 
   const fecha = rec.fecha
@@ -154,53 +149,62 @@ function buildTemplate(rec) {
        </div>`;
 
   return `
-    <div style="display:flex;flex-direction:column;gap:20px">
+    <div>
 
-      <div style="display:flex;justify-content:space-between;gap:16px">
-        <div style="flex:1">
-          <h3 style="margin:0">RETROALIMENTACIÓN</h3>
-          <div style="color:#64748b">Fecha: ${fecha}</div>
+      <!-- HEADER CON LOGO -->
+      <div class="pdf-header">
+        <img src="/mnt/data/Imagen1.png" alt="GESCOB">
+      </div>
 
-          <div style="margin-top:10px"><strong>Asesor:</strong> ${rec.asesor}</div>
-          <div><strong>Cargo:</strong> ${rec.cargo}</div>
+      <div style="display:flex;flex-direction:column;gap:20px">
 
-          <div style="margin-top:10px">
-            <strong>Cliente:</strong> ${rec.cliente?.nombre || ""} 
-            (DNI: ${rec.cliente?.dni || ""})
-          </div>
+        <div style="display:flex;justify-content:space-between;gap:16px">
+          <div style="flex:1">
+            <h3 style="margin:0">RETROALIMENTACIÓN</h3>
+            <div style="color:#64748b">Fecha: ${fecha}</div>
 
-          <div style="margin-top:10px">
-            <strong>Resumen:</strong>
-            <div style="padding:8px;background:#fbfdff;border-radius:6px">
-              ${rec.resumen}
+            <div style="margin-top:10px"><strong>Asesor:</strong> ${rec.asesor}</div>
+            <div><strong>Cargo:</strong> ${rec.cargo}</div>
+
+            <div style="margin-top:10px">
+              <strong>Cliente:</strong> ${rec.cliente?.nombre || ""} 
+              (DNI: ${rec.cliente?.dni || ""})
+            </div>
+
+            <div style="margin-top:10px">
+              <strong>Resumen:</strong>
+              <div style="padding:8px;background:#fbfdff;border-radius:6px">
+                ${rec.resumen}
+              </div>
+            </div>
+
+            <div style="margin-top:10px">
+              <strong>Items observados:</strong><br>
+              ${itemsHtml}
+            </div>
+
+            <div style="margin-top:10px">
+              <strong>Evidencias:</strong>
+              <div>${imgsHtml}</div>
+            </div>
+
+            <div style="margin-top:10px">
+              <strong>Compromiso del agente:</strong>
+              <div style="padding:8px;border:1px dashed #e6eef9;border-radius:6px">
+                ${rec.compromiso || "<em>Vacío</em>"}
+              </div>
             </div>
           </div>
 
-          <div style="margin-top:10px">
-            <strong>Items observados:</strong><br>
-            ${itemsHtml}
-          </div>
-
-          <div style="margin-top:10px">
-            <strong>Evidencias:</strong>
-            <div>${imgsHtml}</div>
-          </div>
-
-          <div style="margin-top:10px">
-            <strong>Compromiso del agente:</strong>
-            <div style="padding:8px;border:1px dashed #e6eef9;border-radius:6px">
-              ${rec.compromiso || "<em>Vacío</em>"}
+          <div style="width:260px">
+            <div class="nota" style="font-size:28px">${rec.nota || 0}%</div>
+            <div style="margin-top:12px">${firmaHtml}</div>
+            <div style="margin-top:12px;color:#64748b">
+              ID de registro:<br><strong>${rec.id}</strong>
             </div>
           </div>
         </div>
 
-        <div style="width:260px">
-          <div class="nota" style="font-size:28px">${rec.nota || 0}%</div>
-          <div style="margin-top:12px">${firmaHtml}</div>
-          <div style="margin-top:12px;color:#64748b">
-            ID de registro:<br><strong>${rec.id}</strong>
-          </div>
-        </div>
       </div>
 
     </div>
@@ -208,10 +212,9 @@ function buildTemplate(rec) {
 }
 
 
-
-/* ===========================================================
-   📥 DESCARGAR PDF (html2pdf)
-=========================================================== */
+/* ----------------------------------------------
+   EXPORTAR PDF
+---------------------------------------------- */
 window.downloadPDF = function () {
 
   const elemento = document.getElementById("preview");
@@ -232,8 +235,6 @@ window.downloadPDF = function () {
 };
 
 
-
-/* Exponer función */
 window.showFeedback = showFeedback;
 
 </script>

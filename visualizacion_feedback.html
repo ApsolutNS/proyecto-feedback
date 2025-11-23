@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Visualización Feedback</title>
+
 <style>
   body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
   .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
@@ -21,10 +22,11 @@
   <h2>Visualización del Feedback (Final)</h2>
 
   <label>Buscar por ID</label>
-  <input id="searchId" placeholder="Pegue el ID del feedback (ej. FB-...)">
+  <input id="searchId" placeholder="Pega el ID del feedback">
+
   <div style="display:flex;gap:8px">
     <button class="btn" onclick="showFeedback()">Mostrar</button>
-    <button class="btn" onclick="downloadHtml()">Descargar HTML (simula PDF)</button>
+    <button class="btn" onclick="downloadHtml()">Descargar HTML</button>
   </div>
 
   <div id="preview" class="doc" style="margin-top:14px">
@@ -32,75 +34,107 @@
   </div>
 </div>
 
-<script>
-// ==============================================
-// 🔵 OBTENER TODOS LOS REGISTROS DESDE EL BACKEND
-// ==============================================
-async function getAllRecords(){
-  try {
-    const resp = await fetch("/.netlify/functions/getRecords");
-    const json = await resp.json();
-    return json.records || [];
-  } catch (e) {
-    alert("Error obteniendo registros del servidor");
-    return [];
-  }
-}
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// ==============================================
-// 🔍 MOSTRAR FEEDBACK POR ID
-// ==============================================
+/* CONFIG FIREBASE — PÉGALO AQUÍ */
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_BUCKET",
+  messagingSenderId: "TU_SENDER",
+  appId: "TU_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+/* ===========================================================
+   🔍 BUSCAR FEEDBACK EN COLECCIÓN "registros"
+=========================================================== */
 async function showFeedback(){
   const id = document.getElementById('searchId').value.trim();
   if(!id) return alert('Ingresa un ID');
 
-  const records = await getAllRecords();
-  const rec = records.find(r => r.id === id);
+  try{
+    const docRef = doc(db, "registros", id);
+    const snap = await getDoc(docRef);
 
-  if(!rec){
-    return alert('No se encontró un feedback con ese ID');
+    if(!snap.exists()) return alert("❌ No existe un registro con ese ID");
+
+    const rec = snap.data();
+
+    // cargar imágenes desde storage
+    rec.imagenes = await loadImages(rec.imagenes || []);
+
+    const html = buildTemplate({ id, ...rec });
+    document.getElementById("preview").innerHTML = html;
+
+  } catch(e){
+    console.error(e);
+    alert("Error obteniendo datos");
   }
-
-  const html = buildTemplate(rec);
-  document.getElementById('preview').innerHTML = html;
 }
 
-// ==============================================
-// 📄 ARMAR PLANTILLA DE VISUALIZACIÓN
-// ==============================================
+/* ===========================================================
+   📥 DESCARGAR CADA IMAGEN DESDE STORAGE
+=========================================================== */
+async function loadImages(list){
+  const arr = [];
+
+  for(const img of list){
+    try {
+      const url = await getDownloadURL(ref(storage, img.url || img.storagePath));
+      arr.push({ data:url });
+    } catch(err){
+      console.warn("No se pudo cargar imagen:", err);
+    }
+  }
+
+  return arr;
+}
+
+/* ===========================================================
+   📄 TEMPLATE HTML
+=========================================================== */
 function buildTemplate(rec){
-  const imgsHtml = rec.images.map(im =>
+
+  const imgsHtml = rec.imagenes.map(im =>
     `<img src="${im.data}" style="max-width:120px;margin-right:8px;border-radius:6px">`
   ).join('');
 
   const itemsHtml = rec.items.map(it => `
     <div style="margin-bottom:6px">
       <strong>${it.name}</strong> (${it.perc}%)
-      <div style="color:#333">${it.detail || ''}</div>
+      <div>${it.detail || ''}</div>
     </div>
   `).join('');
 
-  const firmaHtml = rec.firmaDataUrl
-    ? `<div class="firma"><img src="${rec.firmaDataUrl}" style="max-width:260px"></div>`
-    : `<div class="firma" style="height:80px;display:flex;align-items:center;justify-content:center;color:#64748b">SIN FIRMA</div>`;
+  const firmaHtml = rec.firmaUrl
+    ? `<div class="firma"><img src="${rec.firmaUrl}" style="max-width:260px"></div>`
+    : `<div class="firma" style="height:80px;display:flex;align-items:center;justify-content:center;color:#64748b">
+         SIN FIRMA
+       </div>`;
 
   return `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+    <div style="display:flex;justify-content:space-between;gap:16px">
       <div style="flex:1">
         <h3 style="margin:0">RETROALIMENTACIÓN</h3>
 
-        <div style="color:#64748b">
-          Fecha: ${new Date(rec.fechaHora).toLocaleString()}
-        </div>
+        <div style="color:#64748b">Fecha: ${rec.fecha}</div>
 
         <div style="margin-top:10px">
           <strong>Asesor:</strong> ${rec.asesor} /
           <strong>Cargo:</strong> ${rec.cargo}
         </div>
 
-        <div style="margin-top:10px;">
-          <strong>Cliente:</strong> ${rec.cliente.nombre}
-          (DNI: ${rec.cliente.dni})
+        <div style="margin-top:10px">
+          <strong>Cliente:</strong> ${rec.cliente?.nombre || ''} (DNI: ${rec.cliente?.dni || ''})
         </div>
 
         <div style="margin-top:10px">
@@ -113,10 +147,6 @@ function buildTemplate(rec){
         <div style="margin-top:10px">
           <strong>Items observados:</strong>
           ${itemsHtml}
-        </div>
-
-        <div style="margin-top:10px">
-          <strong>Reincidencia:</strong> ${rec.reincidencia}
         </div>
 
         <div style="margin-top:10px">
@@ -134,23 +164,23 @@ function buildTemplate(rec){
 
       <div style="width:260px">
         <div class="nota" style="font-size:28px">
-          ${rec.nota}%
+          ${rec.nota || 0}%
         </div>
+
         <div style="margin-top:12px">${firmaHtml}</div>
+
         <div style="margin-top:12px;color:#64748b">ID: ${rec.id}</div>
       </div>
     </div>
   `;
 }
 
-// ==============================================
-// 📥 DESCARGAR ARCHIVO HTML (simula PDF)
-// ==============================================
-function downloadHtml(){
-  const div = document.getElementById('preview');
-  const content = div.innerHTML;
-
-  if(!content) return alert('Genera la vista antes de descargar');
+/* ===========================================================
+   📥 DESCARGAR ARCHIVO HTML (como si fuera PDF)
+=========================================================== */
+window.downloadHtml = function (){
+  const content = document.getElementById('preview').innerHTML;
+  if(!content) return alert('Primero genera la vista');
 
   const blob = new Blob(
     [`<html><head><meta charset="utf-8"></head><body>${content}</body></html>`],
@@ -161,8 +191,10 @@ function downloadHtml(){
   a.href = URL.createObjectURL(blob);
   a.download = (document.getElementById('searchId').value || 'feedback') + '.html';
   a.click();
-}
-</script>
+};
 
+window.showFeedback = showFeedback;
+
+</script>
 </body>
 </html>

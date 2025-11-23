@@ -32,7 +32,15 @@
   <div style="margin-top:12px">
     <strong>Feedbacks del agente</strong>
     <table id="agentTable">
-      <thead><tr><th>ID</th><th>Fecha</th><th>Nota</th><th>Estado</th><th>Acción</th></tr></thead>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Nota</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
       <tbody></tbody>
     </table>
   </div>
@@ -54,21 +62,124 @@
 
     <div id="agentMsg" style="margin-top:10px;color:green"></div>
   </div>
-
 </div>
 
 <script>
-// ============= API BASE URL =============
-const API = "/.netlify/functions";
+function getDB(){
+  return JSON.parse(localStorage.getItem('fb_registros_v1') || '[]');
+}
 
-// ============= LOAD ADVISORS =============
-async function loadAdvisors() {
-  try {
-    const res = await fetch(`${API}/records`);
-    const data = await res.json();
-    if (!data.ok) return alert("No se pudo cargar asesores");
+function loadAdvisors(){
+  const db = getDB();
+  const names = [...new Set(db.map(r=>r.asesor).filter(Boolean))];
+  const sel = document.getElementById('selAgent');
+  sel.innerHTML = '<option value="">-- selecciona --</option>';
+  names.forEach(n=> sel.innerHTML += `<option>${n}</option>`);
+}
+loadAdvisors();
 
-    const advisors = [...new Set(data.records.map(r => r.asesor).filter(Boolean))];
+function loadAgentList(){
+  const advisor = document.getElementById('selAgent').value;
+  const db = getDB();
+  const list = db.filter(r=> r.asesor === advisor)
+                 .sort((a,b)=> new Date(b.fechaHora) - new Date(a.fechaHora));
+  const tbody = document.querySelector('#agentTable tbody');
 
-    const sel = document.getElementById('selAgent');
-    sel.innerHTML = '<option value="">-- selecciona --</optio
+  tbody.innerHTML = list.map(r=>`
+    <tr>
+      <td>${r.id}</td>
+      <td>${new Date(r.fechaHora).toLocaleString()}</td>
+      <td>${r.nota}%</td>
+      <td>${r.estado}</td>
+      <td><button onclick="openDetail('${r.id}')">Abrir</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5">Sin registros</td></tr>';
+}
+
+let currentRecordId = null;
+
+function openDetail(id){
+  const db = getDB();
+  const rec = db.find(x=>x.id===id);
+  if(!rec) return alert('Registro no encontrado');
+  currentRecordId = id;
+
+  document.getElementById('detailBlock').style.display = 'block';
+
+  document.getElementById('feedbackInfo').innerHTML = `
+    <div><b>ID:</b> ${rec.id}</div>
+    <div><b>Fecha:</b> ${new Date(rec.fechaHora).toLocaleString()}</div>
+    <div><b>Asesor:</b> ${rec.asesor}</div>
+    <div><b>Tipo:</b> ${rec.tipo}</div>
+    <div style="margin-top:8px"><b>Resumen:</b> ${rec.resumen}</div>
+    <div style="margin-top:8px"><b>Items:</b> ${rec.items.map(it=>`${it.name} (${it.perc}%)`).join('; ')}</div>
+    <div style="margin-top:8px"><b>Evidencias:</b> ${rec.images.length} imagen(es)</div>
+  `;
+
+  if(rec.estado === 'COMPLETADO'){
+    document.getElementById('compromiso').value = rec.compromiso || '';
+    if(rec.firmaDataUrl){
+      const img = new Image();
+      img.src = rec.firmaDataUrl;
+      img.style.maxWidth = '320px';
+      document.getElementById('feedbackInfo').appendChild(img);
+    }
+  } else {
+    document.getElementById('compromiso').value = '';
+    clearCanvas();
+  }
+}
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let drawing=false;
+
+canvas.addEventListener('mousedown', ()=> drawing=true);
+canvas.addEventListener('mouseup', ()=> { drawing=false; ctx.beginPath(); });
+canvas.addEventListener('mouseleave', ()=> { drawing=false; ctx.beginPath(); });
+canvas.addEventListener('mousemove', e=>{
+  if(!drawing) return;
+  const rect = canvas.getBoundingClientRect();
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#000';
+  ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+function clearCanvas(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  document.getElementById('agentMsg').innerText='';
+}
+
+function saveSignature(){
+  if(!currentRecordId) return alert('Abra un registro primero');
+
+  const db = getDB();
+  const rec = db.find(x=>x.id === currentRecordId);
+  if(!rec) return alert('Registro no encontrado');
+
+  const compromiso = document.getElementById('compromiso').value.trim();
+  if(!compromiso) return alert('El compromiso es obligatorio');
+
+  const dataUrl = canvas.toDataURL('image/png');
+
+  rec.compromiso = compromiso;
+  rec.firmaDataUrl = dataUrl;
+  rec.estado = 'COMPLETADO';
+
+  const idx = db.findIndex(x=>x.id === currentRecordId);
+  db[idx] = rec;
+
+  localStorage.setItem('fb_registros_v1', JSON.stringify(db));
+
+  document.getElementById('agentMsg').innerText =
+    'Firma y compromiso guardados. Registro completado.';
+
+  loadAgentList();
+}
+</script>
+</body>
+</html>

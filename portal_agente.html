@@ -11,12 +11,14 @@
   label{display:block;margin-top:10px;font-weight:600}
   input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ef;margin-top:6px;box-sizing:border-box}
   .row{display:flex;gap:10px}
-  canvas{border:1px solid #e6eef9;border-radius:6px}
+  canvas{border:1px solid #e6eef9;border-radius:6px;display:block;background:#fff}
   .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:10px}
   .btn.ghost{background:#fff;color:#0f4c81;border:1px solid #cbd5e1}
   table{width:100%;border-collapse:collapse;margin-top:12px}
   th,td{padding:8px;border-bottom:1px solid #eef2f7;text-align:left}
   th{background:#fbfdff}
+  .small{font-size:13px;color:#64748b}
+  .hidden{display:none}
 </style>
 </head>
 <body>
@@ -37,7 +39,7 @@
     </table>
   </div>
 
-  <div id="detailBlock" style="display:none;margin-top:12px">
+  <div id="detailBlock" class="hidden" style="display:none;margin-top:12px">
     <h3>Completar Feedback</h3>
     <div id="feedbackInfo"></div>
 
@@ -50,6 +52,7 @@
     <div style="display:flex;gap:8px">
       <button class="btn" onclick="saveSignature()">Enviar Firma y Completar</button>
       <button class="btn ghost" onclick="clearCanvas()">Limpiar Firma</button>
+      <button class="btn ghost" onclick="closeDetail()" style="margin-left:auto">Cancelar</button>
     </div>
 
     <div id="agentMsg" style="margin-top:10px;color:green"></div>
@@ -58,17 +61,190 @@
 </div>
 
 <script>
-// ============= API BASE URL =============
-const API = "/.netlify/functions";
+/* ---------------- API BASE ---------------- */
+const API_BASE = "/.netlify/functions";
 
-// ============= LOAD ADVISORS =============
-async function loadAdvisors() {
-  try {
-    const res = await fetch(`${API}/records`);
-    const data = await res.json();
-    if (!data.ok) return alert("No se pudo cargar asesores");
+/* ------------ UTIL (fallback keys) ---------- */
+function getField(obj, ...keys){
+  for(const k of keys){
+    if(obj[k] !== undefined) return obj[k];
+  }
+  return undefined;
+}
 
-    const advisors = [...new Set(data.records.map(r => r.asesor).filter(Boolean))];
+/* ----------- LOAD & RENDER RECORDS --------- */
+let ALL_RECORDS = [];
 
-    const sel = document.getElementById('selAgent');
-    sel.innerHTML = '<option value="">-- selecciona --</optio
+async function loadAllRecords(){
+  try{
+    const res = await fetch(`${API_BASE}/records`);
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || 'No ok');
+    ALL_RECORDS = json.records || [];
+    populateAdvisors();
+  }catch(err){
+    console.error('Error cargando records:', err);
+    alert('No se pudo cargar los registros desde el servidor.');
+    ALL_RECORDS = [];
+  }
+}
+
+function populateAdvisors(){
+  const advisors = [...new Set(ALL_RECORDS.map(r => getField(r,'asesor','Asesor')).filter(Boolean))];
+  const sel = document.getElementById('selAgent');
+  sel.innerHTML = `<option value="">-- selecciona --</option>` + advisors.map(a=>`<option value="${a}">${a}</option>`).join('');
+}
+
+/* --------- FILTER & SHOW AGENT LIST -------- */
+function loadAgentList(){
+  const sel = document.getElementById('selAgent');
+  const agent = sel.value;
+  const tbody = document.querySelector('#agentTable tbody');
+  const filtered = agent ? ALL_RECORDS.filter(r => getField(r,'asesor','Asesor') === agent) : [];
+  if(filtered.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5">Sin registros</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(r=>{
+    const id = getField(r,'id','ID') || '';
+    const fecha = getField(r,'fechaHora','FechaHora') || getField(r,'FechaHora','') || '';
+    const fechaText = fecha ? new Date(fecha).toLocaleString() : '';
+    const nota = getField(r,'nota','Nota') ?? '';
+    const estado = getField(r,'estado','Estado') || '';
+    return `<tr>
+      <td>${id}</td>
+      <td>${fechaText}</td>
+      <td>${nota}%</td>
+      <td>${estado}</td>
+      <td><button class="btn ghost" onclick="openDetail('${id}')">Completar</button></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ------------- DETAIL / COMPLETAR ---------- */
+let CURRENT_ID = null;
+
+function openDetail(id){
+  CURRENT_ID = id;
+  const rec = ALL_RECORDS.find(r => (getField(r,'id','ID')||'') === id);
+  if(!rec){ alert('Registro no encontrado'); return; }
+  const info = document.getElementById('feedbackInfo');
+  const cliente = getField(rec,'cliente','Cliente') || {};
+  const items = getField(rec,'items','Items') || [];
+  const resumen = getField(rec,'resumen','Resumen') || getField(rec,'Resumen','') || '';
+  info.innerHTML = `
+    <div><strong>ID:</strong> ${id}</div>
+    <div><strong>Asesor:</strong> ${getField(rec,'asesor','Asesor') || ''}</div>
+    <div><strong>Cliente:</strong> ${cliente.nombre || cliente.Nombre || ''} (DNI: ${cliente.dni||cliente.DNI||''})</div>
+    <div style="margin-top:8px"><strong>Resumen:</strong><div style="padding:8px;background:#fbfdff;border-radius:6px">${resumen}</div></div>
+    <div style="margin-top:8px"><strong>Items:</strong>
+      ${Array.isArray(items) ? items.map(it=>`<div style="margin-top:6px"><strong>${it.name||it.Name||''}</strong> ${it.perc||it.Perc||''}%<div>${it.detail||it.Detail||''}</div></div>`).join('') : ''}
+    </div>
+  `;
+  document.getElementById('detailBlock').style.display = 'block';
+  document.getElementById('detailBlock').classList.remove('hidden');
+  document.getElementById('agentMsg').textContent = '';
+  document.getElementById('compromiso').value = getField(rec,'compromiso','Compromiso') || '';
+  // setup canvas
+  initCanvas();
+}
+
+function closeDetail(){
+  CURRENT_ID = null;
+  document.getElementById('detailBlock').style.display = 'none';
+}
+
+/* --------------- CANVAS SIGN --------------- */
+let canvas, ctx, drawing = false, lastPos = {x:0,y:0};
+
+function initCanvas(){
+  canvas = document.getElementById('canvas');
+  if(!canvas) return;
+  ctx = canvas.getContext('2d');
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#000';
+  // clear
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // mouse
+  canvas.onmousedown = (e)=>{ drawing = true; lastPos = getPos(e); };
+  canvas.onmouseup = ()=>{ drawing = false; };
+  canvas.onmousemove = (e)=>{ if(!drawing) return; const p = getPos(e); drawLine(lastPos,p); lastPos = p; };
+  // touch
+  canvas.ontouchstart = (e)=>{ e.preventDefault(); drawing = true; lastPos = getPos(e.touches[0]); };
+  canvas.ontouchend = (e)=>{ e.preventDefault(); drawing = false; };
+  canvas.ontouchmove = (e)=>{ e.preventDefault(); if(!drawing) return; const p = getPos(e.touches[0]); drawLine(lastPos,p); lastPos = p; };
+}
+
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function drawLine(a,b){
+  ctx.beginPath();
+  ctx.moveTo(a.x,a.y);
+  ctx.lineTo(b.x,b.y);
+  ctx.stroke();
+}
+
+function clearCanvas(){
+  if(!ctx) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+/* ------------- SAVE SIGNATURE (complete) ------------- */
+async function saveSignature(){
+  if(!CURRENT_ID) return alert('No hay registro seleccionado');
+  const compromiso = document.getElementById('compromiso').value.trim();
+  if(!compromiso) return alert('Ingresa el compromiso del agente');
+  // get data URL
+  const dataUrl = canvas.toDataURL('image/png');
+  // simple check: ensure canvas is not empty (approx)
+  const empty = isCanvasBlank(canvas);
+  if(empty) return alert('Por favor dibuja la firma antes de enviar');
+
+  // send to complete function
+  try{
+    document.getElementById('agentMsg').style.color = 'black';
+    document.getElementById('agentMsg').textContent = 'Enviando...';
+    const res = await fetch(`${API_BASE}/complete`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ id: CURRENT_ID, compromiso, firmaDataUrl: dataUrl })
+    });
+    const json = await res.json();
+    if(!json.ok){
+      throw new Error(json.message || json.error || 'Error al completar');
+    }
+    document.getElementById('agentMsg').style.color = 'green';
+    document.getElementById('agentMsg').textContent = '✔ Registro completado';
+    // update local record state (optimistic)
+    const rec = ALL_RECORDS.find(r => (getField(r,'id','ID')||'') === CURRENT_ID);
+    if(rec){ rec.estado = 'COMPLETADO'; rec.compromiso = compromiso; rec.firmaUrl = json.uploaded?.webUrl || json.uploaded?.webUrl; }
+    loadAgentList();
+    setTimeout(closeDetail, 900);
+  }catch(err){
+    console.error('Error completing:', err);
+    document.getElementById('agentMsg').style.color = 'red';
+    document.getElementById('agentMsg').textContent = 'Error: ' + (err.message || 'No se pudo completar');
+  }
+}
+
+function isCanvasBlank(c) {
+  const blank = document.createElement('canvas');
+  blank.width = c.width;
+  blank.height = c.height;
+  return c.toDataURL() === blank.toDataURL();
+}
+
+/* ----------------- INIT ----------------- */
+(async function init(){
+  await loadAllRecords();
+  // init canvas in case opened later
+  initCanvas();
+})();
+</script>
+
+</body>
+</html>

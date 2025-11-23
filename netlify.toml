@@ -2,12 +2,6 @@
   publish = "."
   command = ""
 
-[functions]
-  directory = "netlify/functions"
-
-[build.environment]
-  NODE_VERSION = "18"
-  
 [[redirects]]
   from = "/*"
   to = "/index.html"

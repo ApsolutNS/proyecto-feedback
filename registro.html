@@ -1,30 +1,152 @@
-<script>
-const API_POST = "/.netlify/functions/register";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Registro de Monitoreo</title>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
+
+<style>
+  body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
+  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
+  h2{margin-top:0}
+  label{display:block;margin-top:10px;font-weight:600}
+  input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ef;margin-top:6px;box-sizing:border-box}
+  .row{display:flex;gap:10px}
+  .col{flex:1}
+  .items-list{margin-top:10px}
+  .item-block{border:1px solid #e6eef9;padding:8px;border-radius:6px;margin-top:8px;display:flex;gap:8px;align-items:flex-start}
+  .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:12px}
+  .btn.ghost{background:#fff;color:#0f4c81;border:1px solid #cbd5e1}
+  .small{font-size:13px;color:#64748b}
+  .img-preview{max-height:90px;margin-right:8px;border-radius:6px}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Registro del Monitoreo (Supervisor)</h2>
+
+  <label>ID LLAMADA</label>
+  <input id="idLlamada">
+
+  <label>ID CONTACTO</label>
+  <input id="idContacto">
+
+  <label>Tipo detectado</label>
+  <input id="tipoDetectado" readonly>
+
+  <div style="display:flex;gap:8px;margin-top:10px">
+    <div style="flex:1">
+      <label>Asesor</label>
+      <select id="asesor"></select>
+      <small class="small">* Cargado desde /data/asesores.json</small>
+    </div>
+    <div style="width:220px">
+      <label>Cargo</label>
+      <select id="cargo">
+        <option>ASESOR INBOUND</option>
+        <option>ASESOR CORREOS</option>
+        <option>ASESOR REDES</option>
+      </select>
+    </div>
+  </div>
+
+  <h3 class="small" style="margin-top:12px">Datos del cliente</h3>
+
+  <div class="row">
+    <div class="col">
+      <label>DNI cliente</label>
+      <input id="cliDni">
+    </div>
+    <div class="col">
+      <label>Nombre cliente</label>
+      <input id="cliNombre">
+    </div>
+    <div class="col">
+      <label>Teléfono</label>
+      <input id="cliTel">
+    </div>
+  </div>
+
+  <label>Tipificación</label>
+  <input id="cliTipif">
+
+  <label>Observación cliente</label>
+  <textarea id="cliObs"></textarea>
+
+  <label>Resumen de la llamada</label>
+  <textarea id="resumen" rows="4"></textarea>
+
+  <h3 style="margin-top:12px">Items observados</h3>
+  <div class="small">Agrega uno o varios items</div>
+
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn" onclick="addItemBlock()">+ Agregar ítem</button>
+    <button class="btn ghost" onclick="clearItems()" style="width:130px">Limpiar items</button>
+  </div>
+
+  <div id="itemsContainer" class="items-list"></div>
+
+  <label style="margin-top:12px">Adjuntar imágenes</label>
+  <input id="imgs" type="file" multiple accept="image/*" />
+  <div id="imgPreview" style="display:flex;margin-top:8px;flex-wrap:wrap"></div>
+
+  <button class="btn" onclick="submitRecord()">Registrar</button>
+  <div id="msg" style="margin-top:12px;color:green"></div>
+</div>
+
+<script>
+// --------------------------------------
+// ⚡ Inicializar Firebase
+// --------------------------------------
+const firebaseConfig = {
+  apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
+  authDomain: "feedback-app-ac30e.firebaseapp.com",
+  projectId: "feedback-app-ac30e",
+  storageBucket: "feedback-app-ac30e.firebasestorage.app",
+  messagingSenderId: "512179147778",
+  appId: "1:512179147778:web:795e4a8b177fe766d3431b",
+  measurementId: "G-X6MP0FFH9P"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// --------------------------------------
 // Cargar asesores
+// --------------------------------------
 async function cargarAsesores() {
   try {
-    const res = await fetch("/data/asesores.json", { cache: "no-store" });
+    const res = await fetch("/data/asesores.json");
     const lista = await res.json();
+
     document.getElementById("asesor").innerHTML =
       lista.map(a => `<option>${a}</option>`).join("");
-  } catch (err) {
-    console.error("Error cargando asesores:", err);
-  }
+
+  } catch (err) { console.error(err); }
 }
 cargarAsesores();
 
-
+// --------------------------------------
 // Detectar tipo
+// --------------------------------------
 function detectarTipoTexto(text){
   if(!text) return 'NO IDENTIFICADO';
   text = text.toLowerCase();
+
   if(text.includes('intefectivank') || text.includes('vank')) return 'EFECTIVANK';
   if(text.includes('intefectiva')) return 'EFECTIVA';
   if(text.includes('intxperto')) return 'XPERTO';
   if(text.includes('facebook')) return 'FACEBOOK';
   if(text.includes('instagram')) return 'INSTAGRAM';
   if(text.includes('correo') || text.includes('mail')) return 'CORREO';
+
   return 'OTRO';
 }
 
@@ -36,137 +158,135 @@ function updateDetected(){
   tipoDetectado.value = detectarTipoTexto(v);
 }
 
-
-// Items
+// --------------------------------------
+// Items disponibles
+// --------------------------------------
 const ITEMS = [
   ["Corte de Gestión",5],["Insulto / Falta de Respeto",10],["Normativa Regulatoria",8],
   ["Protección de datos",10],["Contestación sin demora",6],["Optimización de esperas",4],
   ["Empatía e implicación",4],["Escucha Activa",4],["Sondeo",3],
-  ["Solicita datos de forma correcta y oportuna",3],["Herramientas de Gestión",3],
-  ["Codificación y Registro inConcert",2],["Codificación y Registro en Monitor Logístico",2],
-  ["Codificación y Registro en SmartSheet",2],["Presentación",2],["Personalización",2],
-  ["Despedida",2],["Encuesta de satisfacción",2],["Lenguaje",2],["Voz",2],
-  ["Redacta de forma Correcta",2],["Imagen trasladada",2],["Actitud comercial",3],
-  ["Operativa",3],["Tramita la gestión correspondiente",5],["Transferencia",4],
-  ["Cumple con devolución de llamado",4],["Actitud - Manejo de llamada",3],
-  ["Conocimientos para resolver la consulta",5],["Asesoramiento de Producto o Servicio",4],
-  ["Solución al primer contacto",12],["Verificación de datos",3],
-  ["Damos el número de Ticket",1],["Ninguno",0]
+  ["Solicita datos correctamente",3],["Herramientas de Gestión",3],
+  ["Codificación inConcert",2],["SmartSheet",2],
+  ["Presentación",2],["Personalización",2],
+  ["Despedida",2],["Encuesta",2],["Lenguaje",2],["Voz",2],
+  ["Actitud comercial",3],["Operativa",3],
+  ["Solución 1er Contacto",12],["Verificación",3],
+  ["Ticket entregado",1],["Ninguno",0]
 ];
 
+// --------------------------------------
 function addItemBlock(){
-  const block = document.createElement("div");
-  block.className = "item-block";
-
-  block.innerHTML = `
+  const w = document.createElement('div');
+  w.className = 'item-block';
+  w.innerHTML = `
     <select>
       ${ITEMS.map(it => `<option value="${it[0]}||${it[1]}">${it[0]} (${it[1]}%)</option>`).join("")}
     </select>
     <textarea placeholder="Detalle del item"></textarea>
-    <button class="btn ghost" onclick="this.parentNode.remove()">Eliminar</button>
+    <button class="btn ghost" style="width:90px" onclick="this.parentNode.remove()">Eliminar</button>
   `;
-
-  document.getElementById("itemsContainer").appendChild(block);
+  document.getElementById("itemsContainer").appendChild(w);
 }
 
 function clearItems(){
   document.getElementById("itemsContainer").innerHTML = "";
 }
 
-
-// Vista previa de imágenes
+// --------------------------------------
+// Preview imágenes
+// --------------------------------------
 document.getElementById('imgs').addEventListener('change', function(){
   const preview = document.getElementById('imgPreview');
   preview.innerHTML = "";
-  
-  Array.from(this.files).forEach(file=>{
-    const reader = new FileReader();
-    reader.onload = e =>{
+
+  [...this.files].forEach(f=>{
+    const fr = new FileReader();
+    fr.onload = e=>{
       const img = document.createElement("img");
       img.src = e.target.result;
       img.className = "img-preview";
+      img.style.maxWidth = "120px";
       preview.appendChild(img);
     };
-    reader.readAsDataURL(file);
+    fr.readAsDataURL(f);
   });
 });
 
-
-// Enviar registro
+// --------------------------------------
+// ⭐ Guardar registro en Firebase
+// --------------------------------------
 async function submitRecord(){
-  const msg = document.getElementById('msg');
-  msg.style.color = "green";
-  msg.textContent = "⏳ Enviando...";
+  const msgEl = document.getElementById('msg');
+  msgEl.style.color = 'green';
+  msgEl.textContent = "⏳ Subiendo...";
 
-  try {
+  try{
+    // -------------------------------
     // Items
-    const items = Array.from(document.querySelectorAll(".item-block")).map(b=>{
-      const [name, perc] = b.querySelector("select").value.split("||");
+    // -------------------------------
+    const items = [...document.querySelectorAll(".item-block")].map(b=>{
+      const [name,perc] = b.querySelector("select").value.split("||");
       return {
         name,
-        perc: parseFloat(perc),
+        perc: Number(perc),
         detail: b.querySelector("textarea").value
       };
     });
 
-    // Images
-    const files = document.getElementById("imgs").files;
-    const images = await Promise.all([...files].map(f=>{
-      return new Promise(res=>{
-        const fr = new FileReader();
-        fr.onload = e => res({ name: f.name, data: e.target.result });
-        fr.readAsDataURL(f);
-      });
-    }));
+    // -------------------------------
+    // Subida de imágenes a Firebase Storage
+    // -------------------------------
+    const files = document.getElementById('imgs').files;
+    const imageURLs = [];
 
-    // Datos completos
-    const body = {
+    for(const f of files){
+      const ref = storage.ref(`monitoreo_imagenes/${Date.now()}_${f.name}`);
+      await ref.put(f);
+      const url = await ref.getDownloadURL();
+      imageURLs.push({name: f.name, url});
+    }
+
+    // -------------------------------
+    // Crear objeto final
+    // -------------------------------
+    const data = {
       idLlamada: idLlamada.value,
       idContacto: idContacto.value,
       tipo: tipoDetectado.value,
       asesor: asesor.value,
       cargo: cargo.value,
-
-      clienteDni: cliDni.value,
-      clienteNombre: cliNombre.value,
-      clienteTel: cliTel.value,
-
+      cliente:{
+        dni: cliDni.value,
+        nombre: cliNombre.value,
+        tel: cliTel.value
+      },
       tipificacion: cliTipif.value,
       observacionCliente: cliObs.value,
       resumen: resumen.value,
-
       items,
-      images,
-
-      nota: 0,            // por defecto
-      compromiso: "",     // por defecto
-      firmaUrl: "",       // campo vacío para Google Sheets
-      fechaHora: new Date().toLocaleString("es-PE")
+      imagenes: imageURLs,
+      fecha: new Date().toISOString()
     };
 
-    const res = await fetch(API_POST, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
+    // -------------------------------
+    // Guardar en Firestore
+    // -------------------------------
+    const newDoc = await db.collection("registros").add(data);
 
-    const out = await res.json();
+    msgEl.style.color = 'green';
+    msgEl.textContent = "✔ Guardado correctamente (ID: " + newDoc.id + ")";
 
-    if(out.ok){
-      msg.style.color = "green";
-      msg.textContent = "✔ Registro enviado correctamente";
-
-      clearItems();
-      document.getElementById("imgPreview").innerHTML = "";
-    } else {
-      msg.style.color = "red";
-      msg.textContent = "❌ Error: " + out.message;
-    }
+    clearItems();
+    document.getElementById('imgPreview').innerHTML = "";
 
   } catch(err){
-    msg.style.color = "red";
-    msg.textContent = "❌ Error inesperado: " + err.message;
+    msgEl.style.color = 'red';
+    msgEl.textContent = "❌ Error: " + err.message;
     console.error(err);
   }
 }
+
 </script>
+</body>
+</html>
+

@@ -10,6 +10,7 @@ exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
 
+    // Validación mínima
     if (!body.asesor || !body.idLlamada) {
       return {
         statusCode: 400,
@@ -17,7 +18,7 @@ exports.handler = async (event) => {
       };
     }
 
-    // AUTH GOOGLE
+    // Google Auth
     const auth = new google.auth.GoogleAuth({
       credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT),
       scopes: ["https://www.googleapis.com/auth/spreadsheets"],
@@ -26,41 +27,38 @@ exports.handler = async (event) => {
     const sheets = google.sheets({ version: "v4", auth });
 
     const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
+
+    // 🔥 Solo 1 range, el correcto:
     const RANGE = "Registros!A:T";
 
-    // Crear ID
+    // Generar ID único corto
     const id = uuidShort();
 
-    // CLIENTE — REENSAMBLADO
-    const cliente = {
-      dni: body.clienteDni || "",
-      nombre: body.clienteNombre || "",
-      tel: body.clienteTel || ""
-    };
-
+    // Armar fila EXACTA para columnas A–T (20 columnas)
     const row = [
-      id,
-      new Date().toISOString(),
-      body.asesor || "",
-      body.cargo || "",
-      body.idLlamada || "",
-      body.idContacto || "",
-      body.tipo || "",
-      cliente.dni,
-      cliente.nombre,
-      cliente.tel,
-      body.tipificacion || "",
-      body.observacionCliente || "",
-      body.resumen || "",
-      body.nota || "",
-      body.reincidencia || "",
-      JSON.stringify(body.items || []),
-      JSON.stringify(body.images || []),
-      body.compromiso || "",
-      body.firmaUrl || "",
-      body.fechaHora || ""
+      id,                              // A - ID
+      new Date().toISOString(),        // B - FechaHora
+      body.asesor || "",               // C - Asesor
+      body.cargo || "",                // D - Cargo
+      body.idLlamada || "",            // E - ID Llamada
+      body.idContacto || "",           // F - ID Contacto
+      body.tipo || "",                 // G - Tipo
+      body.cliente?.dni || "",         // H - DNI Cliente
+      body.cliente?.nombre || "",      // I - Nombre Cliente
+      body.cliente?.tel || "",         // J - Tel Cliente
+      body.tipificacion || "",         // K - Tipificación
+      body.observacionCliente || "",   // L - Observación
+      body.resumen || "",              // M - Resumen
+      body.nota || "",                 // N - Nota %
+      body.reincidencia || "",         // O - Reincidencia
+      JSON.stringify(body.items || []),// P - Items
+      JSON.stringify(body.images || []),// Q - Images
+      body.estado || "",               // R - Estado
+      body.compromiso || "",           // S - Compromiso
+      body.firmaUrl || ""              // T - FirmaUrl
     ];
 
+    // Escribir fila en Sheets
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: RANGE,
@@ -74,6 +72,7 @@ exports.handler = async (event) => {
     };
 
   } catch (err) {
+    console.error("ERROR REGISTER:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({ ok: false, error: err.message }),

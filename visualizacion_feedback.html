@@ -5,17 +5,24 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Visualización Feedback</title>
 
+<!-- Librería para exportar PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+
 <style>
   body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
-  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
+  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;
+        box-shadow:0 6px 18px rgba(10,20,30,0.06)}
   h2{margin-top:0}
   input{width:100%;padding:8px;border:1px solid #e6e9ef;border-radius:6px}
-  .doc{border:1px solid #e6eef9;padding:12px;border-radius:6px;margin-top:12px;background:#fff}
-  .nota{background:#ffecec;border:1px solid #ffbdbd;color:#b30000;padding:10px;border-radius:6px;font-weight:700;text-align:center}
+  .doc{border:1px solid #e6eef9;padding:20px;border-radius:6px;margin-top:12px;background:#fff}
+  .nota{background:#ffecec;border:1px solid #ffbdbd;color:#b30000;
+        padding:10px;border-radius:6px;font-weight:700;text-align:center}
   .firma{border:1px solid #ddd;padding:6px;border-radius:6px;display:inline-block;margin-top:8px}
-  .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:12px}
+  .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;
+       cursor:pointer;margin-top:12px}
 </style>
 </head>
+
 <body>
 
 <div class="card">
@@ -26,7 +33,7 @@
 
   <div style="display:flex;gap:8px">
     <button class="btn" onclick="showFeedback()">Mostrar</button>
-    <button class="btn" onclick="downloadHtml()">Descargar HTML</button>
+    <button class="btn" onclick="downloadPDF()">Descargar PDF</button>
   </div>
 
   <div id="preview" class="doc" style="margin-top:14px">
@@ -39,20 +46,21 @@
 <!-- ========================================= -->
 <script type="module">
 
-/* ===== IMPORTAR FIREBASE DESDE firebase.js ===== */
+/* === IMPORTAR FIREBASE DESDE firebase.js === */
 import { db, storage } from "./js/firebase.js";
 
-/* Firestore (VERSIÓN 9) */
+/* Firestore */
 import {
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-/* Storage (VERSIÓN 9) */
+/* Storage */
 import {
   ref,
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
 
 
 /* ===========================================================
@@ -69,7 +77,7 @@ async function showFeedback() {
     const rec = snap.data();
     rec.id = id;
 
-    // cargar imágenes (muy importante)
+    // cargar imágenes del Storage
     rec.imagenes = await loadImages(rec.imagenes || []);
 
     const html = buildTemplate(rec);
@@ -83,22 +91,24 @@ async function showFeedback() {
 
 
 /* ===========================================================
-   📥 CORREGIR CARGA DE IMÁGENES (FUNCIONA CON URL Y RUTA)
+   📥 CARGAR IMÁGENES DESDE FIREBASE STORAGE
 =========================================================== */
 async function loadImages(list) {
   const arr = [];
 
   for (const img of list) {
     try {
-      // Caso 1: ya es una URL completa
+
+      // Caso: ya viene como URL completa
       if (img.url?.startsWith("https://")) {
         arr.push({ data: img.url });
         continue;
       }
 
-      // Caso 2: es una ruta dentro del bucket
+      // Caso: viene como storagePath
       const storagePath = img.storagePath || img.url;
       const url = await getDownloadURL(ref(storage, storagePath));
+
       arr.push({ data: url });
 
     } catch (err) {
@@ -110,8 +120,9 @@ async function loadImages(list) {
 }
 
 
+
 /* ===========================================================
-   📄 TEMPLATE HTML DEL FEEDBACK
+   📄 TEMPLATE HTML DEL FEEDBACK (CON IMÁGENES GRANDES)
 =========================================================== */
 function buildTemplate(rec) {
 
@@ -121,7 +132,8 @@ function buildTemplate(rec) {
 
   const imgsHtml = rec.imagenes.length
     ? rec.imagenes.map(im =>
-        `<img src="${im.data}" style="max-width:120px;margin-right:8px;border-radius:6px">`
+        `<img src="${im.data}" 
+              style="width:100%;max-width:600px;border-radius:8px;margin-top:10px">`
       ).join("")
     : "<em>Sin imágenes</em>";
 
@@ -135,79 +147,93 @@ function buildTemplate(rec) {
     : "<em>Sin ítems</em>";
 
   const firmaHtml = rec.firmaUrl
-    ? `<div class="firma"><img src="${rec.firmaUrl}" style="max-width:260px"></div>`
-    : `<div class="firma" style="height:80px;display:flex;align-items:center;justify-content:center;color:#64748b">
+    ? `<div class="firma"><img src="${rec.firmaUrl}" style="width:100%;max-width:260px"></div>`
+    : `<div class="firma" style="height:80px;display:flex;align-items:center;
+                               justify-content:center;color:#64748b">
          SIN FIRMA
        </div>`;
 
   return `
-    <div style="display:flex;justify-content:space-between;gap:16px">
-      <div style="flex:1">
+    <div style="display:flex;flex-direction:column;gap:20px">
 
-        <h3 style="margin:0">RETROALIMENTACIÓN</h3>
-        <div style="color:#64748b">Fecha: ${fecha}</div>
+      <div style="display:flex;justify-content:space-between;gap:16px">
+        <div style="flex:1">
+          <h3 style="margin:0">RETROALIMENTACIÓN</h3>
+          <div style="color:#64748b">Fecha: ${fecha}</div>
 
-        <div style="margin-top:10px"><strong>Asesor:</strong> ${rec.asesor}</div>
-        <div><strong>Cargo:</strong> ${rec.cargo}</div>
+          <div style="margin-top:10px"><strong>Asesor:</strong> ${rec.asesor}</div>
+          <div><strong>Cargo:</strong> ${rec.cargo}</div>
 
-        <div style="margin-top:10px">
-          <strong>Cliente:</strong> ${rec.cliente?.nombre || ""} 
-          (DNI: ${rec.cliente?.dni || ""})
-        </div>
+          <div style="margin-top:10px">
+            <strong>Cliente:</strong> ${rec.cliente?.nombre || ""} 
+            (DNI: ${rec.cliente?.dni || ""})
+          </div>
 
-        <div style="margin-top:10px">
-          <strong>Resumen:</strong>
-          <div style="padding:8px;background:#fbfdff;border-radius:6px">
-            ${rec.resumen}
+          <div style="margin-top:10px">
+            <strong>Resumen:</strong>
+            <div style="padding:8px;background:#fbfdff;border-radius:6px">
+              ${rec.resumen}
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <strong>Items observados:</strong><br>
+            ${itemsHtml}
+          </div>
+
+          <div style="margin-top:10px">
+            <strong>Evidencias:</strong>
+            <div>${imgsHtml}</div>
+          </div>
+
+          <div style="margin-top:10px">
+            <strong>Compromiso del agente:</strong>
+            <div style="padding:8px;border:1px dashed #e6eef9;border-radius:6px">
+              ${rec.compromiso || "<em>Vacío</em>"}
+            </div>
           </div>
         </div>
 
-        <div style="margin-top:10px">
-          <strong>Items observados:</strong><br>
-          ${itemsHtml}
-        </div>
-
-        <div style="margin-top:10px">
-          <strong>Evidencias:</strong><br>
-          ${imgsHtml}
-        </div>
-
-        <div style="margin-top:10px">
-          <strong>Compromiso del agente:</strong>
-          <div style="padding:8px;border:1px dashed #e6eef9;border-radius:6px">
-            ${rec.compromiso || "<em>Vacío</em>"}
+        <div style="width:260px">
+          <div class="nota" style="font-size:28px">${rec.nota || 0}%</div>
+          <div style="margin-top:12px">${firmaHtml}</div>
+          <div style="margin-top:12px;color:#64748b">
+            ID de registro:<br><strong>${rec.id}</strong>
           </div>
         </div>
       </div>
 
-      <div style="width:260px">
-        <div class="nota" style="font-size:28px">${rec.nota || 0}%</div>
-        <div style="margin-top:12px">${firmaHtml}</div>
-        <div style="margin-top:12px;color:#64748b">ID: ${rec.id}</div>
-      </div>
     </div>
   `;
 }
 
 
+
 /* ===========================================================
-   📥 DESCARGAR COMO HTML
+   📥 DESCARGAR PDF (html2pdf)
 =========================================================== */
-window.downloadHtml = function () {
-  const content = document.getElementById("preview").innerHTML;
-  if (!content) return alert("Primero genera la vista");
+window.downloadPDF = function () {
 
-  const blob = new Blob(
-    [`<html><head><meta charset="utf-8"></head><body>${content}</body></html>`],
-    { type: "text/html" }
-  );
+  const elemento = document.getElementById("preview");
+  const id = document.getElementById("searchId").value || "feedback";
 
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = (document.getElementById("searchId").value || "feedback") + ".html";
-  a.click();
+  if (!elemento.innerHTML.trim())
+    return alert("Primero genera la vista");
+
+  const opt = {
+    margin: 10,
+    filename: `${id}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  };
+
+  html2pdf().set(opt).from(elemento).save();
 };
 
+
+
+/* Exponer función */
 window.showFeedback = showFeedback;
 
 </script>

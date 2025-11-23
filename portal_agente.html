@@ -209,10 +209,12 @@ window.openDetail = async function (id) {
 
     const fecha = parseFecha(rec).toLocaleString("es-PE");
     const items = rec.items || [];
-    const evidencias = (rec.imagenes || rec.images || []).length;
-
-    const itemsText = items.map(it => `${it.name} (${it.perc}%)`).join("; ");
-
+    const imagenes = rec.imagenes || rec.images || [];
+    const evidenciasHtml = imagenes.map(im => `
+      <img src="${im.url || im.data}" 
+           style="width:100%; max-width:600px; border-radius:8px; margin-top:10px">
+    `).join("");
+    
     feedbackInfo.innerHTML = `
       <div><b>ID:</b> ${id}</div>
       <div><b>Fecha:</b> ${fecha}</div>
@@ -220,7 +222,11 @@ window.openDetail = async function (id) {
       <div><b>Tipo:</b> ${rec.tipo || ""}</div>
       <div style="margin-top:8px"><b>Resumen:</b> ${rec.resumen || ""}</div>
       <div style="margin-top:8px"><b>Items:</b> ${itemsText || "Sin items"}</div>
-      <div style="margin-top:8px"><b>Evidencias:</b> ${evidencias} imagen(es)</div>
+    
+      <div style="margin-top:8px">
+        <b>Evidencias:</b> ${imagenes.length} imagen(es)
+        <div style="margin-top:8px">${evidenciasHtml}</div>
+      </div>
     `;
 
     if (rec.estado === "COMPLETADO") {
@@ -311,4 +317,5 @@ window.saveSignature = async function () {
 
 </body>
 </html>
+
 

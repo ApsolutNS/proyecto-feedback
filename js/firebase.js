@@ -9,10 +9,10 @@ const firebaseConfig = {
   storageBucket: "feedback-app-ac30e.firebasestorage.app",
   messagingSenderId: "512179147778",
   appId: "1:512179147778:web:795e4a8b177fe766d3431b",
-  measurementId: "G-X6MP0FFH9P"
 };
 
 const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+

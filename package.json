@@ -1,6 +1,10 @@
 {
-  "name": "feedback",
+  "name": "monitoring-app",
   "version": "1.0.0",
-  "type": "module",
-  "dependencies": {}
+  "dependencies": {
+    "googleapis": "^131.0.0"
+  },
+  "engines": {
+    "node": "18"
+  }
 }

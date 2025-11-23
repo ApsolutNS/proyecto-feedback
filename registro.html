@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Registro de Monitoreo</title>
+<title>Registro del Monitoreo</title>
 
 <style>
   body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
@@ -21,6 +21,7 @@
   .img-preview{max-height:90px;margin-right:8px;border-radius:6px}
 </style>
 </head>
+
 <body>
 
 <div class="card">
@@ -41,6 +42,7 @@
       <select id="asesor"></select>
       <small class="small">* Cargado desde Firestore</small>
     </div>
+
     <div style="width:220px">
       <label>Cargo</label>
       <select id="cargo">
@@ -58,10 +60,12 @@
       <label>DNI cliente</label>
       <input id="cliDni">
     </div>
+
     <div class="col">
       <label>Nombre cliente</label>
       <input id="cliNombre">
     </div>
+
     <div class="col">
       <label>Teléfono</label>
       <input id="cliTel">
@@ -96,16 +100,21 @@
 </div>
 
 <script type="module">
-/* --------------------- IMPORTS FIREBASE ------------------------- */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+
+/* --------------------- FIREBASE IMPORTS ---------------------- */
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+
 import {
   getFirestore, collection, addDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
 import {
   getStorage, ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-/* --------------------- CONFIG FIREBASE ------------------------- */
+/* --------------------- CONFIG ------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
@@ -120,14 +129,34 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-/* --------------------- CARGAR ASESORES ------------------------- */
+/* --------------------- CARGAR ASESORES (nombre + GC) ------------------------- */
 async function cargarAsesores() {
-  const q = await getDocs(collection(db, "asesores"));
-  const asesores = [];
-  q.forEach(doc => asesores.push(doc.data().nombre));
+  try {
+    const snap = await getDocs(collection(db, "asesores"));
+    const lista = [];
 
-  document.getElementById("asesor").innerHTML =
-    asesores.map(a => `<option>${a}</option>`).join("");
+    snap.forEach(d => {
+      const data = d.data();
+      lista.push({
+        id: d.id,
+        nombre: data.nombre || "SIN NOMBRE",
+        gc: data.GC || "SIN GC"
+      });
+    });
+
+    lista.sort((a,b)=> a.nombre.localeCompare(b.nombre));
+
+    const sel = document.getElementById("asesor");
+
+    sel.innerHTML = lista.map(a =>
+      `<option value="${a.nombre}" data-gc="${a.gc}">
+         ${a.nombre} — ${a.gc}
+       </option>`
+    ).join("");
+
+  } catch (err) {
+    console.error("Error cargando asesores:", err);
+  }
 }
 cargarAsesores();
 
@@ -154,57 +183,44 @@ function updateDetected(){
   tipoDetectado.value = detectarTipoTexto(v);
 }
 
-/* --------------------- ITEMS DISPONIBLES (ACTUALIZADO) --------
-   name  = descripción del ítem
-   perc  = peso dentro del grupo (se usa en PENCUF)
-   group = ERROR | PENCUF | PECNEG | PECUF | PECCUMP | NONE
------------------------------------------------------------------*/
+/* --------------------- ITEMS DISPONIBLES ---------------------- */
 const ITEMS = [
-  // ERROR INEXCUSABLE (nota = 0)
-  { name: "Corte de Gestión", perc: 0, group: "ERROR" },
-  { name: "Insulto / Falta de Respeto", perc: 0, group: "ERROR" },
-  { name: "Normativa Regulatoria", perc: 0, group: "ERROR" },
-  { name: "Protección de datos", perc: 0, group: "ERROR" },
+  ["Corte de Gestión","ERROR_INEXCUSABLE"],
+  ["Insulto / Falta de Respeto","ERROR_INEXCUSABLE"],
+  ["Normativa Regulatoria","ERROR_INEXCUSABLE"],
+  ["Protección de datos","ERROR_INEXCUSABLE"],
 
-  // PENCUF (grupo 25%, proporcional)
-  { name: "Contestación sin demora", perc: 5, group: "PENCUF" },
-  { name: "Optimización de esperas", perc: 5, group: "PENCUF" },
-  { name: "Empatía e implicación", perc: 7, group: "PENCUF" },
-  { name: "Escucha Activa", perc: 7, group: "PENCUF" },
-  { name: "Sondeo", perc: 7, group: "PENCUF" },
-  { name: "Solicita datos de forma correcta y oportuna", perc: 7, group: "PENCUF" },
-  { name: "Herramientas de Gestión", perc: 10, group: "PENCUF" },
-  { name: "Codificación y Registro inConcert", perc: 7, group: "PENCUF" },
-  { name: "Codificación y Registro en Monitor Logístico", perc: 7, group: "PENCUF" },
-  { name: "Codificación y Registro en SmartSheet", perc: 7, group: "PENCUF" },
-  { name: "Presentación", perc: 7, group: "PENCUF" },
-  { name: "Personalización", perc: 7, group: "PENCUF" },
-  { name: "Despedida", perc: 7, group: "PENCUF" },
-  { name: "Encuesta de satisfacción", perc: 10, group: "PENCUF" },
+  ["Presentación","PENCUF"],
+  ["Personalización","PENCUF"],
+  ["Despedida","PENCUF"],
+  ["Escucha Activa","PENCUF"],
+  ["Sondeo","PENCUF"],
+  ["Optimización de esperas","PENCUF"],
+  ["Solicita datos correctamente","PENCUF"],
+  ["Herramientas de Gestión","PENCUF"],
+  ["Codificación y Registro","PENCUF"],
+  ["Encuesta de satisfacción","PENCUF"],
+  ["Contestación sin demora","PENCUF"],
 
-  // PECNEG (grupo 30%, si hay ≥1 se descuenta 30)
-  { name: "Lenguaje", perc: 30, group: "PECNEG" },
-  { name: "Voz", perc: 30, group: "PECNEG" },
-  { name: "Redacta de forma Correcta", perc: 30, group: "PECNEG" },
-  { name: "Imagen trasladada", perc: 30, group: "PECNEG" },
-  { name: "Actitud comercial", perc: 30, group: "PECNEG" },
-  { name: "Operativa", perc: 30, group: "PECNEG" },
-  { name: "Tramita la gestión correspondiente", perc: 30, group: "PECNEG" },
-  { name: "Transferencia", perc: 30, group: "PECNEG" },
+  ["Lenguaje","PECNEG"],
+  ["Voz","PECNEG"],
+  ["Actitud comercial","PECNEG"],
+  ["Operativa","PECNEG"],
+  ["Imagen trasladada","PECNEG"],
+  ["Redacta de forma correcta","PECNEG"],
+  ["Transferencia","PECNEG"],
+  ["Tramita la gestión correspondiente","PECNEG"],
 
-  // PECUF (grupo 35%, si hay ≥1 se descuenta 35)
-  { name: "Cumple con devolución de llamado", perc: 35, group: "PECUF" },
-  { name: "Actitud - Manejo de llamada", perc: 35, group: "PECUF" },
-  { name: "Conocimientos para resolver la consulta", perc: 35, group: "PECUF" },
-  { name: "Asesoramiento de Producto o Servicio (Pagina Web | Posible Compra | Servicios)", perc: 35, group: "PECUF" },
-  { name: "Solución al primer contacto", perc: 35, group: "PECUF" },
+  ["Actitud - Manejo de llamada","PECUF"],
+  ["Solución al primer contacto","PECUF"],
+  ["Cumple con devolución de llamado","PECUF"],
+  ["Conocimientos para resolver la consulta","PECUF"],
+  ["Asesoramiento de producto/servicio","PECUF"],
 
-  // PECCUMP (grupo 10%, si hay ≥1 se descuenta 10)
-  { name: "Verificación de datos", perc: 10, group: "PECCUMP" },
-  { name: "Damos el número de Ticket", perc: 10, group: "PECCUMP" },
+  ["Verificación de datos","PECCUMP"],
+  ["Número de Ticket entregado","PECCUMP"],
 
-  // Ninguno (no penaliza)
-  { name: "Ninguno", perc: 0, group: "NONE" }
+  ["Ninguno","NINGUNO"]
 ];
 
 /* --------------------- AGREGAR ITEM ---------------------- */
@@ -213,21 +229,15 @@ window.addItemBlock = function() {
   w.className = 'item-block';
   w.innerHTML = `
     <select>
-      ${ITEMS.map(it => 
-        `<option value="${it.name}||${it.perc}||${it.group}">
-           ${it.name} (${it.perc}%)
-         </option>`
-      ).join("")}
+      ${ITEMS.map(it => `<option value="${it[0]}||${it[1]}">${it[0]}</option>`).join("")}
     </select>
-    <textarea placeholder="Detalle del item"></textarea>
+    <textarea placeholder="Detalle del ítem"></textarea>
     <button class="btn ghost" style="width:90px" onclick="this.parentNode.remove()">Eliminar</button>
   `;
   document.getElementById("itemsContainer").appendChild(w);
-};
+}
 
-window.clearItems = function(){
-  document.getElementById("itemsContainer").innerHTML = "";
-};
+window.clearItems = ()=> document.getElementById("itemsContainer").innerHTML = "";
 
 /* --------------------- PREVIEW IMÁGENES ---------------------- */
 document.getElementById('imgs').addEventListener('change', function(){
@@ -247,104 +257,32 @@ document.getElementById('imgs').addEventListener('change', function(){
   });
 });
 
-/* --------------------- CÁLCULO DE NOTA ---------------------- */
-/*
-  Reglas:
-  - Si hay un ítem group === "ERROR" → nota = 0, tipo = "ERROR INEXCUSABLE"
-  - PENCUF (25%): descuento = (suma perc / 100) * 25
-  - PECNEG (30%): si hay ≥1 → descuento = 30
-  - PECUF (35%): si hay ≥1 → descuento = 35
-  - PECCUMP (10%): si hay ≥1 → descuento = 10
-  - Sólo NONE → nota = 100, tipo = "NINGUNO"
-*/
-function calcularNotaConDetalle(items) {
-  const detalle = {
-    ERROR: [],
-    PENCUF: [],
-    PECNEG: [],
-    PECUF: [],
-    PECCUMP: [],
-    NONE: []
-  };
+/* --------------------- FORMULA DE NOTA ---------------------- */
+function calcularNota(items){
 
-  for (const it of items) {
-    if (!detalle[it.group]) detalle[it.group] = [];
-    detalle[it.group].push(it);
-  }
+  if(items.some(i => i.tipo === "ERROR_INEXCUSABLE")) return 0;
 
-  const descuentos = {
+  const grupos = {
     PENCUF: 0,
     PECNEG: 0,
     PECUF: 0,
     PECCUMP: 0
   };
 
-  // Caso ERROR INEXCUSABLE
-  if (detalle.ERROR.length > 0) {
-    return {
-      nota: 0,
-      tipo: "ERROR INEXCUSABLE",
-      detalle,
-      descuentos
-    };
-  }
-
-  // Sólo "Ninguno" (o sin ítems) → 100%
-  const totalItems = items.length;
-  const nonNone = items.filter(i => i.group !== "NONE").length;
-  if (totalItems > 0 && nonNone === 0) {
-    return {
-      nota: 100,
-      tipo: "NINGUNO",
-      detalle,
-      descuentos
-    };
-  }
+  items.forEach(i=> grupos[i.tipo]++ );
 
   let nota = 100;
-  let tipo = "NINGUNO";
 
-  // PENCUF (25%) → proporcional
-  if (detalle.PENCUF && detalle.PENCUF.length > 0) {
-    const sumaPerc = detalle.PENCUF.reduce((acc, it) => acc + (it.perc || 0), 0);
-    descuentos.PENCUF = (sumaPerc / 100) * 25;
-    nota -= descuentos.PENCUF;
-    tipo = "PENCUF";
-  }
+  if(grupos.PENCUF === 1)       nota = 87.5;
+  else if(grupos.PENCUF >= 2)   nota = 75;
 
-  // PECNEG (30%)
-  if (detalle.PECNEG && detalle.PECNEG.length > 0) {
-    descuentos.PECNEG = 30;
-    nota -= descuentos.PECNEG;
-    tipo = "PECNEG";
-  }
+  if(grupos.PECNEG >= 1)        nota = 70;
 
-  // PECUF (35%)
-  if (detalle.PECUF && detalle.PECUF.length > 0) {
-    descuentos.PECUF = 35;
-    nota -= descuentos.PECUF;
-    tipo = "PECUF";
-  }
+  if(grupos.PECUF >= 1)         nota = 65;
 
-  // PECCUMP (10%)
-  if (detalle.PECCUMP && detalle.PECCUMP.length > 0) {
-    descuentos.PECCUMP = 10;
-    nota -= descuentos.PECCUMP;
-    // Si no hay PENCUF/PECNEG/PECUF, tipo será PECCUMP
-    if (tipo === "NINGUNO") {
-      tipo = "PECCUMP";
-    }
-  }
+  if(grupos.PECCUMP >= 1)       nota = 90;
 
-  // Redondear a 1 decimal, mínimo 0
-  nota = Math.max(0, Math.round(nota * 10) / 10);
-
-  return {
-    nota,
-    tipo,
-    detalle,
-    descuentos
-  };
+  return Math.max(0, nota);
 }
 
 /* --------------------- GUARDAR REGISTRO ---------------------- */
@@ -353,22 +291,18 @@ window.submitRecord = async function() {
   msgEl.style.color = 'green';
   msgEl.textContent = "⏳ Subiendo...";
 
-  try {
-    // ITEMS SELECCIONADOS
+  try{
     const items = [...document.querySelectorAll(".item-block")].map(b=>{
-      const [name, percStr, group] = b.querySelector("select").value.split("||");
+      const [name,tipo] = b.querySelector("select").value.split("||");
       return {
         name,
-        perc: Number(percStr),
-        group,
-        detail: b.querySelector("textarea").value || ""
+        tipo,
+        detail: b.querySelector("textarea").value
       };
     });
 
-    // CÁLCULO NOTA + DETALLE
-    const calc = calcularNotaConDetalle(items);
+    const nota = calcularNota(items);
 
-    // IMÁGENES
     const files = document.getElementById('imgs').files;
     const imageURLs = [];
 
@@ -376,15 +310,18 @@ window.submitRecord = async function() {
       const storageRef = ref(storage, `monitoreo_imagenes/${Date.now()}_${f.name}`);
       await uploadBytes(storageRef, f);
       const url = await getDownloadURL(storageRef);
-      imageURLs.push({name: f.name, url});
+      imageURLs.push({name: f.name, url, storagePath: storageRef.fullPath});
     }
 
-    // OBJETO FINAL A GUARDAR
+    const asesorSel = document.getElementById('asesor');
+    const gc = asesorSel.options[asesorSel.selectedIndex].dataset.gc;
+
     const data = {
       idLlamada: idLlamada.value,
       idContacto: idContacto.value,
       tipo: tipoDetectado.value,
-      asesor: asesor.value,
+      asesor: asesorSel.value,
+      gc,
       cargo: cargo.value,
       cliente:{
         dni: cliDni.value,
@@ -395,25 +332,18 @@ window.submitRecord = async function() {
       observacionCliente: cliObs.value,
       resumen: resumen.value,
       items,
+      nota,
       imagenes: imageURLs,
-      nota: calc.nota,
-      calculo: {
-        tipo: calc.tipo,
-        detalle: calc.detalle,
-        descuentos: calc.descuentos
-      },
-      fecha: new Date().toISOString(),
-      estado: "PENDIENTE"
+      fecha: new Date().toISOString()
     };
 
-    const newDoc = await addDoc(collection(db, "registros"), data);
+    await addDoc(collection(db, "registros"), data);
 
     msgEl.style.color = 'green';
-    msgEl.textContent = "✔ Guardado correctamente (ID: " + newDoc.id + ")";
+    msgEl.textContent = "✔ Guardado correctamente";
 
     clearItems();
     document.getElementById('imgPreview').innerHTML = "";
-    document.getElementById('imgs').value = "";
 
   } catch(err){
     msgEl.style.color = 'red';
@@ -421,8 +351,8 @@ window.submitRecord = async function() {
     console.error(err);
   }
 }
+
 </script>
 
 </body>
 </html>
-

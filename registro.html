@@ -5,11 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Registro de Monitoreo</title>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
-
 <style>
   body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
   .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
@@ -44,7 +39,7 @@
     <div style="flex:1">
       <label>Asesor</label>
       <select id="asesor"></select>
-      <small class="small">* Cargado desde /data/asesores.json</small>
+      <small class="small">* Cargado desde Firestore</small>
     </div>
     <div style="width:220px">
       <label>Cargo</label>
@@ -100,42 +95,53 @@
   <div id="msg" style="margin-top:12px;color:green"></div>
 </div>
 
-<script>
-// --------------------------------------
-// ⚡ Inicializar Firebase
-// --------------------------------------
+<script type="module">
+
+/* --------------------- IMPORTS FIREBASE ------------------------- */
+
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+
+import {
+  getFirestore, collection, addDoc, getDocs
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
+/* --------------------- CONFIG FIREBASE ------------------------- */
+
 const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
   projectId: "feedback-app-ac30e",
-  storageBucket: "feedback-app-ac30e.firebasestorage.app",
+  storageBucket: "feedback-app-ac30e.appspot.com",
   messagingSenderId: "512179147778",
   appId: "1:512179147778:web:795e4a8b177fe766d3431b",
   measurementId: "G-X6MP0FFH9P"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-// --------------------------------------
-// Cargar asesores
-// --------------------------------------
+/* --------------------- CARGAR ASESORES ------------------------- */
+
 async function cargarAsesores() {
-  try {
-    const res = await fetch("/data/asesores.json");
-    const lista = await res.json();
+  const q = await getDocs(collection(db, "asesores"));
+  const asesores = [];
+  q.forEach(doc => asesores.push(doc.data().nombre));
 
-    document.getElementById("asesor").innerHTML =
-      lista.map(a => `<option>${a}</option>`).join("");
-
-  } catch (err) { console.error(err); }
+  document.getElementById("asesor").innerHTML =
+    asesores.map(a => `<option>${a}</option>`).join("");
 }
+
 cargarAsesores();
 
-// --------------------------------------
-// Detectar tipo
-// --------------------------------------
+/* --------------------- DETECTAR TIPO -------------------------- */
+
 function detectarTipoTexto(text){
   if(!text) return 'NO IDENTIFICADO';
   text = text.toLowerCase();
@@ -158,9 +164,8 @@ function updateDetected(){
   tipoDetectado.value = detectarTipoTexto(v);
 }
 
-// --------------------------------------
-// Items disponibles
-// --------------------------------------
+/* --------------------- ITEMS DISPONIBLES ---------------------- */
+
 const ITEMS = [
   ["Corte de Gestión",5],["Insulto / Falta de Respeto",10],["Normativa Regulatoria",8],
   ["Protección de datos",10],["Contestación sin demora",6],["Optimización de esperas",4],
@@ -174,8 +179,9 @@ const ITEMS = [
   ["Ticket entregado",1],["Ninguno",0]
 ];
 
-// --------------------------------------
-function addItemBlock(){
+/* --------------------- AGREGAR ITEM ---------------------- */
+
+window.addItemBlock = function() {
   const w = document.createElement('div');
   w.className = 'item-block';
   w.innerHTML = `
@@ -188,13 +194,12 @@ function addItemBlock(){
   document.getElementById("itemsContainer").appendChild(w);
 }
 
-function clearItems(){
+window.clearItems = function(){
   document.getElementById("itemsContainer").innerHTML = "";
 }
 
-// --------------------------------------
-// Preview imágenes
-// --------------------------------------
+/* --------------------- PREVIEW IMÁGENES ---------------------- */
+
 document.getElementById('imgs').addEventListener('change', function(){
   const preview = document.getElementById('imgPreview');
   preview.innerHTML = "";
@@ -212,18 +217,14 @@ document.getElementById('imgs').addEventListener('change', function(){
   });
 });
 
-// --------------------------------------
-// ⭐ Guardar registro en Firebase
-// --------------------------------------
-async function submitRecord(){
+/* --------------------- GUARDAR REGISTRO ---------------------- */
+
+window.submitRecord = async function() {
   const msgEl = document.getElementById('msg');
   msgEl.style.color = 'green';
   msgEl.textContent = "⏳ Subiendo...";
 
   try{
-    // -------------------------------
-    // Items
-    // -------------------------------
     const items = [...document.querySelectorAll(".item-block")].map(b=>{
       const [name,perc] = b.querySelector("select").value.split("||");
       return {
@@ -233,22 +234,16 @@ async function submitRecord(){
       };
     });
 
-    // -------------------------------
-    // Subida de imágenes a Firebase Storage
-    // -------------------------------
     const files = document.getElementById('imgs').files;
     const imageURLs = [];
 
     for(const f of files){
-      const ref = storage.ref(`monitoreo_imagenes/${Date.now()}_${f.name}`);
-      await ref.put(f);
-      const url = await ref.getDownloadURL();
+      const storageRef = ref(storage, `monitoreo_imagenes/${Date.now()}_${f.name}`);
+      await uploadBytes(storageRef, f);
+      const url = await getDownloadURL(storageRef);
       imageURLs.push({name: f.name, url});
     }
 
-    // -------------------------------
-    // Crear objeto final
-    // -------------------------------
     const data = {
       idLlamada: idLlamada.value,
       idContacto: idContacto.value,
@@ -268,10 +263,7 @@ async function submitRecord(){
       fecha: new Date().toISOString()
     };
 
-    // -------------------------------
-    // Guardar en Firestore
-    // -------------------------------
-    const newDoc = await db.collection("registros").add(data);
+    const newDoc = await addDoc(collection(db, "registros"), data);
 
     msgEl.style.color = 'green';
     msgEl.textContent = "✔ Guardado correctamente (ID: " + newDoc.id + ")";
@@ -287,6 +279,6 @@ async function submitRecord(){
 }
 
 </script>
+
 </body>
 </html>
-

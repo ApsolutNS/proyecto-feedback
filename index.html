@@ -85,20 +85,16 @@
 
 <script type="module">
 
-/* ------------------------------
-   IMPORTAR FIREBASE APP CENTRAL
------------------------------- */
 import { db } from "./js/firebase.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-/* ------------------------------
-   PARSE FECHAS
------------------------------- */
+/* ------------------------------ */
+/* PARSE FECHA                   */
+/* ------------------------------ */
 function parseFecha(fecha) {
   if (!fecha) return new Date();
   if (fecha.includes("T")) return new Date(fecha);
 
-  // formato antiguo: 22/11/2024 08:10
   if (fecha.includes("/")) {
     const [d, m, yRest] = fecha.split("/");
     const [y, h] = yRest.split(" ");
@@ -108,25 +104,25 @@ function parseFecha(fecha) {
   return new Date(fecha);
 }
 
-/* ------------------------------
-   OBTENER REGISTROS
------------------------------- */
+/* ------------------------------ */
+/* OBTENER REGISTROS             */
+/* ------------------------------ */
 async function getAllRecords() {
   const snap = await getDocs(collection(db, "registros"));
   const arr = [];
 
   snap.forEach(doc => {
     const data = doc.data();
-    data.id = doc.id;
-    arr.push(data);
+    data.id = doc.id;       // mantener ID
+    arr.push(data);         // mantener TODOS los campos, incluido GC
   });
 
   return arr;
 }
 
-/* ------------------------------
-   SEMANAS DEL MES
------------------------------- */
+/* ------------------------------ */
+/* SEMANAS DEL MES               */
+/* ------------------------------ */
 function getWeeksOfMonth(date = new Date()) {
   const y = date.getFullYear(), m = date.getMonth();
   const last = new Date(y, m + 1, 0).getDate();
@@ -137,13 +133,12 @@ function getWeeksOfMonth(date = new Date()) {
     weeks.push({ startDay: d, endDay: Math.min(d + 6, last) });
     d += 7;
   }
-
   return weeks;
 }
 
-/* ------------------------------
-   CONFIG CHART
------------------------------- */
+/* ------------------------------ */
+/* CONFIG CHART                  */
+/* ------------------------------ */
 const chart = new Chart(document.getElementById("chartMonth"), {
   type: "bar",
   data: {
@@ -154,12 +149,14 @@ const chart = new Chart(document.getElementById("chartMonth"), {
       backgroundColor: "#0f4c81"
     }]
   },
-  options: { scales: { y: { beginAtZero: true, max: 100 } } }
+  options: {
+    scales: { y: { beginAtZero: true, max: 100 } }
+  }
 });
 
-/* ------------------------------
-          DASHBOARD
------------------------------- */
+/* ------------------------------ */
+/* DASHBOARD MAIN                */
+/* ------------------------------ */
 async function refreshDashboard() {
 
   let data = await getAllRecords();
@@ -174,7 +171,7 @@ async function refreshDashboard() {
     return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
   });
 
-  /* ---------------- CONTADORES ---------------- */
+  /* ------------ CONTADORES ------------ */
   const counts = {
     EFECTIVA: 0, EFECTIVANK: 0, XPERTO: 0,
     FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
@@ -189,7 +186,7 @@ async function refreshDashboard() {
   document.getElementById("cntIg").innerText = counts.INSTAGRAM;
   document.getElementById("cntMail").innerText = counts.CORREO;
 
-  /* ---------------- RECIENTES ---------------- */
+  /* ------------ RECIENTES ------------ */
   const recent = data.slice().reverse().slice(0, 8);
 
   document.querySelector("#recentTable tbody").innerHTML =
@@ -205,7 +202,7 @@ async function refreshDashboard() {
         </tr>`;
     }).join("") || `<tr><td colspan="4">Sin registros</td></tr>`;
 
-  /* ---------------- TABLA SEMANAL ---------------- */
+  /* ------------ TABLA SEMANAL ------------ */
   const weeks = getWeeksOfMonth();
   const asesores = [...new Set(data.map(r => r.asesor))];
 
@@ -235,7 +232,7 @@ async function refreshDashboard() {
       return row + "</tr>";
     }).join("");
 
-  /* ---------------- GRÁFICO ---------------- */
+  /* ------------ GRÁFICO ------------ */
   const values = weeks.map(w => {
     const recs = data.filter(r => {
       const f = parseFecha(r.fecha);
@@ -257,5 +254,7 @@ refreshDashboard();
 
 </script>
 
+
 </body>
 </html>
+

@@ -64,123 +64,250 @@
   </div>
 </div>
 
-<script>
-function getDB(){
-  return JSON.parse(localStorage.getItem('fb_registros_v1') || '[]');
+<script type="module">
+/* ------------------- IMPORTS FIREBASE -------------------- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+import {
+  getStorage,
+  ref,
+  uploadString,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+
+/* ------------------- CONFIG FIREBASE --------------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
+  authDomain: "feedback-app-ac30e.firebaseapp.com",
+  projectId: "feedback-app-ac30e",
+  storageBucket: "feedback-app-ac30e.appspot.com",
+  messagingSenderId: "512179147778",
+  appId: "1:512179147778:web:795e4a8b177fe766d3431b",
+  measurementId: "G-X6MP0FFH9P"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+/* ------------------- HELPERS FECHA ----------------------- */
+function parseFecha(rec) {
+  // intenta usar fechaHora, luego fecha, tolerando Timestamp o string
+  if (rec.fechaHora) {
+    if (rec.fechaHora.toDate) return rec.fechaHora.toDate();
+    return new Date(rec.fechaHora);
+  }
+  if (rec.fecha) {
+    if (rec.fecha.toDate) return rec.fecha.toDate();
+    return new Date(rec.fecha);
+  }
+  return new Date();
 }
 
-function loadAdvisors(){
-  const db = getDB();
-  const names = [...new Set(db.map(r=>r.asesor).filter(Boolean))];
-  const sel = document.getElementById('selAgent');
-  sel.innerHTML = '<option value="">-- selecciona --</option>';
-  names.forEach(n=> sel.innerHTML += `<option>${n}</option>`);
+/* ------------------- CARGAR LISTA DE ASESORES ------------ */
+async function loadAdvisors() {
+  try {
+    const snap = await getDocs(collection(db, "registros"));
+    const namesSet = new Set();
+    snap.forEach(d => {
+      const data = d.data();
+      if (data.asesor) namesSet.add(data.asesor);
+    });
+
+    const sel = document.getElementById("selAgent");
+    sel.innerHTML = '<option value="">-- selecciona --</option>';
+    [...namesSet].sort().forEach(n => {
+      const opt = document.createElement("option");
+      opt.value = n;
+      opt.textContent = n;
+      sel.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error cargando asesores:", err);
+  }
 }
 loadAdvisors();
 
-function loadAgentList(){
-  const advisor = document.getElementById('selAgent').value;
-  const db = getDB();
-  const list = db.filter(r=> r.asesor === advisor)
-                 .sort((a,b)=> new Date(b.fechaHora) - new Date(a.fechaHora));
-  const tbody = document.querySelector('#agentTable tbody');
+/* ------------------- LISTA POR AGENTE -------------------- */
+window.loadAgentList = async function () {
+  const advisor = document.getElementById("selAgent").value;
+  const tbody = document.querySelector("#agentTable tbody");
 
-  tbody.innerHTML = list.map(r=>`
-    <tr>
-      <td>${r.id}</td>
-      <td>${new Date(r.fechaHora).toLocaleString()}</td>
-      <td>${r.nota}%</td>
-      <td>${r.estado}</td>
-      <td><button onclick="openDetail('${r.id}')">Abrir</button></td>
-    </tr>
-  `).join('') || '<tr><td colspan="5">Sin registros</td></tr>';
-}
+  if (!advisor) {
+    tbody.innerHTML = '<tr><td colspan="5">Selecciona un asesor</td></tr>';
+    return;
+  }
 
+  try {
+    const qRef = query(
+      collection(db, "registros"),
+      where("asesor", "==", advisor)
+    );
+
+    const snap = await getDocs(qRef);
+    const list = [];
+    snap.forEach(d => {
+      const data = d.data();
+      list.push({
+        id: d.id,
+        nota: data.nota ?? 0,
+        estado: data.estado || "PENDIENTE",
+        fecha: parseFecha(data)
+      });
+    });
+
+    list.sort((a, b) => b.fecha - a.fecha);
+
+    tbody.innerHTML =
+      list.map(r => `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.fecha.toLocaleString("es-PE")}</td>
+          <td>${r.nota}%</td>
+          <td>${r.estado}</td>
+          <td><button onclick="openDetail('${r.id}')">Abrir</button></td>
+        </tr>
+      `).join("") || '<tr><td colspan="5">Sin registros</td></tr>';
+
+  } catch (err) {
+    console.error("Error cargando feedbacks del agente:", err);
+    tbody.innerHTML = '<tr><td colspan="5">Error cargando datos</td></tr>';
+  }
+};
+
+/* ------------------- DETALLE Y FIRMA --------------------- */
 let currentRecordId = null;
 
-function openDetail(id){
-  const db = getDB();
-  const rec = db.find(x=>x.id===id);
-  if(!rec) return alert('Registro no encontrado');
-  currentRecordId = id;
-
-  document.getElementById('detailBlock').style.display = 'block';
-
-  document.getElementById('feedbackInfo').innerHTML = `
-    <div><b>ID:</b> ${rec.id}</div>
-    <div><b>Fecha:</b> ${new Date(rec.fechaHora).toLocaleString()}</div>
-    <div><b>Asesor:</b> ${rec.asesor}</div>
-    <div><b>Tipo:</b> ${rec.tipo}</div>
-    <div style="margin-top:8px"><b>Resumen:</b> ${rec.resumen}</div>
-    <div style="margin-top:8px"><b>Items:</b> ${rec.items.map(it=>`${it.name} (${it.perc}%)`).join('; ')}</div>
-    <div style="margin-top:8px"><b>Evidencias:</b> ${rec.images.length} imagen(es)</div>
-  `;
-
-  if(rec.estado === 'COMPLETADO'){
-    document.getElementById('compromiso').value = rec.compromiso || '';
-    if(rec.firmaDataUrl){
-      const img = new Image();
-      img.src = rec.firmaDataUrl;
-      img.style.maxWidth = '320px';
-      document.getElementById('feedbackInfo').appendChild(img);
+window.openDetail = async function (id) {
+  try {
+    const docRef = doc(db, "registros", id);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) {
+      alert("Registro no encontrado");
+      return;
     }
-  } else {
-    document.getElementById('compromiso').value = '';
-    clearCanvas();
+    const rec = snap.data();
+    currentRecordId = id;
+
+    const detailBlock = document.getElementById("detailBlock");
+    const feedbackInfo = document.getElementById("feedbackInfo");
+    const compromisoEl = document.getElementById("compromiso");
+    const agentMsg = document.getElementById("agentMsg");
+
+    detailBlock.style.display = "block";
+    agentMsg.textContent = "";
+
+    const fecha = parseFecha(rec).toLocaleString("es-PE");
+    const items = rec.items || [];
+    const evidencias = (rec.imagenes || rec.images || []).length;
+
+    const itemsText = items.map(it => `${it.name} (${it.perc}%)`).join("; ");
+
+    feedbackInfo.innerHTML = `
+      <div><b>ID:</b> ${id}</div>
+      <div><b>Fecha:</b> ${fecha}</div>
+      <div><b>Asesor:</b> ${rec.asesor || ""}</div>
+      <div><b>Tipo:</b> ${rec.tipo || ""}</div>
+      <div style="margin-top:8px"><b>Resumen:</b> ${rec.resumen || ""}</div>
+      <div style="margin-top:8px"><b>Items:</b> ${itemsText || "Sin items"}</div>
+      <div style="margin-top:8px"><b>Evidencias:</b> ${evidencias} imagen(es)</div>
+    `;
+
+    if (rec.estado === "COMPLETADO") {
+      compromisoEl.value = rec.compromiso || "";
+    } else {
+      compromisoEl.value = "";
+      clearCanvasInternal();
+    }
+
+  } catch (err) {
+    console.error("Error abriendo detalle:", err);
+    alert("Error al abrir el detalle");
   }
-}
+};
 
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let drawing=false;
+/* ------------------- CANVAS FIRMA ------------------------ */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+let drawing = false;
 
-canvas.addEventListener('mousedown', ()=> drawing=true);
-canvas.addEventListener('mouseup', ()=> { drawing=false; ctx.beginPath(); });
-canvas.addEventListener('mouseleave', ()=> { drawing=false; ctx.beginPath(); });
-canvas.addEventListener('mousemove', e=>{
-  if(!drawing) return;
+canvas.addEventListener("mousedown", () => { drawing = true; });
+canvas.addEventListener("mouseup", () => { drawing = false; ctx.beginPath(); });
+canvas.addEventListener("mouseleave", () => { drawing = false; ctx.beginPath(); });
+canvas.addEventListener("mousemove", e => {
+  if (!drawing) return;
   const rect = canvas.getBoundingClientRect();
   ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = '#000';
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#000";
   ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
 });
 
-function clearCanvas(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  document.getElementById('agentMsg').innerText='';
+function clearCanvasInternal() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById("agentMsg").innerText = "";
 }
 
-function saveSignature(){
-  if(!currentRecordId) return alert('Abra un registro primero');
+window.clearCanvas = clearCanvasInternal;
 
-  const db = getDB();
-  const rec = db.find(x=>x.id === currentRecordId);
-  if(!rec) return alert('Registro no encontrado');
+/* ------------------- GUARDAR FIRMA + COMPROMISO ---------- */
+window.saveSignature = async function () {
+  if (!currentRecordId) {
+    alert("Abra un registro primero");
+    return;
+  }
 
-  const compromiso = document.getElementById('compromiso').value.trim();
-  if(!compromiso) return alert('El compromiso es obligatorio');
+  const compromiso = document.getElementById("compromiso").value.trim();
+  const agentMsg = document.getElementById("agentMsg");
 
-  const dataUrl = canvas.toDataURL('image/png');
+  if (!compromiso) {
+    alert("El compromiso es obligatorio");
+    return;
+  }
 
-  rec.compromiso = compromiso;
-  rec.firmaDataUrl = dataUrl;
-  rec.estado = 'COMPLETADO';
+  try {
+    agentMsg.style.color = "green";
+    agentMsg.textContent = "Subiendo firma y actualizando registro...";
 
-  const idx = db.findIndex(x=>x.id === currentRecordId);
-  db[idx] = rec;
+    const dataUrl = canvas.toDataURL("image/png");
+    const sigRef = ref(storage, `firmas/${currentRecordId}.png`);
 
-  localStorage.setItem('fb_registros_v1', JSON.stringify(db));
+    // subir la firma como data_url
+    await uploadString(sigRef, dataUrl, "data_url");
+    const url = await getDownloadURL(sigRef);
 
-  document.getElementById('agentMsg').innerText =
-    'Firma y compromiso guardados. Registro completado.';
+    await updateDoc(doc(db, "registros", currentRecordId), {
+      compromiso,
+      firmaUrl: url,
+      estado: "COMPLETADO"
+    });
 
-  loadAgentList();
-}
+    agentMsg.style.color = "green";
+    agentMsg.textContent =
+      "Firma y compromiso guardados. Registro completado.";
+
+    await window.loadAgentList();
+
+  } catch (err) {
+    console.error("Error guardando firma:", err);
+    agentMsg.style.color = "red";
+    agentMsg.textContent = "Error guardando firma: " + err.message;
+  }
+};
 </script>
+
 </body>
 </html>
-

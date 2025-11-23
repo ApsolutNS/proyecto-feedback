@@ -13,7 +13,7 @@
   table{width:100%;border-collapse:collapse;margin-top:12px}
   th,td{padding:8px;border-bottom:1px solid #eef2f7;text-align:left}
   th{background:#fbfdff}
-  canvas{border:1px solid #e6eef9;border-radius:6px; margin-top:10px}
+  canvas{border:1px solid #e6eef9;border-radius:6px;margin-top:10px}
   .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:10px}
   .btn.ghost{background:#fff;color:#0f4c81;border:1px solid #cbd5e1}
 </style>
@@ -46,6 +46,7 @@
 
   <div id="detailBlock" style="display:none;margin-top:12px">
     <h3>Completar Feedback</h3>
+
     <div id="feedbackInfo"></div>
 
     <label>Compromiso del agente</label>
@@ -64,8 +65,9 @@
 </div>
 
 <script type="module">
-
-/* ------------------- IMPORTS FIREBASE -------------------- */
+/* -----------------------------------------------------------------------
+   FIREBASE IMPORTS
+------------------------------------------------------------------------ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, getDocs, query, where,
@@ -76,7 +78,9 @@ import {
   getStorage, ref, uploadString, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-/* ------------------- CONFIG ------------------------------- */
+/* -----------------------------------------------------------------------
+   FIREBASE CONFIG
+------------------------------------------------------------------------ */
 const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
@@ -91,38 +95,53 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-/* ------------------- PARSE FECHA ------------------------- */
-function parseFecha(rec){
-  if(rec.fechaHora){
-    if(rec.fechaHora.toDate) return rec.fechaHora.toDate();
-    return new Date(rec.fechaHora);
+/* -----------------------------------------------------------------------
+   CARGAR ASESORES CON GC
+------------------------------------------------------------------------ */
+let asesoresByNombre = {}; // { "Dandy Joel": "GC47227421" }
+
+async function loadAdvisors(){
+  const snap = await getDocs(collection(db,"asesores"));
+  asesoresByNombre = {};
+
+  snap.forEach(d=>{
+    const {nombre, GC} = d.data();
+    if(nombre && GC) asesoresByNombre[nombre] = GC;
+  });
+
+  const sel = document.getElementById("selAgent");
+  sel.innerHTML = '<option value="">-- selecciona --</option>';
+
+  Object.keys(asesoresByNombre)
+    .sort()
+    .forEach(nombre=>{
+      sel.innerHTML += `<option value="${nombre}">${nombre} — ${asesoresByNombre[nombre]}</option>`;
+    });
+}
+loadAdvisors();
+
+function getGC(nombre){
+  return asesoresByNombre[nombre] || "";
+}
+
+/* -----------------------------------------------------------------------
+   PARSE FECHA
+------------------------------------------------------------------------ */
+function parseFecha(r){
+  if(r.fechaHora){
+    if(r.fechaHora.toDate) return r.fechaHora.toDate();
+    return new Date(r.fechaHora);
   }
-  if(rec.fecha){
-    if(rec.fecha.toDate) return rec.fecha.toDate();
-    return new Date(rec.fecha);
+  if(r.fecha){
+    if(r.fecha.toDate) return r.fecha.toDate();
+    return new Date(r.fecha);
   }
   return new Date();
 }
 
-/* ------------------- CARGAR ASESORES --------------------- */
-async function loadAdvisors(){
-  try{
-    const snap = await getDocs(collection(db,"registros"));
-    const set = new Set();
-    snap.forEach(d=>{ if(d.data().asesor) set.add(d.data().asesor); });
-
-    const sel = document.getElementById("selAgent");
-    sel.innerHTML = '<option value="">-- selecciona --</option>';
-
-    [...set].sort().forEach(n=>{
-      sel.innerHTML += `<option>${n}</option>`;
-    });
-
-  }catch(err){ console.error("Error:",err); }
-}
-loadAdvisors();
-
-/* ------------------- LISTA POR AGENTE -------------------- */
+/* -----------------------------------------------------------------------
+   LISTA DE FEEDBACKS DEL AGENTE
+------------------------------------------------------------------------ */
 window.loadAgentList = async function(){
   const advisor = document.getElementById("selAgent").value;
   const tbody = document.querySelector("#agentTable tbody");
@@ -132,89 +151,85 @@ window.loadAgentList = async function(){
     return;
   }
 
-  try{
-    const qRef = query(collection(db,"registros"), where("asesor","==",advisor));
-    const snap = await getDocs(qRef);
+  const qRef = query(collection(db,"registros"), where("asesor","==",advisor));
+  const snap = await getDocs(qRef);
 
-    const list=[];
-    snap.forEach(d=>{
-      const data=d.data();
-      list.push({
-        id:d.id,
-        nota:data.nota ?? 0,
-        estado:data.estado || "PENDIENTE",
-        fecha:parseFecha(data)
-      });
+  const list = [];
+  snap.forEach(d=>{
+    const data = d.data();
+    list.push({
+      id: d.id,
+      nota: data.nota ?? 0,
+      estado: data.estado || "PENDIENTE",
+      fecha: parseFecha(data)
     });
+  });
 
-    list.sort((a,b)=>b.fecha - a.fecha);
+  list.sort((a,b)=>b.fecha - a.fecha);
 
-    tbody.innerHTML = list.map(r=>`
-      <tr>
-        <td>${r.id}</td>
-        <td>${r.fecha.toLocaleString("es-PE")}</td>
-        <td>${r.nota}%</td>
-        <td>${r.estado}</td>
-        <td><button onclick="openDetail('${r.id}')">Abrir</button></td>
-      </tr>
-    `).join("");
-
-  }catch(err){
-    console.error(err);
-    tbody.innerHTML = '<tr><td colspan="5">Error cargando datos</td></tr>';
-  }
+  tbody.innerHTML = list.map(r=>`
+    <tr>
+      <td>${r.id}</td>
+      <td>${r.fecha.toLocaleString("es-PE")}</td>
+      <td>${r.nota}%</td>
+      <td>${r.estado}</td>
+      <td><button onclick="openDetail('${r.id}')">Abrir</button></td>
+    </tr>
+  `).join("") || '<tr><td colspan="5">Sin registros</td></tr>';
 };
 
-/* ------------------- ABRIR DETALLE ------------------------ */
+/* -----------------------------------------------------------------------
+   ABRIR DETALLE DEL FEEDBACK
+------------------------------------------------------------------------ */
 let currentRecordId = null;
 
 window.openDetail = async function(id){
-  try{
-    const snap = await getDoc(doc(db,"registros",id));
-    if(!snap.exists()) return alert("Registro no encontrado");
+  const snap = await getDoc(doc(db,"registros",id));
+  if(!snap.exists()) return alert("Registro no encontrado");
 
-    const rec = snap.data();
-    currentRecordId = id;
+  const rec = snap.data();
+  currentRecordId = id;
 
-    const feedbackInfo = document.getElementById("feedbackInfo");
-    const compromisoEl = document.getElementById("compromiso");
-    const imagenes = rec.imagenes || [];
+  const fecha = parseFecha(rec).toLocaleString("es-PE");
+  const gc = getGC(rec.asesor);
+  const items = rec.items || [];
+  const evidencias = rec.imagenes || [];
+  const nota = rec.nota ?? 0;
 
-    const items = rec.items || [];
-    const itemsText = items.map(it=>`${it.name} (${it.perc}%)`).join("; ");
+  const itemsText = items.length
+    ? items.map(it => `${it.name} (${it.perc}%)`).join("; ")
+    : "Sin ítems";
 
-    const evidenciasHtml = imagenes.map(im => `
-      <img src="${im.url}" 
-           style="width:100%; max-width:700px; border-radius:8px; margin-top:10px">
-    `).join("");
+  const imgs = evidencias.length
+    ? evidencias.map(im => `
+        <img src="${im.url}" style="width:100%;max-width:700px;margin-top:10px;border-radius:8px">
+      `).join("")
+    : "<em>Sin evidencias</em>";
 
-    feedbackInfo.innerHTML = `
-      <div><b>ID:</b> ${id}</div>
-      <div><b>Fecha:</b> ${parseFecha(rec).toLocaleString("es-PE")}</div>
-      <div><b>Asesor:</b> ${rec.asesor}</div>
-      <div><b>Tipo:</b> ${rec.tipo}</div>
-      <div style="margin-top:8px"><b>Resumen:</b> ${rec.resumen}</div>
-      <div style="margin-top:8px"><b>Items:</b> ${itemsText}</div>
+  document.getElementById("feedbackInfo").innerHTML = `
+    <div><b>ID:</b> ${id}</div>
+    <div><b>Fecha:</b> ${fecha}</div>
+    <div><b>Asesor:</b> ${rec.asesor} — ${gc}</div>
+    <div><b>Tipo:</b> ${rec.tipo}</div>
+    <div><b>Nota:</b> ${nota}%</div>
+    <div style="margin-top:8px"><b>Resumen:</b> ${rec.resumen || ""}</div>
+    <div style="margin-top:8px"><b>Items:</b> ${itemsText}</div>
+    <div style="margin-top:8px">
+      <b>Evidencias:</b> ${evidencias.length}
+      <div>${imgs}</div>
+    </div>
+  `;
 
-      <div style="margin-top:8px">
-        <b>Evidencias:</b> ${imagenes.length} imagen(es)
-        <div>${evidenciasHtml}</div>
-      </div>
-    `;
-
-    compromisoEl.value = rec.compromiso || "";
-    document.getElementById("detailBlock").style.display="block";
-
-  }catch(err){
-    console.error(err);
-    alert("Error al abrir el detalle");
-  }
+  document.getElementById("compromiso").value = rec.compromiso || "";
+  document.getElementById("detailBlock").style.display = "block";
 };
 
-/* ------------------- FIRMA ------------------------------- */
+/* -----------------------------------------------------------------------
+   FIRMA EN CANVAS
+------------------------------------------------------------------------ */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-let drawing=false;
+let drawing = false;
 
 canvas.addEventListener("mousedown",()=>drawing=true);
 canvas.addEventListener("mouseup",()=>{drawing=false;ctx.beginPath();});
@@ -235,38 +250,33 @@ window.clearCanvas = function(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 };
 
-/* ------------------- GUARDAR FIRMA ----------------------- */
+/* -----------------------------------------------------------------------
+   GUARDAR FIRMA + COMPROMISO
+------------------------------------------------------------------------ */
 window.saveSignature = async function(){
-  if(!currentRecordId) return alert("Abra un registro");
+  if(!currentRecordId) return alert("No hay registro abierto");
 
   const compromiso = document.getElementById("compromiso").value.trim();
   if(!compromiso) return alert("El compromiso es obligatorio");
 
-  const agentMsg = document.getElementById("agentMsg");
+  const msg = document.getElementById("agentMsg");
+  msg.style.color = "green";
+  msg.textContent = "Subiendo firma...";
 
-  try{
-    agentMsg.textContent = "Subiendo firma...";
-    const dataUrl = canvas.toDataURL("image/png");
-    const sigRef = ref(storage, `firmas/${currentRecordId}.png`);
+  const dataUrl = canvas.toDataURL("image/png");
+  const sigRef = ref(storage, `firmas/${currentRecordId}.png`);
+  await uploadString(sigRef, dataUrl, "data_url");
+  const url = await getDownloadURL(sigRef);
 
-    await uploadString(sigRef, dataUrl, "data_url");
-    const url = await getDownloadURL(sigRef);
+  await updateDoc(doc(db,"registros",currentRecordId),{
+    compromiso,
+    firmaUrl: url,
+    estado: "COMPLETADO"
+  });
 
-    await updateDoc(doc(db,"registros",currentRecordId),{
-      compromiso,
-      firmaUrl:url,
-      estado:"COMPLETADO"
-    });
-
-    agentMsg.textContent = "Guardado correctamente";
-    loadAgentList();
-
-  }catch(err){
-    agentMsg.textContent = "Error: "+err.message;
-    console.error(err);
-  }
+  msg.textContent = "Feedback completado correctamente";
+  loadAgentList();
 };
-
 </script>
 
 </body>

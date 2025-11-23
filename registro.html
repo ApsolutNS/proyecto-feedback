@@ -1,102 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Registro de Monitoreo</title>
-
-<style>
-  body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
-  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
-  h2{margin-top:0}
-  label{display:block;margin-top:10px;font-weight:600}
-  input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ef;margin-top:6px;box-sizing:border-box}
-  .row{display:flex;gap:10px}
-  .col{flex:1}
-  .items-list{margin-top:10px}
-  .item-block{border:1px solid #e6eef9;padding:8px;border-radius:6px;margin-top:8px;display:flex;gap:8px;align-items:flex-start}
-  .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:12px}
-  .btn.ghost{background:#fff;color:#0f4c81;border:1px solid #cbd5e1}
-  .small{font-size:13px;color:#64748b}
-  .img-preview{max-height:90px;margin-right:8px;border-radius:6px}
-</style>
-</head>
-
-<body>
-<div class="card">
-  <h2>Registro del Monitoreo (Supervisor)</h2>
-
-  <label>ID LLAMADA</label>
-  <input id="idLlamada" placeholder="Ej: intefectiva_123">
-
-  <label>ID CONTACTO</label>
-  <input id="idContacto" placeholder="Ej: contacto_456">
-
-  <label>Tipo detectado</label>
-  <input id="tipoDetectado" readonly>
-
-  <div style="display:flex;gap:8px;margin-top:10px">
-    <div style="flex:1">
-      <label>Asesor</label>
-      <select id="asesor"></select>
-      <small class="small">* Esta lista se carga desde <b>/data/asesores.json</b></small>
-    </div>
-    <div style="width:220px">
-      <label>Cargo</label>
-      <select id="cargo">
-        <option>ASESOR INBOUND</option>
-        <option>ASESOR CORREOS</option>
-        <option>ASESOR REDES</option>
-      </select>
-    </div>
-  </div>
-
-  <h3 class="small" style="margin-top:12px">Datos del cliente</h3>
-
-  <div class="row">
-    <div class="col">
-      <label>DNI cliente</label>
-      <input id="cliDni">
-    </div>
-    <div class="col">
-      <label>Nombre cliente</label>
-      <input id="cliNombre">
-    </div>
-    <div class="col">
-      <label>Teléfono</label>
-      <input id="cliTel">
-    </div>
-  </div>
-
-  <label>Tipificación</label>
-  <input id="cliTipif">
-
-  <label>Observación cliente</label>
-  <textarea id="cliObs"></textarea>
-
-  <label>Resumen de la llamada</label>
-  <textarea id="resumen" rows="4"></textarea>
-
-  <h3 style="margin-top:12px">Items observados</h3>
-  <div class="small">Agrega uno o varios items y escribe el detalle en cada uno.</div>
-
-  <div style="display:flex;gap:8px;margin-top:8px">
-    <button class="btn" onclick="addItemBlock()">+ Agregar ítem</button>
-    <button class="btn ghost" onclick="clearItems()" style="width:130px">Limpiar items</button>
-  </div>
-
-  <div id="itemsContainer" class="items-list"></div>
-
-  <label style="margin-top:12px">Adjuntar imágenes</label>
-  <input id="imgs" type="file" multiple accept="image/*" />
-
-  <div id="imgPreview" style="display:flex;margin-top:8px;flex-wrap:wrap"></div>
-
-  <button class="btn" onclick="submitRecord()">Registrar</button>
-
-  <div id="msg" style="margin-top:12px;color:green"></div>
-</div>
-
 <script>
 const API_POST = "/.netlify/functions/register";
 
@@ -104,12 +5,15 @@ const API_POST = "/.netlify/functions/register";
 async function cargarAsesores() {
   try {
     const res = await fetch("/data/asesores.json", { cache: "no-store" });
-    if (!res.ok) throw new Error('No se pudo cargar /data/asesores.json');
     const lista = await res.json();
-    document.getElementById("asesor").innerHTML = lista.map(a => `<option>${a}</option>`).join("");
-  } catch (err) { console.error(err); }
+    document.getElementById("asesor").innerHTML =
+      lista.map(a => `<option>${a}</option>`).join("");
+  } catch (err) {
+    console.error("Error cargando asesores:", err);
+  }
 }
 cargarAsesores();
+
 
 // Detectar tipo
 function detectarTipoTexto(text){
@@ -123,14 +27,17 @@ function detectarTipoTexto(text){
   if(text.includes('correo') || text.includes('mail')) return 'CORREO';
   return 'OTRO';
 }
+
 document.getElementById('idLlamada').addEventListener('input', updateDetected);
 document.getElementById('idContacto').addEventListener('input', updateDetected);
+
 function updateDetected(){
   const v = idLlamada.value + " " + idContacto.value;
   tipoDetectado.value = detectarTipoTexto(v);
 }
 
-// ITEMS
+
+// Items
 const ITEMS = [
   ["Corte de Gestión",5],["Insulto / Falta de Respeto",10],["Normativa Regulatoria",8],
   ["Protección de datos",10],["Contestación sin demora",6],["Optimización de esperas",4],
@@ -148,94 +55,118 @@ const ITEMS = [
 ];
 
 function addItemBlock(){
-  const wrapper = document.createElement('div');
-  wrapper.className = 'item-block';
-  wrapper.innerHTML = `
+  const block = document.createElement("div");
+  block.className = "item-block";
+
+  block.innerHTML = `
     <select>
       ${ITEMS.map(it => `<option value="${it[0]}||${it[1]}">${it[0]} (${it[1]}%)</option>`).join("")}
     </select>
     <textarea placeholder="Detalle del item"></textarea>
-    <button class="btn ghost" style="width:90px" onclick="this.parentNode.remove()">Eliminar</button>
+    <button class="btn ghost" onclick="this.parentNode.remove()">Eliminar</button>
   `;
-  document.getElementById("itemsContainer").appendChild(wrapper);
-}
-function clearItems(){ document.getElementById("itemsContainer").innerHTML = ""; }
 
-// Preview imágenes
+  document.getElementById("itemsContainer").appendChild(block);
+}
+
+function clearItems(){
+  document.getElementById("itemsContainer").innerHTML = "";
+}
+
+
+// Vista previa de imágenes
 document.getElementById('imgs').addEventListener('change', function(){
   const preview = document.getElementById('imgPreview');
   preview.innerHTML = "";
-  Array.from(this.files).forEach(f=>{
-    const fr = new FileReader();
-    fr.onload = e=>{
+  
+  Array.from(this.files).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e =>{
       const img = document.createElement("img");
       img.src = e.target.result;
       img.className = "img-preview";
-      img.style.maxWidth = "120px";
       preview.appendChild(img);
     };
-    fr.readAsDataURL(f);
+    reader.readAsDataURL(file);
   });
 });
 
-// Submit registro
-async function submitRecord(){
-  const msgEl = document.getElementById('msg');
-  msgEl.style.color = 'green';
-  msgEl.textContent = '⏳ Enviando...';
 
-  try{
-    const items = Array.from(document.querySelectorAll("#itemsContainer .item-block")).map(b=>{
-      const [name,perc] = b.querySelector("select").value.split("||");
-      return { name, perc: parseFloat(perc), detail: b.querySelector("textarea").value };
+// Enviar registro
+async function submitRecord(){
+  const msg = document.getElementById('msg');
+  msg.style.color = "green";
+  msg.textContent = "⏳ Enviando...";
+
+  try {
+    // Items
+    const items = Array.from(document.querySelectorAll(".item-block")).map(b=>{
+      const [name, perc] = b.querySelector("select").value.split("||");
+      return {
+        name,
+        perc: parseFloat(perc),
+        detail: b.querySelector("textarea").value
+      };
     });
 
-    const files = document.getElementById('imgs').files;
+    // Images
+    const files = document.getElementById("imgs").files;
     const images = await Promise.all([...files].map(f=>{
       return new Promise(res=>{
         const fr = new FileReader();
-        fr.onload = e=>res({name:f.name, data:e.target.result});
+        fr.onload = e => res({ name: f.name, data: e.target.result });
         fr.readAsDataURL(f);
       });
     }));
 
+    // Datos completos
     const body = {
       idLlamada: idLlamada.value,
       idContacto: idContacto.value,
       tipo: tipoDetectado.value,
       asesor: asesor.value,
       cargo: cargo.value,
-      cliente:{ dni: cliDni.value, nombre: cliNombre.value, tel: cliTel.value },
+
+      clienteDni: cliDni.value,
+      clienteNombre: cliNombre.value,
+      clienteTel: cliTel.value,
+
       tipificacion: cliTipif.value,
       observacionCliente: cliObs.value,
       resumen: resumen.value,
+
       items,
-      images
+      images,
+
+      nota: 0,            // por defecto
+      compromiso: "",     // por defecto
+      firmaUrl: "",       // campo vacío para Google Sheets
+      fechaHora: new Date().toLocaleString("es-PE")
     };
 
     const res = await fetch(API_POST, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
 
     const out = await res.json();
+
     if(out.ok){
-      msgEl.style.color = 'green';
-      msgEl.textContent = `✔ Registro enviado correctamente (ID: ${out.id})`;
+      msg.style.color = "green";
+      msg.textContent = "✔ Registro enviado correctamente";
+
       clearItems();
-      document.getElementById('imgPreview').innerHTML = '';
+      document.getElementById("imgPreview").innerHTML = "";
     } else {
-      msgEl.style.color = 'red';
-      msgEl.textContent = `❌ Error: ${out.message}`;
+      msg.style.color = "red";
+      msg.textContent = "❌ Error: " + out.message;
     }
+
   } catch(err){
-    msgEl.style.color = 'red';
-    msgEl.textContent = `❌ Error inesperado: ${err.message}`;
+    msg.style.color = "red";
+    msg.textContent = "❌ Error inesperado: " + err.message;
     console.error(err);
   }
 }
 </script>
-
-</body>
-</html>

@@ -5,191 +5,378 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Visualización Feedback</title>
 
+<!-- Librería para exportar a PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 
 <style>
-  body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
-  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
+  body{font-family:Arial,Helvetica,sans-serif;background:#f4f6fb;margin:0;padding:18px}
+  .card{max-width:1200px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
   h2{margin-top:0}
-  input{width:100%;padding:8px;border:1px solid #e6e9ef;border-radius:6px}
-  .doc{border:1px solid #e6eef9;padding:20px;border-radius:6px;margin-top:12px;background:#fff}
+  label{display:block;margin-top:6px;font-weight:600;font-size:13px}
+  select,input{width:100%;padding:8px;border:1px solid #e6e9ef;border-radius:6px;box-sizing:border-box}
+  .btn{background:#0f4c81;color:#fff;border:none;padding:10px 14px;border-radius:6px;
+       cursor:pointer;font-size:13px;font-weight:600}
+  .btn:disabled{opacity:0.5;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  th,td{padding:6px 8px;border-bottom:1px solid #eef2f7;text-align:left}
+  th{background:#fbfdff}
+  .doc{border:1px solid #e6eef9;padding:16px;border-radius:6px;margin-top:6px;background:#fff;font-size:13px}
   .nota{background:#ffecec;border:1px solid #ffbdbd;color:#b30000;padding:10px;border-radius:6px;font-weight:700;text-align:center}
   .firma{border:1px solid #ddd;padding:6px;border-radius:6px;display:inline-block;margin-top:8px}
-  .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:12px}
 </style>
 </head>
-
 <body>
 
 <div class="card">
-  <h2>Visualización del Feedback (Final)</h2>
+  <h2>Visualización de Feedbacks</h2>
 
-  <label>Buscar por ID</label>
-  <input id="searchId" placeholder="Pega el ID del feedback">
-
-  <div style="display:flex;gap:8px">
-    <button class="btn" onclick="showFeedback()">Mostrar</button>
-    <button class="btn" onclick="downloadPDF()">Descargar PDF</button>
+  <!-- Filtros -->
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px">
+    <div style="flex:1;min-width:180px">
+      <label>Filtrar por asesor</label>
+      <select id="selAgent" onchange="applyFilters()">
+        <option value="">Todos los asesores</option>
+      </select>
+    </div>
+    <div style="width:180px;min-width:160px">
+      <label>Estado</label>
+      <select id="selEstado" onchange="applyFilters()">
+        <option value="">Todos</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="COMPLETADO">Completado</option>
+      </select>
+    </div>
+    <div style="align-self:flex-end">
+      <button class="btn" onclick="downloadPDF()">Descargar PDF del seleccionado</button>
+    </div>
   </div>
 
-  <div id="preview" class="doc" style="margin-top:14px">
-    Aquí se mostrará el feedback final cuando busques por ID.
+  <!-- Layout: tabla + vista previa -->
+  <div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr);gap:16px">
+    <div>
+      <strong>Listado de feedbacks</strong>
+      <table id="feedbackTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Asesor</th>
+            <th>Nota</th>
+            <th>Estado</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6">Cargando registros...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div>
+      <strong>Vista previa</strong>
+      <div id="preview" class="doc">
+        Selecciona un registro para ver el detalle.
+      </div>
+    </div>
   </div>
 </div>
 
 <script type="module">
-
+/* ================================
+   IMPORTS FIREBASE (MODULAR v9)
+================================ */
 import { db, storage } from "./js/firebase.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import { ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import {
+  ref,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-/* =========  LOGO BASE64  ========= */
-const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAH4AAAAsCAYAAACjZQx0AAAAAXNSR0IArs4c6QA...bLZ3PcdAiEQznAjHsh9CEVR0ar1AivV1gurtf3EHrZW235WvJAifopaLQiegOIB";
+/* =========  LOGO BASE64  =========
+   (usa el mismo que ya tenías; corto aquí para no hacerlo gigante) */
+const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAH4AAAAsCAYAAACjZQx0AAAAAXNSR0IArs4c6QA...";
 
-/* ------------------------------------------ */
-/* 🔎 BUSCAR FEEDBACK POR ID                  */
-/* ------------------------------------------ */
-async function showFeedback() {
-  const id = document.getElementById("searchId").value.trim();
-  if (!id) return alert("Ingresa un ID");
+/* ================================
+   ESTADO GLOBAL
+================================ */
+let allRecords = [];        // todos los registros de Firestore
+let filteredRecords = [];   // registros luego de aplicar filtros
+let currentRecordId = null; // ID seleccionado actualmente
 
-  try {
-    const snap = await getDoc(doc(db, "registros", id));
-    if (!snap.exists()) return alert("❌ No existe un registro con ese ID");
+/* ================================
+   CARGAR REGISTROS Y ARMAR FILTROS
+================================ */
+async function loadData(){
+  try{
+    const snap = await getDocs(collection(db, "registros"));
+    allRecords = [];
+    snap.forEach(d => {
+      const data = d.data();
+      allRecords.push({
+        id: d.id,
+        ...data
+      });
+    });
 
-    const rec = snap.data();
-    rec.id = id;
-    rec.imagenes = await loadImages(rec.imagenes || []);
+    // Poblar combo de asesores desde los registros
+    const selAgent = document.getElementById("selAgent");
+    const names = [...new Set(allRecords.map(r => r.asesor).filter(Boolean))].sort();
+    selAgent.innerHTML = '<option value="">Todos los asesores</option>' +
+      names.map(n => `<option value="${n}">${n}</option>`).join("");
 
-    const html = buildTemplate(rec);
-    document.getElementById("preview").innerHTML = html;
-
-  } catch (e) {
-    console.error(e);
-    alert("Error obteniendo datos");
+    applyFilters();
+  }catch(err){
+    console.error(err);
+    const tbody = document.querySelector("#feedbackTable tbody");
+    tbody.innerHTML = '<tr><td colspan="6">Error cargando registros</td></tr>';
   }
 }
 
-/* ------------------------------------------ */
-/* 📥 CARGAR IMÁGENES DEL STORAGE             */
-/* ------------------------------------------ */
-async function loadImages(list) {
+/* ================================
+   FECHA SEGURA
+================================ */
+function parseFechaRec(r){
+  const f = r.fechaHora || r.fecha;
+  if(!f) return new Date(0);
+  if(typeof f === "string") return new Date(f);
+  if(f.toDate) return f.toDate();
+  return new Date(f);
+}
+
+/* ================================
+   APLICAR FILTROS Y PINTAR TABLA
+================================ */
+function renderTable(){
+  const tbody = document.querySelector("#feedbackTable tbody");
+  if(!filteredRecords.length){
+    tbody.innerHTML = '<tr><td colspan="6">No hay registros con esos filtros</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredRecords.map(r=>{
+    const fecha = parseFechaRec(r).toLocaleString("es-PE");
+    const estado = r.estado || "PENDIENTE";
+    const nota = r.nota ?? 0;
+    return `
+      <tr>
+        <td>${r.id}</td>
+        <td>${fecha}</td>
+        <td>${r.asesor || ""}</td>
+        <td>${nota}%</td>
+        <td>${estado}</td>
+        <td>
+          <button class="btn" style="padding:4px 8px;font-size:11px"
+                  onclick="selectFeedback('${r.id}')">
+            Ver
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function applyFilters(){
+  const selAgentVal = document.getElementById("selAgent").value;
+  const selEstadoVal = document.getElementById("selEstado").value;
+
+  filteredRecords = allRecords.slice();
+
+  if(selAgentVal){
+    filteredRecords = filteredRecords.filter(r => r.asesor === selAgentVal);
+  }
+  if(selEstadoVal){
+    filteredRecords = filteredRecords.filter(r => (r.estado || "PENDIENTE") === selEstadoVal);
+  }
+
+  // Ordenar por fecha descendente
+  filteredRecords.sort((a,b)=> parseFechaRec(b) - parseFechaRec(a));
+
+  renderTable();
+}
+
+/* ================================
+   CARGAR IMÁGENES DEL STORAGE
+================================ */
+async function loadImages(list){
   const arr = [];
-  for (const img of list) {
-    try {
-      if (img.url?.startsWith("https://")) {
+  for(const img of (list || [])){
+    try{
+      if(img.url?.startsWith("http")){
         arr.push({ data: img.url });
         continue;
       }
       const path = img.storagePath || img.url;
+      if(!path) continue;
       const url = await getDownloadURL(ref(storage, path));
       arr.push({ data: url });
-    } catch {}
+    }catch(err){
+      console.warn("No se pudo cargar imagen:", err);
+    }
   }
   return arr;
 }
 
-/* ------------------------------------------ */
-/* 📄 TEMPLATE DEL DOCUMENTO                  */
-/* ------------------------------------------ */
-function buildTemplate(rec) {
+/* ================================
+   TEMPLATE DEL DOCUMENTO
+================================ */
+function buildTemplate(rec){
+  const fechaObj = parseFechaRec(rec);
+  const fecha = isNaN(fechaObj.getTime())
+    ? "Fecha no registrada"
+    : fechaObj.toLocaleString("es-PE");
 
-  const fecha = rec.fecha
-    ? new Date(rec.fecha).toLocaleString("es-PE")
-    : "Fecha no registrada";
-
-  const imgsHtml = rec.imagenes.length
-    ? rec.imagenes.map(im => `<img src="${im.data}" style="width:100%;max-width:600px;border-radius:8px;margin-top:10px">`).join("")
+  const imgsHtml = (rec.imagenes && rec.imagenes.length)
+    ? rec.imagenes.map(im => `
+        <img src="${im.data}"
+             style="width:100%;max-width:600px;border-radius:8px;margin-top:10px">
+      `).join("")
     : "<em>Sin imágenes</em>";
 
-  const itemsHtml = rec.items?.length
+  const itemsHtml = (rec.items && rec.items.length)
     ? rec.items.map(it => `
         <div style="margin-bottom:6px">
           <strong>${it.name}</strong> (${it.perc}%)
           <div>${it.detail || ""}</div>
-        </div>`).join("")
+        </div>
+      `).join("")
     : "<em>Sin ítems</em>";
 
   const firmaHtml = rec.firmaUrl
-    ? `<div class="firma"><img src="${rec.firmaUrl}" style="width:100%;max-width:260px"></div>`
-    : `<div class="firma" style="height:80px;display:flex;align-items:center;justify-content:center;color:#64748b">SIN FIRMA</div>`;
+    ? `<div class="firma">
+         <img src="${rec.firmaUrl}" style="width:100%;max-width:260px">
+       </div>`
+    : `<div class="firma" style="height:80px;display:flex;align-items:center;
+                                justify-content:center;color:#64748b">
+         SIN FIRMA
+       </div>`;
 
   return `
-    <div style="display:flex;flex-direction:column;gap:20px">
-
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <img src="${LOGO_BASE64}" style="height:70px;">
-        <div style="font-size:22px;font-weight:bold;color:#0f4c81">REPORTE DE FEEDBACK</div>
+        <div style="font-size:22px;font-weight:bold;color:#0f4c81">
+          REPORTE DE FEEDBACK
+        </div>
       </div>
 
       <div style="display:flex;justify-content:space-between;gap:16px">
         <div style="flex:1">
-
           <div><strong>Fecha:</strong> ${fecha}</div>
-          <div style="margin-top:10px"><strong>Asesor:</strong> ${rec.asesor}</div>
-          <div><strong>Cargo:</strong> ${rec.cargo}</div>
+          <div style="margin-top:8px"><strong>Asesor:</strong> ${rec.asesor || ""}</div>
+          <div><strong>Cargo:</strong> ${rec.cargo || ""}</div>
 
-          <div style="margin-top:10px">
-            <strong>Cliente:</strong> ${rec.cliente?.nombre || ""} (DNI: ${rec.cliente?.dni || ""})
+          <div style="margin-top:8px">
+            <strong>Cliente:</strong>
+            ${rec.cliente?.nombre || ""} (DNI: ${rec.cliente?.dni || ""})
           </div>
 
-          <div style="margin-top:10px">
+          <div style="margin-top:8px">
             <strong>Resumen:</strong>
-            <div style="padding:8px;background:#fbfdff;border-radius:6px">${rec.resumen}</div>
+            <div style="padding:8px;background:#fbfdff;border-radius:6px">
+              ${rec.resumen || ""}
+            </div>
           </div>
 
-          <div style="margin-top:10px">
-            <strong>Items observados:</strong><br>${itemsHtml}
+          <div style="margin-top:8px">
+            <strong>Items observados:</strong><br>
+            ${itemsHtml}
           </div>
 
-          <div style="margin-top:10px">
-            <strong>Evidencias:</strong><br>${imgsHtml}
+          <div style="margin-top:8px">
+            <strong>Evidencias:</strong><br>
+            ${imgsHtml}
           </div>
 
-          <div style="margin-top:10px">
+          <div style="margin-top:8px">
             <strong>Compromiso del agente:</strong>
             <div style="padding:8px;border:1px dashed #e6eef9;border-radius:6px">
               ${rec.compromiso || "<em>Vacío</em>"}
             </div>
           </div>
-
         </div>
 
         <div style="width:260px;text-align:center">
-          <div class="nota" style="font-size:28px">${rec.nota || 0}%</div>
+          <div class="nota" style="font-size:28px">
+            ${rec.nota || 0}%
+          </div>
           <div style="margin-top:12px">${firmaHtml}</div>
           <div style="margin-top:12px;color:#64748b">
             ID:<br><strong>${rec.id}</strong>
           </div>
+          <div style="margin-top:8px;color:#64748b;font-size:11px">
+            Estado: <strong>${rec.estado || "PENDIENTE"}</strong>
+          </div>
         </div>
       </div>
-
     </div>
   `;
 }
 
-/* ------------------------------------------ */
-/* 📎 EXPORTAR PDF                            */
-/* ------------------------------------------ */
-window.downloadPDF = function () {
+/* ================================
+   MOSTRAR FEEDBACK SELECCIONADO
+================================ */
+async function showFeedbackById(id){
+  try{
+    const snap = await getDoc(doc(db, "registros", id));
+    if(!snap.exists()){
+      alert("No se encontró el registro");
+      return;
+    }
+    const rec = snap.data();
+    rec.id = id;
+    rec.imagenes = await loadImages(rec.imagenes || []);
+    const html = buildTemplate(rec);
+    document.getElementById("preview").innerHTML = html;
+  }catch(err){
+    console.error(err);
+    alert("Error obteniendo datos");
+  }
+}
+
+/* ================================
+   EXPORTAR PDF
+================================ */
+function downloadPDF(){
+  if(!currentRecordId){
+    alert("Primero selecciona un feedback en la tabla");
+    return;
+  }
   const elemento = document.getElementById("preview");
-  const id = document.getElementById("searchId").value || "feedback";
-
-  if (!elemento.innerHTML.trim()) return alert("Primero genera la vista");
-
+  if(!elemento.innerHTML.trim()){
+    alert("No hay contenido para exportar");
+    return;
+  }
   const opt = {
     margin: 10,
-    filename: `${id}.pdf`,
+    filename: `${currentRecordId}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
   };
-
   html2pdf().set(opt).from(elemento).save();
-};
+}
 
-window.showFeedback = showFeedback;
+/* ================================
+   EXponer funciones al scope global
+================================ */
+function selectFeedback(id){
+  currentRecordId = id;
+  showFeedbackById(id);
+}
 
+window.applyFilters = applyFilters;
+window.selectFeedback = selectFeedback;
+window.downloadPDF = downloadPDF;
+
+/* ================================
+   INICIO
+================================ */
+loadData();
 </script>
 </body>
 </html>

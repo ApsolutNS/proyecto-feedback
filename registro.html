@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Registro del Monitoreo</title>
-
 <style>
   body{
     font-family:Arial,Helvetica,sans-serif;
@@ -205,6 +204,14 @@
         </div>
       </div>
 
+      <label>Registrado por</label>
+      <select id="registradoPor">
+        <option value="">-- Selecciona --</option>
+        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
+        <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
+        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
+      </select>
+
       <h3>Datos del cliente</h3>
       <div class="row">
         <div class="col">
@@ -232,16 +239,16 @@
 
       <h3>Ítems observados</h3>
       <div class="small">
-        Marca los ítems en los que el asesor falla y describe el contexto en el detalle.
+        Marca los ítems en los que el asesor <b>falla</b> y describe el contexto en el detalle.
         Recuerda: sólo se registran incumplimientos (no aciertos).
       </div>
 
       <div class="chips-row">
         <span class="chip error">ERROR INEXCUSABLE ⇒ nota 0</span>
-        <span class="chip">PENCUF ⇒ resta hasta 25 pts según %</span>
+        <span class="chip">PENCUF ⇒ resta máximo 25 pts (según %)</span>
         <span class="chip">PECNEG ⇒ -30 pts fijo</span>
         <span class="chip">PECUF ⇒ -35 pts fijo</span>
-        <span class="chip">PECCUMP ⇒ -35 pts fijo</span>
+        <span class="chip">PECCUMP ⇒ -10 pts fijo</span>
       </div>
 
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
@@ -265,6 +272,7 @@
       <div id="scoreCircle" class="score-circle">
         <span id="notaPreview">100</span>%
       </div>
+
       <div class="summary-row">
         <span>Clasificación</span>
         <span id="badgeCalidad" class="badge good">🟢 Aprobado</span>
@@ -289,7 +297,9 @@
         <span>ERROR INEXCUSABLE</span>
         <span id="infoEI" class="small">No aplicado</span>
       </div>
+
       <hr style="margin:10px 0;border:none;border-top:1px solid #e5e7eb">
+
       <div class="small">
         La nota se recalcula automáticamente según los ítems marcados.<br>
         <b>Regla:</b> si hay <b>ERROR INEXCUSABLE</b> la nota es siempre <b>0</b>.
@@ -318,6 +328,7 @@ const firebaseConfig = {
   appId: "1:512179147778:web:795e4a8b177fe766d3431b",
   measurementId: "G-X6MP0FFH9P"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -340,14 +351,12 @@ const ITEMS = [
   { name:"Solicita datos de forma correcta y oportuna", perc:7, tipo:"PENCUF" },
   { name:"Herramientas de Gestión", perc:10, tipo:"PENCUF" },
   { name:"Codificación y Registro inConcert", perc:7, tipo:"PENCUF" },
+  { name:"Presentación", perc:7, tipo:"PENCUF" },
+  { name:"Personalización", perc:7, tipo:"PENCUF" },
 
-  // PENCNEG (asumimos comportamiento de PECNEG, se agrupa como PECNEG)
+  // PECNEG
   { name:"Codificación y Registro en Monitor Logístico", perc:7, tipo:"PECNEG" },
   { name:"Codificación y Registro en SmartSheet", perc:7, tipo:"PECNEG" },
-  { name:"Presentación", perc:7, tipo:"PENCUF" },      // en tu ejemplo, se considera PENCUF
-  { name:"Personalización", perc:7, tipo:"PENCUF" },   // idem
-
-  // PECNEG – un solo ítem → -30 pts (no acumula más)
   { name:"Despedida", perc:7, tipo:"PECNEG" },
   { name:"Encuesta de satisfacción", perc:10, tipo:"PECNEG" },
   { name:"Lenguaje", perc:30, tipo:"PECNEG" },
@@ -359,14 +368,14 @@ const ITEMS = [
   { name:"Tramita la gestión correspondiente", perc:30, tipo:"PECNEG" },
   { name:"Transferencia", perc:30, tipo:"PECNEG" },
 
-  // PECUF – un solo ítem → -35 pts (se acumula con PENCUF y otros grupos)
+  // PECUF – un solo ítem ⇒ -35 pts (se acumula con PENCUF y otros)
   { name:"Cumple con devolución de llamado", perc:35, tipo:"PECUF" },
   { name:"Actitud - Manejo de llamada", perc:35, tipo:"PECUF" },
   { name:"Conocimientos para resolver la consulta", perc:35, tipo:"PECUF" },
   { name:"Asesoramiento de Producto o Servicio (Pagina Web | Posible Compra | Servicios)", perc:35, tipo:"PECUF" },
   { name:"Solución al primer contacto", perc:35, tipo:"PECUF" },
 
-  // PECCUMP – un solo ítem → -35 pts (similar a PECUF)
+  // PECCUMP – un solo ítem ⇒ -10 pts (según tu indicación)
   { name:"Verificación de datos", perc:10, tipo:"PECCUMP" },
   { name:"Damos el número de Ticket", perc:10, tipo:"PECCUMP" },
 
@@ -403,21 +412,25 @@ cargarAsesores();
 /* --------------------- DETECTAR TIPO -------------------------- */
 function detectarTipoTexto(text){
   if(!text) return 'NO IDENTIFICADO';
-  text = text.toLowerCase();
-  if(text.includes('intefectivank') || text.includes('vank')) return 'EFECTIVANK';
-  if(text.includes('intefectiva')) return 'EFECTIVA';
-  if(text.includes('intxperto')) return 'XPERTO';
-  if(text.includes('facebook')) return 'FACEBOOK';
-  if(text.includes('instagram')) return 'INSTAGRAM';
-  if(text.includes('correo') || text.includes('mail')) return 'CORREO';
+  const t = text.toLowerCase();
+  if(t.includes('intefectivank') || t.includes('vank')) return 'EFECTIVANK';
+  if(t.includes('intefectiva')) return 'EFECTIVA';
+  if(t.includes('intxperto')) return 'XPERTO';
+  if(t.includes('facebook')) return 'FACEBOOK';
+  if(t.includes('instagram')) return 'INSTAGRAM';
+  if(t.includes('correo') || t.includes('mail')) return 'CORREO';
   return 'OTRO';
+}
+
+function updateDetected(){
+  const idLlamadaEl   = document.getElementById('idLlamada');
+  const idContactoEl  = document.getElementById('idContacto');
+  const tipoDetectado = document.getElementById('tipoDetectado');
+  const v = (idLlamadaEl.value || "") + " " + (idContactoEl.value || "");
+  tipoDetectado.value = detectarTipoTexto(v);
 }
 document.getElementById('idLlamada').addEventListener('input', updateDetected);
 document.getElementById('idContacto').addEventListener('input', updateDetected);
-function updateDetected(){
-  const v = idLlamada.value + " " + idContacto.value;
-  tipoDetectado.value = detectarTipoTexto(v);
-}
 
 /* --------------------- UI: ITEMS ---------------------- */
 window.addItemBlock = function() {
@@ -437,7 +450,7 @@ window.addItemBlock = function() {
   document.getElementById("itemsContainer").appendChild(w);
 
   const select = w.querySelector(".item-select");
-  const meta = w.querySelector(".item-meta");
+  const meta   = w.querySelector(".item-meta");
   const removeBtn = w.querySelector(".item-remove");
 
   select.addEventListener("change", ()=>{
@@ -450,7 +463,9 @@ window.addItemBlock = function() {
     }
     recalcularNotaPreview();
   });
+
   w.querySelector(".item-detail").addEventListener("input", ()=>{ /* opcional */ });
+
   removeBtn.addEventListener("click", ()=>{
     w.remove();
     recalcularNotaPreview();
@@ -488,8 +503,8 @@ document.getElementById('imgs').addEventListener('change', function(){
   - Nota base: 100
   - PENCUF → resta: 25 * (sumaPercPENCUF / 100)
   - PECNEG → si hay al menos uno: -30
-  - PECUF → si hay al menos uno: -35
-  - PECCUMP → si hay al menos uno: -35
+  - PECUF  → si hay al menos uno: -35
+  - PECCUMP → si hay al menos uno: -10
 */
 function calcularNota(items){
   if(items.some(i => i.tipo === "ERROR_INEXCUSABLE")){
@@ -500,6 +515,7 @@ function calcularNota(items){
   const totalPENCUF = items
     .filter(i => i.tipo === "PENCUF")
     .reduce((sum,i)=> sum + (i.perc || 0), 0);
+
   const dedPENCUF = 25 * (totalPENCUF / 100);
 
   const hasPECNEG   = items.some(i => i.tipo === "PECNEG");
@@ -513,6 +529,7 @@ function calcularNota(items){
 
   if(nota < 0) nota = 0;
   if(nota > 100) nota = 100;
+
   return Math.round(nota * 10) / 10; // 1 decimal
 }
 
@@ -523,9 +540,9 @@ function obtenerItemsFormulario(){
   blocks.forEach(b=>{
     const select = b.querySelector(".item-select");
     const detail = b.querySelector(".item-detail").value;
-    const name = select.value;
+    const name   = select.value;
     if(!name) return;
-    const meta = ITEMS.find(i=>i.name === name) || { tipo:"NINGUNO", perc:0 };
+    const meta   = ITEMS.find(i=>i.name === name) || { tipo:"NINGUNO", perc:0 };
     items.push({
       name,
       tipo: meta.tipo,
@@ -538,12 +555,11 @@ function obtenerItemsFormulario(){
 
 function recalcularNotaPreview(){
   const items = obtenerItemsFormulario();
-  const nota = calcularNota(items);
+  const nota  = calcularNota(items);
 
-  // actualiza círculo
   const notaEl = document.getElementById("notaPreview");
   const circle = document.getElementById("scoreCircle");
-  const badge = document.getElementById("badgeCalidad");
+  const badge  = document.getElementById("badgeCalidad");
 
   notaEl.textContent = nota.toFixed(1).replace(/\.0$/,"");
 
@@ -559,7 +575,6 @@ function recalcularNotaPreview(){
     badge.textContent = "🔴 No aprobado";
   }
 
-  // detalle grupos
   const infoPENCUF  = document.getElementById("infoPENCUF");
   const infoPECNEG  = document.getElementById("infoPECNEG");
   const infoPECUF   = document.getElementById("infoPECUF");
@@ -568,19 +583,20 @@ function recalcularNotaPreview(){
 
   const totalPENCUF = items.filter(i=>i.tipo==="PENCUF")
                            .reduce((s,i)=>s+(i.perc||0),0);
-  const dedPENCUF = 25 * (totalPENCUF / 100);
+  const dedPENCUF   = 25 * (totalPENCUF / 100);
+
   infoPENCUF.textContent = totalPENCUF
     ? `-${dedPENCUF.toFixed(1)} pts (suma ${totalPENCUF}%)`
     : "Sin descuentos";
 
-  const hasPECNEG  = items.some(i=>i.tipo==="PECNEG");
-  const hasPECUF   = items.some(i=>i.tipo==="PECUF");
-  const hasPECCUMP = items.some(i=>i.tipo==="PECCUMP");
-  const hasEI      = items.some(i=>i.tipo==="ERROR_INEXCUSABLE");
+  const hasPECNEG   = items.some(i=>i.tipo==="PECNEG");
+  const hasPECUF    = items.some(i=>i.tipo==="PECUF");
+  const hasPECCUMP  = items.some(i=>i.tipo==="PECCUMP");
+  const hasEI       = items.some(i=>i.tipo==="ERROR_INEXCUSABLE");
 
-  infoPECNEG.textContent  = hasPECNEG  ? "-30 pts"  : "Sin descuentos";
-  infoPECUF.textContent   = hasPECUF   ? "-35 pts"  : "Sin descuentos";
-  infoPECCUMP.textContent = hasPECCUMP ? "-10 pts"  : "Sin descuentos";
+  infoPECNEG.textContent  = hasPECNEG  ? "-30 pts" : "Sin descuentos";
+  infoPECUF.textContent   = hasPECUF   ? "-35 pts" : "Sin descuentos";
+  infoPECCUMP.textContent = hasPECCUMP ? "-10 pts" : "Sin descuentos";
   infoEI.textContent      = hasEI      ? "Aplica ⇒ nota 0" : "No aplicado";
 }
 
@@ -592,7 +608,7 @@ window.submitRecord = async function() {
 
   try{
     const items = obtenerItemsFormulario();
-    const nota = calcularNota(items);
+    const nota  = calcularNota(items);
 
     const files = document.getElementById('imgs').files;
     const imageURLs = [];
@@ -603,24 +619,29 @@ window.submitRecord = async function() {
       imageURLs.push({name: f.name, url, storagePath: storageRef.fullPath});
     }
 
-    const asesorSel = document.getElementById('asesor');
+    const asesorSel    = document.getElementById('asesor');
+    const cargoEl      = document.getElementById('cargo');
+    const tipoDetectEl = document.getElementById('tipoDetectado');
+    const registradoEl = document.getElementById('registradoPor');
+
     const gc = asesorSel.options[asesorSel.selectedIndex]?.dataset.gc || "SIN GC";
 
     const data = {
-      idLlamada: idLlamada.value,
-      idContacto: idContacto.value,
-      tipo: tipoDetectado.value,
-      asesor: asesorSel.value,
+      idLlamada:   document.getElementById('idLlamada').value,
+      idContacto:  document.getElementById('idContacto').value,
+      tipo:        tipoDetectEl.value,
+      asesor:      asesorSel.value,
       gc,
-      cargo: cargo.value,
+      cargo:       cargoEl.value,
+      registradoPor: registradoEl.value || "",
       cliente:{
-        dni: cliDni.value,
-        nombre: cliNombre.value,
-        tel: cliTel.value
+        dni:    document.getElementById('cliDni').value,
+        nombre: document.getElementById('cliNombre').value,
+        tel:    document.getElementById('cliTel').value
       },
-      tipificacion: cliTipif.value,
-      observacionCliente: cliObs.value,
-      resumen: resumen.value,
+      tipificacion:       document.getElementById('cliTipif').value,
+      observacionCliente: document.getElementById('cliObs').value,
+      resumen:            document.getElementById('resumen').value,
       items,
       nota,
       imagenes: imageURLs,
@@ -631,8 +652,10 @@ window.submitRecord = async function() {
 
     msgEl.style.color = 'green';
     msgEl.textContent = `✔ Guardado correctamente · Nota final: ${nota}`;
-    clearItems();
+
+    window.clearItems();
     document.getElementById('imgPreview').innerHTML = "";
+    document.getElementById('imgs').value = "";
     recalcularNotaPreview();
   } catch(err){
     msgEl.style.color = 'red';

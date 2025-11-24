@@ -4,35 +4,155 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Dashboard - Supervisión</title>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
-  body{font-family:Arial,Helvetica,sans-serif;background:#f4f6fb;margin:0;color:#0b1220}
-  header{background:#0f4c81;color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+  body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:#0b1120;
+    margin:0;
+    color:#e2e8f0;
+  }
+  header{
+    background:linear-gradient(90deg,#0f172a,#0f4c81);
+    color:#fff;
+    padding:16px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid rgba(148,163,184,0.3);
+  }
   header h1{margin:0;font-size:18px}
-  .container{padding:18px;display:grid;grid-template-columns:260px 1fr;gap:16px}
+  header small{color:#cbd5f5}
+  .container{
+    padding:18px;
+    display:grid;
+    grid-template-columns:270px 1fr;
+    gap:16px;
+  }
   .left{display:flex;flex-direction:column;gap:12px}
-  .card{background:#fff;border-radius:8px;padding:12px;box-shadow:0 4px 12px rgba(15,20,30,0.06)}
-  .btn{padding:12px;border-radius:8px;border:none;cursor:pointer;font-weight:700;width:100%}
-  .btn.primary{background:#0f4c81;color:#fff}
-  .btn.secondary{background:#fff;border:1px solid #cbd5e1}
+  .card{
+    background:rgba(15,23,42,0.96);
+    border-radius:14px;
+    padding:14px 16px;
+    box-shadow:0 18px 45px rgba(0,0,0,0.55);
+    border:1px solid rgba(148,163,184,0.38);
+    backdrop-filter:blur(14px);
+  }
+  .card h3{margin:0 0 8px;font-size:15px;color:#e5e7eb}
+  .btn{
+    padding:12px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    font-weight:700;
+    width:100%;
+    font-size:13px;
+  }
+  .btn.primary{
+    background:linear-gradient(135deg,#0f4c81,#22c55e);
+    color:#fff;
+  }
+  .btn.secondary{
+    background:transparent;
+    color:#e2e8f0;
+    border:1px solid rgba(148,163,184,0.5);
+  }
+  .btn.secondary:hover{background:rgba(15,23,42,0.9);}
   table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:6px;border-bottom:1px solid #eef2f7;text-align:left}
-  th{background:#fbfdff;color:#334155}
-  .weekly{overflow:auto}
-  .small{font-size:13px;color:#64748b}
+  th,td{
+    padding:6px 8px;
+    border-bottom:1px solid rgba(30,64,175,0.55);
+    text-align:left;
+  }
+  th{
+    background:rgba(15,23,42,0.95);
+    color:#cbd5f5;
+    position:sticky;top:0;
+  }
+  .weekly{overflow:auto;max-height:260px}
+  .small{font-size:13px;color:#94a3b8}
+  /* Vista ejecutiva – tarjetas */
+  .exec-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:10px;
+    margin-top:6px;
+  }
+  .exec-card{
+    padding:10px 12px;
+    border-radius:10px;
+    background:radial-gradient(circle at top left,#1e293b,#020617);
+    border:1px solid rgba(148,163,184,0.4);
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .exec-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:12px;
+    color:#cbd5f5;
+  }
+  .exec-name{font-weight:600}
+  .exec-gc{font-size:11px;color:#9ca3af}
+  .exec-main{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    margin-top:4px;
+  }
+  .exec-score{
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:0.03em;
+  }
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:4px 8px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:600;
+  }
+  .pill.green{
+    background:rgba(34,197,94,0.1);
+    color:#4ade80;
+    border:1px solid rgba(34,197,94,0.5);
+  }
+  .pill.red{
+    background:rgba(248,113,113,0.08);
+    color:#fb7185;
+    border:1px solid rgba(248,113,113,0.5);
+  }
+  .exec-meta{
+    font-size:11px;
+    color:#94a3b8;
+    margin-top:2px;
+  }
+  .tiny-tag{
+    display:inline-block;
+    padding:2px 6px;
+    border-radius:999px;
+    border:1px solid rgba(148,163,184,0.5);
+    font-size:10px;
+    color:#9ca3af;
+    margin-left:4px;
+  }
+  canvas{max-height:220px}
 </style>
 </head>
-
 <body>
 <header>
-  <h1>Panel Principal - Calidad & Monitoreo</h1>
+  <div>
+    <h1>Panel Principal - Calidad & Monitoreo</h1>
+    <small>Vista ejecutiva + detalle mensual</small>
+  </div>
   <div style="font-size:13px">Usuario: <strong>Supervisor</strong></div>
 </header>
 
 <div class="container">
-
   <!-- ASIDE -->
   <aside class="left">
     <div class="card">
@@ -42,6 +162,7 @@
       <button class="btn secondary" onclick="location.href='visualizacion_feedback.html'">3 · Visualización Feedback</button>
     </div>
 
+    <!-- KPIs globales simples (solo texto, sin colores extra) -->
     <div class="card">
       <h3>Tipo monitoreo (conteo)</h3>
       <p class="small"><b>EFECTIVA:</b> <span id="cntEfectiva">0</span></p>
@@ -55,11 +176,26 @@
 
   <!-- MAIN -->
   <main>
-
+    <!-- NUEVA VISTA EJECUTIVA B2 -->
     <div class="card">
+      <h3>Vista ejecutiva por asesor
+        <span class="tiny-tag">B2 · Semáforo 85%</span>
+      </h3>
+      <div class="small">
+        Promedio mensual por asesor (solo dos estados: 
+        <span style="color:#4ade80;font-weight:bold">🟢 85–100</span> /
+        <span style="color:#fb7185;font-weight:bold">🔴 0–84</span>)
+      </div>
+      <div id="execGrid" class="exec-grid"></div>
+    </div>
+
+    <!-- GRÁFICO MES -->
+    <div class="card">
+      <h3>Promedio semanal del mes</h3>
       <canvas id="chartMonth"></canvas>
     </div>
 
+    <!-- TABLA SEMANAL -->
     <div class="card">
       <h3>Tabla semanal del mes</h3>
       <div class="weekly">
@@ -70,6 +206,7 @@
       </div>
     </div>
 
+    <!-- ÚLTIMOS REGISTROS -->
     <div class="card">
       <h3>Últimos registros</h3>
       <table id="recentTable">
@@ -79,12 +216,10 @@
         <tbody></tbody>
       </table>
     </div>
-
   </main>
 </div>
 
 <script type="module">
-
 /* ------------------------------
    IMPORTAR FIREBASE
 ------------------------------ */
@@ -98,12 +233,15 @@ import {
 ------------------------------ */
 function parseFecha(fecha) {
   if (!fecha) return new Date();
-  if (fecha.includes("T")) return new Date(fecha);
-
-  if (fecha.includes("/")) {
-    const [d, m, yRest] = fecha.split("/");
-    const [y, h] = yRest.split(" ");
-    return new Date(`${y}-${m}-${d}T${h}`);
+  if (fecha.toDate) return fecha.toDate(); // por si es Timestamp de Firestore
+  if (typeof fecha === "string") {
+    if (fecha.includes("T")) return new Date(fecha);
+    if (fecha.includes("/")) {
+      const [d, m, yRest] = fecha.split("/");
+      const [y, h] = yRest.split(" ");
+      return new Date(`${y}-${m}-${d}T${h}`);
+    }
+    return new Date(fecha);
   }
   return new Date(fecha);
 }
@@ -114,11 +252,7 @@ function parseFecha(fecha) {
 async function loadRegistros() {
   const snap = await getDocs(collection(db, "registros"));
   const arr = [];
-
-  snap.forEach(doc => {
-    arr.push({ id: doc.id, ...doc.data() });
-  });
-
+  snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
   return arr;
 }
 
@@ -127,16 +261,14 @@ async function loadRegistros() {
 ------------------------------ */
 async function loadAsesores() {
   const snap = await getDocs(collection(db, "asesores"));
-  const mapa = {}; 
-
+  const mapa = {};
   snap.forEach(doc => {
     const d = doc.data();
     if (d.nombre) {
       mapa[d.nombre.trim()] = d.GC || "SIN GC";
     }
   });
-
-  return mapa; // { "Asesor Nombre" : "GCxxxx" }
+  return mapa;
 }
 
 /* ------------------------------
@@ -145,7 +277,6 @@ async function loadAsesores() {
 async function getMergedData() {
   const registros = await loadRegistros();
   const asesores = await loadAsesores();
-
   return registros.map(r => ({
     ...r,
     gc: asesores[r.asesor?.trim()] || "SIN GC"
@@ -159,10 +290,8 @@ function getWeeksOfMonth(date = new Date()) {
   const y = date.getFullYear();
   const m = date.getMonth();
   const last = new Date(y, m + 1, 0).getDate();
-
   const weeks = [];
   let d = 1;
-
   while (d <= last) {
     weeks.push({ startDay: d, endDay: Math.min(d + 6, last) });
     d += 7;
@@ -183,14 +312,73 @@ const chart = new Chart(document.getElementById("chartMonth"), {
       backgroundColor: "#0f4c81"
     }]
   },
-  options: { scales: { y: { beginAtZero: true, max: 100 }}}
+  options: {
+    plugins:{ legend:{ display:false }},
+    scales: { y: { beginAtZero: true, max: 100 }}
+  }
 });
 
 /* ------------------------------
-   GENERAR DASHBOARD
+   VISTA EJECUTIVA B2
+------------------------------ */
+function renderExecView(data) {
+  // Agrupar por asesor
+  const porAsesor = {};
+  data.forEach(r => {
+    if (!r.asesor) return;
+    const key = r.asesor;
+    if (!porAsesor[key]) {
+      porAsesor[key] = { 
+        asesor: key,
+        gc: r.gc || "SIN GC",
+        total: 0,
+        sumaNota: 0
+      };
+    }
+    porAsesor[key].total += 1;
+    porAsesor[key].sumaNota += Number(r.nota || 0);
+  });
+
+  const lista = Object.values(porAsesor)
+    .map(a => ({
+      ...a,
+      promedio: a.total ? a.sumaNota / a.total : 0
+    }))
+    .sort((a,b) => b.promedio - a.promedio); // orden descendente
+
+  const cont = document.getElementById("execGrid");
+  cont.innerHTML = lista.map(a => {
+    const prom = Math.round(a.promedio * 10) / 10;
+    const esVerde = prom >= 85;
+    const pillClass = esVerde ? "green" : "red";
+    const label = esVerde ? "🟢 85 – 100" : "🔴 0 – 84";
+
+    return `
+      <div class="exec-card">
+        <div class="exec-header">
+          <div>
+            <div class="exec-name">${a.asesor}</div>
+            <div class="exec-gc">GC: ${a.gc}</div>
+          </div>
+          <div class="pill ${pillClass}">
+            ${label}
+          </div>
+        </div>
+        <div class="exec-main">
+          <div class="exec-score">${prom}%</div>
+          <div class="exec-meta">
+            <div><b>${a.total}</b> feedback(s) en el mes</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("") || `<div class="small">Sin datos para este mes.</div>`;
+}
+
+/* ------------------------------
+   GENERAR DASHBOARD COMPLETO
 ------------------------------ */
 async function refreshDashboard() {
-
   let data = await getMergedData();
 
   // ordenar por fecha
@@ -204,14 +392,17 @@ async function refreshDashboard() {
            f.getFullYear() === hoy.getFullYear();
   });
 
-  /* ------------ CONTADORES ------------- */
+  /* --- Vista ejecutiva B2 --- */
+  renderExecView(data);
+
+  /* --- Contadores tipo --- */
   const counts = {
     EFECTIVA: 0, EFECTIVANK: 0, XPERTO: 0,
     FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
   };
-
-  data.forEach(r => counts[r.tipo] = (counts[r.tipo] || 0) + 1);
-
+  data.forEach(r => {
+    counts[r.tipo] = (counts[r.tipo] || 0) + 1;
+  });
   document.getElementById("cntEfectiva").innerText = counts.EFECTIVA;
   document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
   document.getElementById("cntXperto").innerText = counts.XPERTO;
@@ -219,9 +410,8 @@ async function refreshDashboard() {
   document.getElementById("cntIg").innerText = counts.INSTAGRAM;
   document.getElementById("cntMail").innerText = counts.CORREO;
 
-  /* ------------ ÚLTIMOS REGISTROS ------------- */
+  /* --- Últimos registros --- */
   const recent = data.slice().reverse().slice(0, 8);
-
   document.querySelector("#recentTable tbody").innerHTML =
     recent.map(r => `
       <tr>
@@ -230,11 +420,11 @@ async function refreshDashboard() {
         <td>${r.nota || 0}%</td>
         <td>${r.tipo}</td>
       </tr>
-    `).join("");
+    `).join("") || `<tr><td colspan="4">Sin registros</td></tr>`;
 
-  /* ------------ TABLA SEMANAL ------------- */
+  /* --- Tabla semanal --- */
   const weeks = getWeeksOfMonth();
-  const asesores = [...new Set(data.map(r => r.asesor))];
+  const asesoresUnicos = [...new Set(data.map(r => r.asesor))];
 
   document.getElementById("weeklyHead").innerHTML =
     `<tr><th>ASESOR</th>` +
@@ -242,12 +432,10 @@ async function refreshDashboard() {
     `</tr>`;
 
   document.getElementById("weeklyBody").innerHTML =
-    asesores.map(a => {
+    asesoresUnicos.map(a => {
       const reg = data.find(r => r.asesor === a);
       const gc = reg?.gc || "SIN GC";
-
       let row = `<tr><td>${a} — ${gc}</td>`;
-
       for (let w=0; w<weeks.length; w++) {
         const recs = data.filter(r => {
           const f = parseFecha(r.fecha);
@@ -256,35 +444,29 @@ async function refreshDashboard() {
                  d >= weeks[w].startDay &&
                  d <= weeks[w].endDay;
         });
-
         row += `<td>${recs[0]?.tipo || "-"}</td>`;
         row += `<td>${recs[1]?.tipo || "-"}</td>`;
       }
-
       return row + "</tr>";
-    }).join("");
+    }).join("") || `<tr><td colspan="${1+weeks.length*2}">Sin registros</td></tr>`;
 
-  /* ------------ GRÁFICO ------------- */
+  /* --- Gráfico semanal --- */
   const values = weeks.map(w => {
     const recs = data.filter(r => {
       const f = parseFecha(r.fecha);
       const d = f.getDate();
       return d >= w.startDay && d <= w.endDay;
     });
-
     if (!recs.length) return 0;
     const avg = recs.reduce((t, r) => t + (parseFloat(r.nota) || 0), 0) / recs.length;
     return Math.round(avg);
   });
-
   chart.data.labels = weeks.map((_, i) => `S${i+1}`);
   chart.data.datasets[0].data = values;
   chart.update();
 }
 
 refreshDashboard();
-
 </script>
-
 </body>
 </html>

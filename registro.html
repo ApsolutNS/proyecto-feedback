@@ -19,13 +19,19 @@
   .header-bar{
     display:flex;
     justify-content:space-between;
-    align-items:center;
+    align-items:flex-start;
     margin-bottom:12px;
     color:#e5e7eb;
+    gap:12px;
+    flex-wrap:wrap;
   }
-  .header-bar h1{
+  .header-left h1{
     margin:0;
     font-size:18px;
+  }
+  .header-left .subtitle{
+    font-size:12px;
+    color:#9ca3af;
   }
   .tag{
     font-size:11px;
@@ -162,11 +168,20 @@
 <body>
 <div class="shell">
   <div class="header-bar">
-    <div>
+    <div class="header-left">
       <h1>Registro del Monitoreo</h1>
-      <div class="small">Supervisor · Versión PREMIUM con cálculo automático de nota</div>
+      <div class="subtitle">Supervisor · Versión PREMIUM con cálculo automático de nota</div>
     </div>
-    <div class="tag">Firestore + Storage · v2</div>
+    <div>
+      <label style="margin-top:0;font-size:12px;">Registrado por</label>
+      <select id="registradoPor" style="min-width:210px">
+        <option value="">Selecciona...</option>
+        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
+        <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
+        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
+      </select>
+      <div class="tag" style="margin-top:6px;text-align:center">Firestore + Storage · v3</div>
+    </div>
   </div>
 
   <div class="layout">
@@ -204,14 +219,6 @@
         </div>
       </div>
 
-      <label>Registrado por</label>
-      <select id="registradoPor">
-        <option value="">-- Selecciona --</option>
-        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
-        <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
-        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
-      </select>
-
       <h3>Datos del cliente</h3>
       <div class="row">
         <div class="col">
@@ -239,13 +246,13 @@
 
       <h3>Ítems observados</h3>
       <div class="small">
-        Marca los ítems en los que el asesor <b>falla</b> y describe el contexto en el detalle.
+        Marca los ítems en los que el asesor falla y describe el contexto en el detalle.
         Recuerda: sólo se registran incumplimientos (no aciertos).
       </div>
 
       <div class="chips-row">
         <span class="chip error">ERROR INEXCUSABLE ⇒ nota 0</span>
-        <span class="chip">PENCUF ⇒ resta máximo 25 pts (según %)</span>
+        <span class="chip">PENCUF ⇒ resta hasta 25 pts según %</span>
         <span class="chip">PECNEG ⇒ -30 pts fijo</span>
         <span class="chip">PECUF ⇒ -35 pts fijo</span>
         <span class="chip">PECCUMP ⇒ -10 pts fijo</span>
@@ -277,6 +284,7 @@
         <span>Clasificación</span>
         <span id="badgeCalidad" class="badge good">🟢 Aprobado</span>
       </div>
+
       <div class="summary-row">
         <span>PENCUF</span>
         <span id="infoPENCUF" class="small">Sin descuentos</span>
@@ -328,7 +336,6 @@ const firebaseConfig = {
   appId: "1:512179147778:web:795e4a8b177fe766d3431b",
   measurementId: "G-X6MP0FFH9P"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -368,14 +375,14 @@ const ITEMS = [
   { name:"Tramita la gestión correspondiente", perc:30, tipo:"PECNEG" },
   { name:"Transferencia", perc:30, tipo:"PECNEG" },
 
-  // PECUF – un solo ítem ⇒ -35 pts (se acumula con PENCUF y otros)
+  // PECUF – un solo ítem → -35 pts (se acumula con PENCUF y otros grupos)
   { name:"Cumple con devolución de llamado", perc:35, tipo:"PECUF" },
   { name:"Actitud - Manejo de llamada", perc:35, tipo:"PECUF" },
   { name:"Conocimientos para resolver la consulta", perc:35, tipo:"PECUF" },
   { name:"Asesoramiento de Producto o Servicio (Pagina Web | Posible Compra | Servicios)", perc:35, tipo:"PECUF" },
   { name:"Solución al primer contacto", perc:35, tipo:"PECUF" },
 
-  // PECCUMP – un solo ítem ⇒ -10 pts (según tu indicación)
+  // PECCUMP – un solo ítem → -10 pts (tu regla final)
   { name:"Verificación de datos", perc:10, tipo:"PECCUMP" },
   { name:"Damos el número de Ticket", perc:10, tipo:"PECCUMP" },
 
@@ -412,25 +419,21 @@ cargarAsesores();
 /* --------------------- DETECTAR TIPO -------------------------- */
 function detectarTipoTexto(text){
   if(!text) return 'NO IDENTIFICADO';
-  const t = text.toLowerCase();
-  if(t.includes('intefectivank') || t.includes('vank')) return 'EFECTIVANK';
-  if(t.includes('intefectiva')) return 'EFECTIVA';
-  if(t.includes('intxperto')) return 'XPERTO';
-  if(t.includes('facebook')) return 'FACEBOOK';
-  if(t.includes('instagram')) return 'INSTAGRAM';
-  if(t.includes('correo') || t.includes('mail')) return 'CORREO';
+  text = text.toLowerCase();
+  if(text.includes('intefectivank') || text.includes('vank')) return 'EFECTIVANK';
+  if(text.includes('intefectiva')) return 'EFECTIVA';
+  if(text.includes('intxperto')) return 'XPERTO';
+  if(text.includes('facebook')) return 'FACEBOOK';
+  if(text.includes('instagram')) return 'INSTAGRAM';
+  if(text.includes('correo') || text.includes('mail')) return 'CORREO';
   return 'OTRO';
-}
-
-function updateDetected(){
-  const idLlamadaEl   = document.getElementById('idLlamada');
-  const idContactoEl  = document.getElementById('idContacto');
-  const tipoDetectado = document.getElementById('tipoDetectado');
-  const v = (idLlamadaEl.value || "") + " " + (idContactoEl.value || "");
-  tipoDetectado.value = detectarTipoTexto(v);
 }
 document.getElementById('idLlamada').addEventListener('input', updateDetected);
 document.getElementById('idContacto').addEventListener('input', updateDetected);
+function updateDetected(){
+  const v = idLlamada.value + " " + idContacto.value;
+  tipoDetectado.value = detectarTipoTexto(v);
+}
 
 /* --------------------- UI: ITEMS ---------------------- */
 window.addItemBlock = function() {
@@ -450,7 +453,7 @@ window.addItemBlock = function() {
   document.getElementById("itemsContainer").appendChild(w);
 
   const select = w.querySelector(".item-select");
-  const meta   = w.querySelector(".item-meta");
+  const meta = w.querySelector(".item-meta");
   const removeBtn = w.querySelector(".item-remove");
 
   select.addEventListener("change", ()=>{
@@ -464,7 +467,7 @@ window.addItemBlock = function() {
     recalcularNotaPreview();
   });
 
-  w.querySelector(".item-detail").addEventListener("input", ()=>{ /* opcional */ });
+  w.querySelector(".item-detail").addEventListener("input", ()=>{});
 
   removeBtn.addEventListener("click", ()=>{
     w.remove();
@@ -503,7 +506,7 @@ document.getElementById('imgs').addEventListener('change', function(){
   - Nota base: 100
   - PENCUF → resta: 25 * (sumaPercPENCUF / 100)
   - PECNEG → si hay al menos uno: -30
-  - PECUF  → si hay al menos uno: -35
+  - PECUF → si hay al menos uno: -35
   - PECCUMP → si hay al menos uno: -10
 */
 function calcularNota(items){
@@ -515,7 +518,6 @@ function calcularNota(items){
   const totalPENCUF = items
     .filter(i => i.tipo === "PENCUF")
     .reduce((sum,i)=> sum + (i.perc || 0), 0);
-
   const dedPENCUF = 25 * (totalPENCUF / 100);
 
   const hasPECNEG   = items.some(i => i.tipo === "PECNEG");
@@ -540,9 +542,9 @@ function obtenerItemsFormulario(){
   blocks.forEach(b=>{
     const select = b.querySelector(".item-select");
     const detail = b.querySelector(".item-detail").value;
-    const name   = select.value;
+    const name = select.value;
     if(!name) return;
-    const meta   = ITEMS.find(i=>i.name === name) || { tipo:"NINGUNO", perc:0 };
+    const meta = ITEMS.find(i=>i.name === name) || { tipo:"NINGUNO", perc:0 };
     items.push({
       name,
       tipo: meta.tipo,
@@ -555,11 +557,12 @@ function obtenerItemsFormulario(){
 
 function recalcularNotaPreview(){
   const items = obtenerItemsFormulario();
-  const nota  = calcularNota(items);
+  const nota = calcularNota(items);
 
+  // círculo
   const notaEl = document.getElementById("notaPreview");
   const circle = document.getElementById("scoreCircle");
-  const badge  = document.getElementById("badgeCalidad");
+  const badge = document.getElementById("badgeCalidad");
 
   notaEl.textContent = nota.toFixed(1).replace(/\.0$/,"");
 
@@ -575,6 +578,7 @@ function recalcularNotaPreview(){
     badge.textContent = "🔴 No aprobado";
   }
 
+  // detalle grupos
   const infoPENCUF  = document.getElementById("infoPENCUF");
   const infoPECNEG  = document.getElementById("infoPECNEG");
   const infoPECUF   = document.getElementById("infoPECUF");
@@ -583,20 +587,20 @@ function recalcularNotaPreview(){
 
   const totalPENCUF = items.filter(i=>i.tipo==="PENCUF")
                            .reduce((s,i)=>s+(i.perc||0),0);
-  const dedPENCUF   = 25 * (totalPENCUF / 100);
+  const dedPENCUF = 25 * (totalPENCUF / 100);
 
   infoPENCUF.textContent = totalPENCUF
     ? `-${dedPENCUF.toFixed(1)} pts (suma ${totalPENCUF}%)`
     : "Sin descuentos";
 
-  const hasPECNEG   = items.some(i=>i.tipo==="PECNEG");
-  const hasPECUF    = items.some(i=>i.tipo==="PECUF");
-  const hasPECCUMP  = items.some(i=>i.tipo==="PECCUMP");
-  const hasEI       = items.some(i=>i.tipo==="ERROR_INEXCUSABLE");
+  const hasPECNEG  = items.some(i=>i.tipo==="PECNEG");
+  const hasPECUF   = items.some(i=>i.tipo==="PECUF");
+  const hasPECCUMP = items.some(i=>i.tipo==="PECCUMP");
+  const hasEI      = items.some(i=>i.tipo==="ERROR_INEXCUSABLE");
 
-  infoPECNEG.textContent  = hasPECNEG  ? "-30 pts" : "Sin descuentos";
-  infoPECUF.textContent   = hasPECUF   ? "-35 pts" : "Sin descuentos";
-  infoPECCUMP.textContent = hasPECCUMP ? "-10 pts" : "Sin descuentos";
+  infoPECNEG.textContent  = hasPECNEG  ? "-30 pts"  : "Sin descuentos";
+  infoPECUF.textContent   = hasPECUF   ? "-35 pts"  : "Sin descuentos";
+  infoPECCUMP.textContent = hasPECCUMP ? "-10 pts"  : "Sin descuentos";
   infoEI.textContent      = hasEI      ? "Aplica ⇒ nota 0" : "No aplicado";
 }
 
@@ -607,9 +611,17 @@ window.submitRecord = async function() {
   msgEl.textContent = "⏳ Subiendo...";
 
   try{
-    const items = obtenerItemsFormulario();
-    const nota  = calcularNota(items);
+    const registradoPor = document.getElementById("registradoPor").value;
+    if(!registradoPor){
+      msgEl.style.color = 'red';
+      msgEl.textContent = "Debes seleccionar quién registra el monitoreo.";
+      return;
+    }
 
+    const items = obtenerItemsFormulario();
+    const nota = calcularNota(items);
+
+    // subir imágenes
     const files = document.getElementById('imgs').files;
     const imageURLs = [];
     for(const f of files){
@@ -619,33 +631,30 @@ window.submitRecord = async function() {
       imageURLs.push({name: f.name, url, storagePath: storageRef.fullPath});
     }
 
-    const asesorSel    = document.getElementById('asesor');
-    const cargoEl      = document.getElementById('cargo');
-    const tipoDetectEl = document.getElementById('tipoDetectado');
-    const registradoEl = document.getElementById('registradoPor');
-
+    const asesorSel = document.getElementById('asesor');
     const gc = asesorSel.options[asesorSel.selectedIndex]?.dataset.gc || "SIN GC";
 
     const data = {
-      idLlamada:   document.getElementById('idLlamada').value,
-      idContacto:  document.getElementById('idContacto').value,
-      tipo:        tipoDetectEl.value,
-      asesor:      asesorSel.value,
+      idLlamada: idLlamada.value,
+      idContacto: idContacto.value,
+      tipo: tipoDetectado.value,
+      asesor: asesorSel.value,
       gc,
-      cargo:       cargoEl.value,
-      registradoPor: registradoEl.value || "",
+      cargo: cargo.value,
       cliente:{
-        dni:    document.getElementById('cliDni').value,
-        nombre: document.getElementById('cliNombre').value,
-        tel:    document.getElementById('cliTel').value
+        dni: cliDni.value,
+        nombre: cliNombre.value,
+        tel: cliTel.value
       },
-      tipificacion:       document.getElementById('cliTipif').value,
-      observacionCliente: document.getElementById('cliObs').value,
-      resumen:            document.getElementById('resumen').value,
+      tipificacion: cliTipif.value,
+      observacionCliente: cliObs.value,
+      resumen: resumen.value,
       items,
       nota,
       imagenes: imageURLs,
-      fecha: new Date().toISOString()
+      fecha: new Date().toISOString(),
+      registradoPor,          // 🔹 NUEVO: quién ingresó el monitoreo
+      estado: "PENDIENTE"     // para el portal del agente
     };
 
     await addDoc(collection(db, "registros"), data);
@@ -653,10 +662,10 @@ window.submitRecord = async function() {
     msgEl.style.color = 'green';
     msgEl.textContent = `✔ Guardado correctamente · Nota final: ${nota}`;
 
-    window.clearItems();
+    clearItems();
     document.getElementById('imgPreview').innerHTML = "";
-    document.getElementById('imgs').value = "";
     recalcularNotaPreview();
+
   } catch(err){
     msgEl.style.color = 'red';
     msgEl.textContent = "❌ Error: " + err.message;

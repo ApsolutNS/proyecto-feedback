@@ -192,7 +192,7 @@ async function refreshDashboard() {
   document.querySelector("#recentTable tbody").innerHTML =
     recent.map(r => {
       const fecha = parseFecha(r.fecha).toLocaleString("es-PE");
-      const asesorGC = `${r.asesor} — ${r.gc || "SIN GC"}`;
+      const asesorGC = `${r.asesor} — ${r.GC || "SIN GC"}`;
       return `
         <tr>
           <td>${fecha}</td>
@@ -257,4 +257,5 @@ refreshDashboard();
 
 </body>
 </html>
+
 

@@ -214,7 +214,7 @@ async function refreshDashboard() {
   document.getElementById("weeklyBody").innerHTML =
     asesores.map(a => {
       const filaAsesor = data.find(r => r.asesor === a);
-      const gc = filaAsesor?.gc || "SIN GC";
+      const gc = filaAsesor?.GC || "SIN GC";
 
       let row = `<tr><td>${a} — ${gc}</td>`;
 
@@ -257,5 +257,6 @@ refreshDashboard();
 
 </body>
 </html>
+
 
 

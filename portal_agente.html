@@ -4,20 +4,33 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Portal del Agente</title>
+
 <style>
   body{font-family:Arial;background:#f4f6fb;margin:0;padding:18px}
-  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
+  .card{max-width:980px;margin:auto;background:#fff;padding:18px;border-radius:8px;
+        box-shadow:0 6px 18px rgba(10,20,30,0.06)}
   h2{margin-top:0}
   label{display:block;margin-top:10px;font-weight:600}
-  input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ef;margin-top:6px;box-sizing:border-box}
+  input,select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #e6e9ef;margin-top:6px}
   table{width:100%;border-collapse:collapse;margin-top:12px}
   th,td{padding:8px;border-bottom:1px solid #eef2f7;text-align:left}
   th{background:#fbfdff}
-  canvas{border:1px solid #e6eef9;border-radius:6px;margin-top:10px}
   .btn{background:#0f4c81;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;margin-top:10px}
   .btn.ghost{background:#fff;color:#0f4c81;border:1px solid #cbd5e1}
+
+  /* POPUP */
+  #popup{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;
+  }
+  #popupContent{
+    background:white;padding:20px;border-radius:10px;max-width:760px;width:90%;
+    box-shadow:0 4px 18px rgba(0,0,0,0.3)
+  }
+  canvas{border:1px solid #ccc;border-radius:6px}
 </style>
 </head>
+
 <body>
 
 <div class="card">
@@ -52,22 +65,38 @@
     <label>Compromiso del agente</label>
     <textarea id="compromiso" rows="4"></textarea>
 
-    <label>Firma (dibujar)</label>
-    <canvas id="canvas" width="700" height="140"></canvas>
-
-    <div style="display:flex;gap:8px">
-      <button class="btn" onclick="saveSignature()">Enviar Firma y Completar</button>
-      <button class="btn ghost" onclick="clearCanvas()">Limpiar Firma</button>
+    <label>Selecciona cómo deseas firmar</label>
+    <div style="display:flex;gap:10px;margin-top:5px">
+      <button class="btn" onclick="openPopup()">DIBUJAR FIRMA</button>
+      <button class="btn" onclick="document.getElementById('fileInput').click()">SUBIR FIRMA</button>
     </div>
+
+    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="uploadFirmImage(event)">
 
     <div id="agentMsg" style="margin-top:10px;color:green"></div>
   </div>
 </div>
 
+
+<!-- ================= POPUP PARA DIBUJAR ================= -->
+<div id="popup">
+  <div id="popupContent">
+    <h3>Firmar</h3>
+
+    <canvas id="canvas" width="700" height="160"></canvas>
+
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn" onclick="saveSignatureCanvas()">Guardar Firma</button>
+      <button class="btn ghost" onclick="clearCanvas()">Limpiar</button>
+      <button class="btn ghost" onclick="closePopup()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+
 <script type="module">
-/* -----------------------------------------------------------------------
-   FIREBASE IMPORTS
------------------------------------------------------------------------- */
+
+/* ---------------------- FIREBASE ---------------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, getDocs, query, where,
@@ -75,73 +104,56 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 import {
-  getStorage, ref, uploadString, getDownloadURL
+  getStorage, ref, uploadString, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-/* -----------------------------------------------------------------------
-   FIREBASE CONFIG
------------------------------------------------------------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
   projectId: "feedback-app-ac30e",
   storageBucket: "feedback-app-ac30e.firebasestorage.app",
   messagingSenderId: "512179147778",
-  appId: "1:512179147778:web:795e4a8b177fe766d3431b",
-  measurementId: "G-X6MP0FFH9P"
+  appId: "1:512179147778:web:795e4a8b177fe766d3431b"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-/* -----------------------------------------------------------------------
-   CARGAR ASESORES CON GC
------------------------------------------------------------------------- */
-let asesoresByNombre = {}; // { "Dandy Joel": "GC47227421" }
+/* ---------------------- VARIABLES ---------------------- */
+let asesoresByNombre = {};
+let currentRecordId = null;
 
+
+/* ------------------- CARGAR ASESORES -------------------- */
 async function loadAdvisors(){
   const snap = await getDocs(collection(db,"asesores"));
   asesoresByNombre = {};
 
   snap.forEach(d=>{
     const {nombre, GC} = d.data();
-    if(nombre && GC) asesoresByNombre[nombre] = GC;
+    if(nombre) asesoresByNombre[nombre] = GC || "SIN GC";
   });
 
   const sel = document.getElementById("selAgent");
   sel.innerHTML = '<option value="">-- selecciona --</option>';
 
-  Object.keys(asesoresByNombre)
-    .sort()
-    .forEach(nombre=>{
-      sel.innerHTML += `<option value="${nombre}">${nombre} — ${asesoresByNombre[nombre]}</option>`;
-    });
+  Object.keys(asesoresByNombre).sort().forEach(n=>{
+    sel.innerHTML += `<option>${n}</option>`;
+  });
 }
 loadAdvisors();
 
-function getGC(nombre){
-  return asesoresByNombre[nombre] || "";
-}
 
-/* -----------------------------------------------------------------------
-   PARSE FECHA
------------------------------------------------------------------------- */
+/* ------------------- PARSE FECHA ----------------------- */
 function parseFecha(r){
-  if(r.fechaHora){
-    if(r.fechaHora.toDate) return r.fechaHora.toDate();
-    return new Date(r.fechaHora);
-  }
-  if(r.fecha){
-    if(r.fecha.toDate) return r.fecha.toDate();
-    return new Date(r.fecha);
-  }
-  return new Date();
+  if(r.fechaHora?.toDate) return r.fechaHora.toDate();
+  if(r.fecha?.toDate) return r.fecha.toDate();
+  return new Date(r.fecha || Date.now());
 }
 
-/* -----------------------------------------------------------------------
-   LISTA DE FEEDBACKS DEL AGENTE
------------------------------------------------------------------------- */
+
+/* ---------------- LISTAR FEEDBACKS --------------------- */
 window.loadAgentList = async function(){
   const advisor = document.getElementById("selAgent").value;
   const tbody = document.querySelector("#agentTable tbody");
@@ -154,14 +166,14 @@ window.loadAgentList = async function(){
   const qRef = query(collection(db,"registros"), where("asesor","==",advisor));
   const snap = await getDocs(qRef);
 
-  const list = [];
+  const list=[];
   snap.forEach(d=>{
-    const data = d.data();
+    const data=d.data();
     list.push({
-      id: d.id,
-      nota: data.nota ?? 0,
-      estado: data.estado || "PENDIENTE",
-      fecha: parseFecha(data)
+      id:d.id,
+      nota:data.nota ?? 0,
+      estado:data.estado || "PENDIENTE",
+      fecha:parseFecha(data)
     });
   });
 
@@ -174,66 +186,49 @@ window.loadAgentList = async function(){
       <td>${r.nota}%</td>
       <td>${r.estado}</td>
       <td><button onclick="openDetail('${r.id}')">Abrir</button></td>
-    </tr>
-  `).join("") || '<tr><td colspan="5">Sin registros</td></tr>';
+    </tr>`).join("") || '<tr><td colspan="5">Sin registros</td></tr>';
 };
 
-/* -----------------------------------------------------------------------
-   ABRIR DETALLE DEL FEEDBACK
------------------------------------------------------------------------- */
-let currentRecordId = null;
 
+/* ---------------- ABRIR DETALLE ------------------------ */
 window.openDetail = async function(id){
   const snap = await getDoc(doc(db,"registros",id));
   if(!snap.exists()) return alert("Registro no encontrado");
-
-  const rec = snap.data();
+  
   currentRecordId = id;
-
-  const fecha = parseFecha(rec).toLocaleString("es-PE");
-  const gc = getGC(rec.asesor);
-  const items = rec.items || [];
-  const evidencias = rec.imagenes || [];
-  const nota = rec.nota ?? 0;
-
-  const itemsText = items.length
-    ? items.map(it => `${it.name} (${it.perc}%)`).join("; ")
-    : "Sin ítems";
-
-  const imgs = evidencias.length
-    ? evidencias.map(im => `
-        <img src="${im.url}" style="width:100%;max-width:700px;margin-top:10px;border-radius:8px">
-      `).join("")
-    : "<em>Sin evidencias</em>";
+  const rec = snap.data();
 
   document.getElementById("feedbackInfo").innerHTML = `
     <div><b>ID:</b> ${id}</div>
-    <div><b>Fecha:</b> ${fecha}</div>
-    <div><b>Asesor:</b> ${rec.asesor} — ${gc}</div>
+    <div><b>Fecha:</b> ${parseFecha(rec).toLocaleString("es-PE")}</div>
+    <div><b>Asesor:</b> ${rec.asesor} — ${asesoresByNombre[rec.asesor] || "SIN GC"}</div>
     <div><b>Tipo:</b> ${rec.tipo}</div>
-    <div><b>Nota:</b> ${nota}%</div>
+    <div><b>Nota:</b> ${rec.nota || 0}%</div>
     <div style="margin-top:8px"><b>Resumen:</b> ${rec.resumen || ""}</div>
-    <div style="margin-top:8px"><b>Items:</b> ${itemsText}</div>
-    <div style="margin-top:8px">
-      <b>Evidencias:</b> ${evidencias.length}
-      <div>${imgs}</div>
-    </div>
   `;
 
   document.getElementById("compromiso").value = rec.compromiso || "";
   document.getElementById("detailBlock").style.display = "block";
 };
 
-/* -----------------------------------------------------------------------
-   FIRMA EN CANVAS
------------------------------------------------------------------------- */
+
+/* -------------------- POPUP --------------------------- */
+window.openPopup = function(){
+  document.getElementById("popup").style.display = "flex";
+};
+
+window.closePopup = function(){
+  document.getElementById("popup").style.display = "none";
+};
+
+
+/* ------------------ CANVAS ---------------------------- */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 let drawing = false;
 
 canvas.addEventListener("mousedown",()=>drawing=true);
 canvas.addEventListener("mouseup",()=>{drawing=false;ctx.beginPath();});
-canvas.addEventListener("mouseleave",()=>{drawing=false;ctx.beginPath();});
 canvas.addEventListener("mousemove",e=>{
   if(!drawing) return;
   const r = canvas.getBoundingClientRect();
@@ -250,21 +245,19 @@ window.clearCanvas = function(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 };
 
-/* -----------------------------------------------------------------------
-   GUARDAR FIRMA + COMPROMISO
------------------------------------------------------------------------- */
-window.saveSignature = async function(){
-  if(!currentRecordId) return alert("No hay registro abierto");
 
+/* ----------- GUARDAR FIRMA DIBUJADA ------------------ */
+window.saveSignatureCanvas = async function(){
+  if(!currentRecordId) return alert("No hay registro activo");
   const compromiso = document.getElementById("compromiso").value.trim();
-  if(!compromiso) return alert("El compromiso es obligatorio");
+  if(!compromiso) return alert("Ingresa tu compromiso");
 
   const msg = document.getElementById("agentMsg");
-  msg.style.color = "green";
-  msg.textContent = "Subiendo firma...";
+  msg.textContent = "Guardando firma...";
 
   const dataUrl = canvas.toDataURL("image/png");
   const sigRef = ref(storage, `firmas/${currentRecordId}.png`);
+
   await uploadString(sigRef, dataUrl, "data_url");
   const url = await getDownloadURL(sigRef);
 
@@ -274,9 +267,39 @@ window.saveSignature = async function(){
     estado: "COMPLETADO"
   });
 
-  msg.textContent = "Feedback completado correctamente";
+  msg.textContent = "Firma guardada correctamente";
+  closePopup();
   loadAgentList();
 };
+
+
+/* ----------- SUBIR FIRMA DESDE ARCHIVOS --------------- */
+window.uploadFirmImage = async function(event){
+  if(!currentRecordId) return alert("No hay registro activo");
+
+  const compromiso = document.getElementById("compromiso").value.trim();
+  if(!compromiso) return alert("Ingresa tu compromiso");
+
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const msg = document.getElementById("agentMsg");
+  msg.textContent = "Subiendo imagen...";
+
+  const sigRef = ref(storage, `firmas/${currentRecordId}.png`);
+  await uploadBytes(sigRef, file);
+  const url = await getDownloadURL(sigRef);
+
+  await updateDoc(doc(db,"registros",currentRecordId),{
+    compromiso,
+    firmaUrl: url,
+    estado: "COMPLETADO"
+  });
+
+  msg.textContent = "Firma subida correctamente";
+  loadAgentList();
+};
+
 </script>
 
 </body>

@@ -61,14 +61,8 @@ td{
 }
 .btn:hover{background:#2563eb}
 .btn.sm{padding:6px 10px;font-size:12px}
-.btn.ghost{
-  background:transparent;border:1px solid #64748b;color:#93c5fd;
-}
-.section-title{
-  margin-top:12px;
-  font-weight:bold;
-  color:#fff;
-}
+.btn.ghost{background:transparent;border:1px solid #64748b;color:#93c5fd;}
+
 #detailBox{
   margin-top:20px;
   display:none;
@@ -77,17 +71,11 @@ td{
   border-radius:10px;
   border:1px solid #334155;
 }
-.logo{
-  display:flex;
-  justify-content:flex-end;
-  margin-bottom:10px;
-}
+.logo{text-align:right;margin-bottom:10px}
 .logo img{max-height:45px}
-.feedback-body{
-  font-size:14px;
-  line-height:1.5;
-  color:#cbd5e1;
-}
+
+.feedback-body{font-size:14px;line-height:1.5;color:#cbd5e1}
+
 .item-block{
   margin-bottom:6px;
   padding-left:6px;
@@ -100,16 +88,19 @@ td{
   margin-top:8px;
   border:1px solid #475569;
 }
+
 #pdfBtn{
   margin-top:12px;
   background:#10b981 !important;
 }
 </style>
 </head>
-<body>
 
+<body>
 <div class="card">
   <h2>Visualización de Feedback — Modo DARK</h2>
+
+  <!-- FILTROS -->
 
   <label>Filtrar por asesor</label>
   <select id="filtroAsesor">
@@ -149,18 +140,20 @@ td{
     <div class="logo">
       <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media&token=730b1e7c-abbf-4369-9e8c-fafad2b39883">
     </div>
+
     <h3>Detalle del Feedback</h3>
     <div id="detailContent" class="feedback-body"></div>
 
     <button id="pdfBtn" class="btn">Exportar PDF</button>
   </div>
+
 </div>
 
 <script type="module">
 /* ---------------- FIREBASE ---------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { 
-  getFirestore, collection, getDocs, doc, getDoc, query, where 
+  getFirestore, collection, getDocs 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -169,37 +162,51 @@ const firebaseConfig = {
   projectId:"feedback-app-ac30e",
   storageBucket:"feedback-app-ac30e.firebasestorage.app"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /* ---------------- LOAD LIST ---------------- */
-async function cargarRegistros() {
-  const snap = await getDocs(collection(db, "registros"));
-  const data = [];
-  snap.forEach(d => {
-    const r = d.data();
-    data.push({
-      id:d.id,
-      ...r,
-      fechaObj: r.fecha ? new Date(r.fecha) : new Date()
-    });
-  });
-  return data.sort((a,b)=>b.fechaObj - a.fechaObj);
-}
-
-/* ------------ FILL TABLE ---------------- */
 let registros = [];
 
-async function renderTabla() {
-  const t = document.querySelector("#tablaFeedback tbody");
-  t.innerHTML = "";
+async function cargarRegistros() {
+  const snap = await getDocs(collection(db, "registros"));
+  registros = [];
 
+  snap.forEach(d => {
+    const r = d.data();
+    registros.push({
+      id: d.id,
+      ...r,
+      fechaObj: new Date(r.fecha),
+      registradoPor: r.registradoPor || ""  // 👈 AQUI LA CORRECCIÓN
+    });
+  });
+
+  registros.sort((a, b) => b.fechaObj - a.fechaObj);
+}
+
+/* -------- FILL FILTERS -------- */
+function cargarAsesoresFiltro() {
+  const asesores = [...new Set(registros.map(r => r.asesor))].sort();
+  filtroAsesor.innerHTML = `<option value="">— Todos —</option>`;
+
+  asesores.forEach(a => {
+    filtroAsesor.innerHTML += `<option value="${a}">${a}</option>`;
+  });
+}
+
+/* ------------ RENDER TABLE ---------------- */
+function renderTabla() {
   const filAs = filtroAsesor.value;
   const filReg = filtroRegistrado.value;
 
+  const t = document.querySelector("#tablaFeedback tbody");
+  t.innerHTML = "";
+
   registros
     .filter(r => !filAs || r.asesor === filAs)
-    .filter(r => !filReg || r.registrado_por === filReg)
+    .filter(r => !filReg || r.registradoPor === filReg)  // 👈 CORREGIDO
     .forEach(r => {
       t.innerHTML += `
         <tr>
@@ -207,49 +214,31 @@ async function renderTabla() {
           <td>${r.fechaObj.toLocaleString("es-PE")}</td>
           <td>${r.asesor}</td>
           <td>${r.nota}%</td>
-          <td>${r.registrado_por || "-"}</td>
+          <td>${r.registradoPor || "-"}</td>
           <td><button class="btn sm" onclick="verDetalle('${r.id}')">Ver</button></td>
         </tr>
       `;
     });
 }
 
-/* ------------ LOAD ADVISORS TO FILTER ------------- */
-function cargarAsesoresFiltro() {
-  const asesores = [...new Set(registros.map(r => r.asesor))].sort();
-  filtroAsesor.innerHTML = `<option value="">— Todos —</option>`;
-  asesores.forEach(a => {
-    filtroAsesor.innerHTML += `<option value="${a}">${a}</option>`;
-  });
-}
-
-window.addEventListener("load", async () => {
-  registros = await cargarRegistros();
-  cargarAsesoresFiltro();
-  renderTabla();
-});
-
-filtroAsesor.onchange = renderTabla;
-filtroRegistrado.onchange = renderTabla;
-
 /* ---------------- DETALLE ------------------- */
-window.verDetalle = async function(id){
-  const r = registros.find(x=>x.id===id);
-  if(!r) return;
+window.verDetalle = function(id){
+  const r = registros.find(x => x.id === id);
+  if (!r) return;
 
-  let itemsHtml = (r.items || []).map(it => `
+  const itemsHtml = (r.items || []).map(it => `
     <div class="item-block">
       <b>${it.name}</b> (${it.perc}%)
       <div>${it.detail || ""}</div>
     </div>
   `).join("");
 
-  let evidencias = (r.imagenes || []).map(im => `
+  const evidencias = (r.imagenes || []).map(im => `
     <img class="evidence-img" src="${im.url}">
   `).join("");
 
   document.getElementById("detailContent").innerHTML = `
-    <p><b>Registrado por:</b> ${r.registrado_por || "-"}</p>
+    <p><b>Registrado por:</b> ${r.registradoPor}</p>
     <p><b>Asesor:</b> ${r.asesor} (GC: ${r.gc || ""})</p>
     <p><b>Fecha:</b> ${r.fechaObj.toLocaleString("es-PE")}</p>
 
@@ -272,25 +261,32 @@ window.verDetalle = async function(id){
   `;
 
   document.getElementById("detailBox").style.display = "block";
-
-  // Save current to export
   window._CURRENT_FEEDBACK_ID = id;
 };
 
 /* ---------------- PDF EXPORT ---------------- */
 document.getElementById("pdfBtn").onclick = async () => {
   const element = document.getElementById("detailBox");
-
   const canvas = await html2canvas(element, { scale: 2 });
-  const imgData = canvas.toDataURL("image/png");
+  const img = canvas.toDataURL("image/png");
 
-  const pdf = new jspdf.jsPDF("p", "mm", "a4");
-  const width = pdf.internal.pageSize.getWidth();
-  const height = (canvas.height * 190) / canvas.width;
+  const pdf = new jspdf.jsPDF("p","mm","a4");
+  const w = pdf.internal.pageSize.getWidth() - 20;
+  const h = (canvas.height * w) / canvas.width;
 
-  pdf.addImage(imgData, "PNG", 10, 10, width - 20, height);
+  pdf.addImage(img, "PNG", 10, 10, w, h);
   pdf.save(`feedback_${window._CURRENT_FEEDBACK_ID}.pdf`);
 };
+
+/* ---------------- INIT ---------------- */
+window.onload = async () => {
+  await cargarRegistros();
+  cargarAsesoresFiltro();
+  renderTabla();
+  filtroAsesor.onchange = renderTabla;
+  filtroRegistrado.onchange = renderTabla;
+};
 </script>
+
 </body>
 </html>

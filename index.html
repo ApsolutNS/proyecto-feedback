@@ -85,12 +85,17 @@
 
 <script type="module">
 
+/* ------------------------------
+   IMPORTAR FIREBASE
+------------------------------ */
 import { db } from "./js/firebase.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { 
+  collection, getDocs 
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-/* ------------------------------ */
-/* PARSE FECHA                   */
-/* ------------------------------ */
+/* ------------------------------
+   PARSE FECHAS
+------------------------------ */
 function parseFecha(fecha) {
   if (!fecha) return new Date();
   if (fecha.includes("T")) return new Date(fecha);
@@ -100,32 +105,61 @@ function parseFecha(fecha) {
     const [y, h] = yRest.split(" ");
     return new Date(`${y}-${m}-${d}T${h}`);
   }
-
   return new Date(fecha);
 }
 
-/* ------------------------------ */
-/* OBTENER REGISTROS             */
-/* ------------------------------ */
-async function getAllRecords() {
+/* ------------------------------
+   CARGAR REGISTROS
+------------------------------ */
+async function loadRegistros() {
   const snap = await getDocs(collection(db, "registros"));
   const arr = [];
 
   snap.forEach(doc => {
-    const data = doc.data();
-    data.id = doc.id;       // mantener ID
-    arr.push(data);         // mantener TODOS los campos, incluido GC
+    arr.push({ id: doc.id, ...doc.data() });
   });
 
   return arr;
 }
 
-/* ------------------------------ */
-/* SEMANAS DEL MES               */
-/* ------------------------------ */
+/* ------------------------------
+   CARGAR ASESORES (CON GC)
+------------------------------ */
+async function loadAsesores() {
+  const snap = await getDocs(collection(db, "asesores"));
+  const mapa = {}; 
+
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (d.nombre) {
+      mapa[d.nombre.trim()] = d.GC || "SIN GC";
+    }
+  });
+
+  return mapa; // { "Asesor Nombre" : "GCxxxx" }
+}
+
+/* ------------------------------
+   CRUZAR REGISTROS + ASESORES
+------------------------------ */
+async function getMergedData() {
+  const registros = await loadRegistros();
+  const asesores = await loadAsesores();
+
+  return registros.map(r => ({
+    ...r,
+    gc: asesores[r.asesor?.trim()] || "SIN GC"
+  }));
+}
+
+/* ------------------------------
+   SEMANAS DEL MES
+------------------------------ */
 function getWeeksOfMonth(date = new Date()) {
-  const y = date.getFullYear(), m = date.getMonth();
+  const y = date.getFullYear();
+  const m = date.getMonth();
   const last = new Date(y, m + 1, 0).getDate();
+
   const weeks = [];
   let d = 1;
 
@@ -136,9 +170,9 @@ function getWeeksOfMonth(date = new Date()) {
   return weeks;
 }
 
-/* ------------------------------ */
-/* CONFIG CHART                  */
-/* ------------------------------ */
+/* ------------------------------
+   CHART
+------------------------------ */
 const chart = new Chart(document.getElementById("chartMonth"), {
   type: "bar",
   data: {
@@ -149,17 +183,15 @@ const chart = new Chart(document.getElementById("chartMonth"), {
       backgroundColor: "#0f4c81"
     }]
   },
-  options: {
-    scales: { y: { beginAtZero: true, max: 100 } }
-  }
+  options: { scales: { y: { beginAtZero: true, max: 100 }}}
 });
 
-/* ------------------------------ */
-/* DASHBOARD MAIN                */
-/* ------------------------------ */
+/* ------------------------------
+   GENERAR DASHBOARD
+------------------------------ */
 async function refreshDashboard() {
 
-  let data = await getAllRecords();
+  let data = await getMergedData();
 
   // ordenar por fecha
   data = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
@@ -168,10 +200,11 @@ async function refreshDashboard() {
   const hoy = new Date();
   data = data.filter(r => {
     const f = parseFecha(r.fecha);
-    return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+    return f.getMonth() === hoy.getMonth() &&
+           f.getFullYear() === hoy.getFullYear();
   });
 
-  /* ------------ CONTADORES ------------ */
+  /* ------------ CONTADORES ------------- */
   const counts = {
     EFECTIVA: 0, EFECTIVANK: 0, XPERTO: 0,
     FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
@@ -186,43 +219,42 @@ async function refreshDashboard() {
   document.getElementById("cntIg").innerText = counts.INSTAGRAM;
   document.getElementById("cntMail").innerText = counts.CORREO;
 
-  /* ------------ RECIENTES ------------ */
+  /* ------------ ÚLTIMOS REGISTROS ------------- */
   const recent = data.slice().reverse().slice(0, 8);
 
   document.querySelector("#recentTable tbody").innerHTML =
-    recent.map(r => {
-      const fecha = parseFecha(r.fecha).toLocaleString("es-PE");
-      const asesorGC = `${r.asesor} — ${r.GC || "SIN GC"}`;
-      return `
-        <tr>
-          <td>${fecha}</td>
-          <td>${asesorGC}</td>
-          <td>${r.nota || 0}%</td>
-          <td>${r.tipo}</td>
-        </tr>`;
-    }).join("") || `<tr><td colspan="4">Sin registros</td></tr>`;
+    recent.map(r => `
+      <tr>
+        <td>${parseFecha(r.fecha).toLocaleString("es-PE")}</td>
+        <td>${r.asesor} — ${r.gc}</td>
+        <td>${r.nota || 0}%</td>
+        <td>${r.tipo}</td>
+      </tr>
+    `).join("");
 
-  /* ------------ TABLA SEMANAL ------------ */
+  /* ------------ TABLA SEMANAL ------------- */
   const weeks = getWeeksOfMonth();
   const asesores = [...new Set(data.map(r => r.asesor))];
 
   document.getElementById("weeklyHead").innerHTML =
     `<tr><th>ASESOR</th>` +
-    weeks.map((_, i) => `<th>S${i + 1} C1</th><th>S${i + 1} C2</th>`).join("") +
+    weeks.map((_, i) => `<th>S${i+1} C1</th><th>S${i+1} C2</th>`).join("") +
     `</tr>`;
 
   document.getElementById("weeklyBody").innerHTML =
     asesores.map(a => {
-      const filaAsesor = data.find(r => r.asesor === a);
-      const gc = filaAsesor?.GC || "SIN GC";
+      const reg = data.find(r => r.asesor === a);
+      const gc = reg?.gc || "SIN GC";
 
       let row = `<tr><td>${a} — ${gc}</td>`;
 
-      for (let w = 0; w < weeks.length; w++) {
+      for (let w=0; w<weeks.length; w++) {
         const recs = data.filter(r => {
           const f = parseFecha(r.fecha);
           const d = f.getDate();
-          return r.asesor === a && d >= weeks[w].startDay && d <= weeks[w].endDay;
+          return r.asesor === a &&
+                 d >= weeks[w].startDay &&
+                 d <= weeks[w].endDay;
         });
 
         row += `<td>${recs[0]?.tipo || "-"}</td>`;
@@ -232,7 +264,7 @@ async function refreshDashboard() {
       return row + "</tr>";
     }).join("");
 
-  /* ------------ GRÁFICO ------------ */
+  /* ------------ GRÁFICO ------------- */
   const values = weeks.map(w => {
     const recs = data.filter(r => {
       const f = parseFecha(r.fecha);
@@ -245,7 +277,7 @@ async function refreshDashboard() {
     return Math.round(avg);
   });
 
-  chart.data.labels = weeks.map((_, i) => `S${i + 1}`);
+  chart.data.labels = weeks.map((_, i) => `S${i+1}`);
   chart.data.datasets[0].data = values;
   chart.update();
 }
@@ -254,9 +286,5 @@ refreshDashboard();
 
 </script>
 
-
 </body>
 </html>
-
-
-

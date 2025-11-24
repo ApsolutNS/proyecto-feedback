@@ -2,403 +2,295 @@
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Visualización Feedback</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Visualización de Feedback — PREMIUM DARK</title>
 
-<!-- Librería para exportar a PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+<!-- jsPDF + html2canvas para exportar a PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-  body{font-family:Arial,Helvetica,sans-serif;background:#f4f6fb;margin:0;padding:18px}
-  .card{max-width:1200px;margin:auto;background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.06)}
-  h2{margin-top:0}
-  label{display:block;margin-top:6px;font-weight:600;font-size:13px}
-  select,input{width:100%;padding:8px;border:1px solid #e6e9ef;border-radius:6px;box-sizing:border-box}
-  .btn{background:#0f4c81;color:#fff;border:none;padding:10px 14px;border-radius:6px;
-       cursor:pointer;font-size:13px;font-weight:600}
-  .btn:disabled{opacity:0.5;cursor:not-allowed}
-  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
-  th,td{padding:6px 8px;border-bottom:1px solid #eef2f7;text-align:left}
-  th{background:#fbfdff}
-  .doc{border:1px solid #e6eef9;padding:16px;border-radius:6px;margin-top:6px;background:#fff;font-size:13px}
-  .nota{background:#ffecec;border:1px solid #ffbdbd;color:#b30000;padding:10px;border-radius:6px;font-weight:700;text-align:center}
-  .firma{border:1px solid #ddd;padding:6px;border-radius:6px;display:inline-block;margin-top:8px}
+/* ------------------- THEME DARK ------------------- */
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  background:#0f172a;
+  margin:0;
+  padding:18px;
+  color:#e2e8f0;
+}
+.card{
+  max-width:1200px;
+  margin:auto;
+  background:#1e293b;
+  padding:18px;
+  border-radius:10px;
+  border:1px solid #334155;
+  box-shadow:0 0 25px rgba(0,0,0,0.35);
+}
+h2,h3{color:white;margin-top:0}
+label{display:block;margin-top:10px;font-weight:600;color:#cbd5e1}
+select,input{
+  width:100%;
+  padding:8px;
+  border-radius:6px;
+  border:1px solid #475569;
+  background:#0f172a;
+  color:#e2e8f0;
+}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+th{
+  background:#334155;
+  padding:8px;
+  color:#e2e8f0;
+  border-bottom:1px solid #475569;
+}
+td{
+  padding:8px;
+  border-bottom:1px solid #334155;
+  color:#cbd5e1;
+}
+.btn{
+  background:#3b82f6;
+  color:#fff;
+  border:none;
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:13px;
+  transition:0.2s;
+}
+.btn:hover{background:#2563eb}
+.btn.sm{padding:6px 10px;font-size:12px}
+.btn.ghost{
+  background:transparent;border:1px solid #64748b;color:#93c5fd;
+}
+.section-title{
+  margin-top:12px;
+  font-weight:bold;
+  color:#fff;
+}
+#detailBox{
+  margin-top:20px;
+  display:none;
+  background:#0f172a;
+  padding:16px;
+  border-radius:10px;
+  border:1px solid #334155;
+}
+.logo{
+  display:flex;
+  justify-content:flex-end;
+  margin-bottom:10px;
+}
+.logo img{max-height:45px}
+.feedback-body{
+  font-size:14px;
+  line-height:1.5;
+  color:#cbd5e1;
+}
+.item-block{
+  margin-bottom:6px;
+  padding-left:6px;
+  border-left:3px solid #3b82f6;
+}
+.evidence-img{
+  width:100%;
+  max-width:650px;
+  border-radius:6px;
+  margin-top:8px;
+  border:1px solid #475569;
+}
+#pdfBtn{
+  margin-top:12px;
+  background:#10b981 !important;
+}
 </style>
 </head>
 <body>
 
 <div class="card">
-  <h2>Visualización de Feedbacks</h2>
+  <h2>Visualización de Feedback — Modo DARK</h2>
 
-  <!-- Filtros -->
-  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px">
-    <div style="flex:1;min-width:180px">
-      <label>Filtrar por asesor</label>
-      <select id="selAgent" onchange="applyFilters()">
-        <option value="">Todos los asesores</option>
-      </select>
-    </div>
-    <div style="width:180px;min-width:160px">
-      <label>Estado</label>
-      <select id="selEstado" onchange="applyFilters()">
-        <option value="">Todos</option>
-        <option value="PENDIENTE">Pendiente</option>
-        <option value="COMPLETADO">Completado</option>
-      </select>
-    </div>
-    <div style="align-self:flex-end">
-      <button class="btn" onclick="downloadPDF()">Descargar PDF del seleccionado</button>
-    </div>
-  </div>
+  <label>Filtrar por asesor</label>
+  <select id="filtroAsesor">
+    <option value="">— Todos —</option>
+  </select>
 
-  <!-- Layout: tabla + vista previa -->
-  <div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr);gap:16px">
-    <div>
-      <strong>Listado de feedbacks</strong>
-      <table id="feedbackTable">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Fecha</th>
-            <th>Asesor</th>
-            <th>Nota</th>
-            <th>Estado</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="6">Cargando registros...</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <label>Filtrar por quién registró</label>
+  <select id="filtroRegistrado">
+    <option value="">— Todos —</option>
+    <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
+      Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
+    </option>
+    <option value="César Alonso Torres Montes - Supervisor">
+      César Alonso Torres Montes - Supervisor
+    </option>
+    <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
+      Karen Vanessa Vital Cordova - Líder de Operaciones
+    </option>
+  </select>
 
-    <div>
-      <strong>Vista previa</strong>
-      <div id="preview" class="doc">
-        Selecciona un registro para ver el detalle.
-      </div>
+  <table id="tablaFeedback">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha</th>
+        <th>Asesor</th>
+        <th>Nota</th>
+        <th>Registrado por</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- DETALLE -->
+  <div id="detailBox">
+    <div class="logo">
+      <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media&token=730b1e7c-abbf-4369-9e8c-fafad2b39883">
     </div>
+    <h3>Detalle del Feedback</h3>
+    <div id="detailContent" class="feedback-body"></div>
+
+    <button id="pdfBtn" class="btn">Exportar PDF</button>
   </div>
 </div>
 
 <script type="module">
-/* ================================
-   IMPORTS FIREBASE (MODULAR v9)
-================================ */
-import { db, storage } from "./js/firebase.js";
-import {
-  collection,
-  getDocs,
-  doc,
-  getDoc
+/* ---------------- FIREBASE ---------------- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { 
+  getFirestore, collection, getDocs, doc, getDoc, query, where 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import {
-  ref,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-/* =========  LOGO BASE64  =========
-   (usa el mismo que ya tenías; corto aquí para no hacerlo gigante) */
-const LOGO_BASE64 = "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media&token=730b1e7c-abbf-4369-9e8c-fafad2b39883";
+const firebaseConfig = {
+  apiKey:"AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
+  authDomain:"feedback-app-ac30e.firebaseapp.com",
+  projectId:"feedback-app-ac30e",
+  storageBucket:"feedback-app-ac30e.firebasestorage.app"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-/* ================================
-   ESTADO GLOBAL
-================================ */
-let allRecords = [];        // todos los registros de Firestore
-let filteredRecords = [];   // registros luego de aplicar filtros
-let currentRecordId = null; // ID seleccionado actualmente
-
-/* ================================
-   CARGAR REGISTROS Y ARMAR FILTROS
-================================ */
-async function loadData(){
-  try{
-    const snap = await getDocs(collection(db, "registros"));
-    allRecords = [];
-    snap.forEach(d => {
-      const data = d.data();
-      allRecords.push({
-        id: d.id,
-        ...data
-      });
+/* ---------------- LOAD LIST ---------------- */
+async function cargarRegistros() {
+  const snap = await getDocs(collection(db, "registros"));
+  const data = [];
+  snap.forEach(d => {
+    const r = d.data();
+    data.push({
+      id:d.id,
+      ...r,
+      fechaObj: r.fecha ? new Date(r.fecha) : new Date()
     });
-
-    // Poblar combo de asesores desde los registros
-    const selAgent = document.getElementById("selAgent");
-    const names = [...new Set(allRecords.map(r => r.asesor).filter(Boolean))].sort();
-    selAgent.innerHTML = '<option value="">Todos los asesores</option>' +
-      names.map(n => `<option value="${n}">${n}</option>`).join("");
-
-    applyFilters();
-  }catch(err){
-    console.error(err);
-    const tbody = document.querySelector("#feedbackTable tbody");
-    tbody.innerHTML = '<tr><td colspan="6">Error cargando registros</td></tr>';
-  }
+  });
+  return data.sort((a,b)=>b.fechaObj - a.fechaObj);
 }
 
-/* ================================
-   FECHA SEGURA
-================================ */
-function parseFechaRec(r){
-  const f = r.fechaHora || r.fecha;
-  if(!f) return new Date(0);
-  if(typeof f === "string") return new Date(f);
-  if(f.toDate) return f.toDate();
-  return new Date(f);
+/* ------------ FILL TABLE ---------------- */
+let registros = [];
+
+async function renderTabla() {
+  const t = document.querySelector("#tablaFeedback tbody");
+  t.innerHTML = "";
+
+  const filAs = filtroAsesor.value;
+  const filReg = filtroRegistrado.value;
+
+  registros
+    .filter(r => !filAs || r.asesor === filAs)
+    .filter(r => !filReg || r.registrado_por === filReg)
+    .forEach(r => {
+      t.innerHTML += `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.fechaObj.toLocaleString("es-PE")}</td>
+          <td>${r.asesor}</td>
+          <td>${r.nota}%</td>
+          <td>${r.registrado_por || "-"}</td>
+          <td><button class="btn sm" onclick="verDetalle('${r.id}')">Ver</button></td>
+        </tr>
+      `;
+    });
 }
 
-/* ================================
-   APLICAR FILTROS Y PINTAR TABLA
-================================ */
-function renderTable(){
-  const tbody = document.querySelector("#feedbackTable tbody");
-  if(!filteredRecords.length){
-    tbody.innerHTML = '<tr><td colspan="6">No hay registros con esos filtros</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = filteredRecords.map(r=>{
-    const fecha = parseFechaRec(r).toLocaleString("es-PE");
-    const estado = r.estado || "PENDIENTE";
-    const nota = r.nota ?? 0;
-    return `
-      <tr>
-        <td>${r.id}</td>
-        <td>${fecha}</td>
-        <td>${r.asesor || ""}</td>
-        <td>${nota}%</td>
-        <td>${estado}</td>
-        <td>
-          <button class="btn" style="padding:4px 8px;font-size:11px"
-                  onclick="selectFeedback('${r.id}')">
-            Ver
-          </button>
-        </td>
-      </tr>
-    `;
-  }).join("");
+/* ------------ LOAD ADVISORS TO FILTER ------------- */
+function cargarAsesoresFiltro() {
+  const asesores = [...new Set(registros.map(r => r.asesor))].sort();
+  filtroAsesor.innerHTML = `<option value="">— Todos —</option>`;
+  asesores.forEach(a => {
+    filtroAsesor.innerHTML += `<option value="${a}">${a}</option>`;
+  });
 }
 
-function applyFilters(){
-  const selAgentVal = document.getElementById("selAgent").value;
-  const selEstadoVal = document.getElementById("selEstado").value;
+window.addEventListener("load", async () => {
+  registros = await cargarRegistros();
+  cargarAsesoresFiltro();
+  renderTabla();
+});
 
-  filteredRecords = allRecords.slice();
+filtroAsesor.onchange = renderTabla;
+filtroRegistrado.onchange = renderTabla;
 
-  if(selAgentVal){
-    filteredRecords = filteredRecords.filter(r => r.asesor === selAgentVal);
-  }
-  if(selEstadoVal){
-    filteredRecords = filteredRecords.filter(r => (r.estado || "PENDIENTE") === selEstadoVal);
-  }
+/* ---------------- DETALLE ------------------- */
+window.verDetalle = async function(id){
+  const r = registros.find(x=>x.id===id);
+  if(!r) return;
 
-  // Ordenar por fecha descendente
-  filteredRecords.sort((a,b)=> parseFechaRec(b) - parseFechaRec(a));
-
-  renderTable();
-}
-
-/* ================================
-   CARGAR IMÁGENES DEL STORAGE
-================================ */
-async function loadImages(list){
-  const arr = [];
-  for(const img of (list || [])){
-    try{
-      if(img.url?.startsWith("http")){
-        arr.push({ data: img.url });
-        continue;
-      }
-      const path = img.storagePath || img.url;
-      if(!path) continue;
-      const url = await getDownloadURL(ref(storage, path));
-      arr.push({ data: url });
-    }catch(err){
-      console.warn("No se pudo cargar imagen:", err);
-    }
-  }
-  return arr;
-}
-
-/* ================================
-   TEMPLATE DEL DOCUMENTO
-================================ */
-function buildTemplate(rec) {
-  // ---- FECHA LARGA (domingo, 23 de noviembre de 2025) ----
-  const fechaRaw = rec.fechaHora
-    ? new Date(rec.fechaHora)
-    : (rec.fecha ? new Date(rec.fecha) : new Date());
-
-  const dias = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
-  const meses = ["enero","febrero","marzo","abril","mayo","junio",
-                 "julio","agosto","septiembre","octubre","noviembre","diciembre"];
-
-  const fechaTexto = `${dias[fechaRaw.getDay()]}, ${fechaRaw.getDate()} de ${meses[fechaRaw.getMonth()]} de ${fechaRaw.getFullYear()}`;
-
-  // ---- IMÁGENES ----
-  const imgsHtml = rec.imagenes?.length
-    ? rec.imagenes.map(im =>
-        `<img src="${im.data}" style="width:100%;max-width:600px;border-radius:8px;margin-top:10px">`
-      ).join("")
-    : "<em>Sin imágenes</em>";
-
-  // ---- ITEMS ----
-  const itemsHtml = rec.items?.length
-    ? rec.items.map(it => `
-        <div style="margin-bottom:6px">
-          <strong>${it.name}</strong> (${it.perc}%)
-          <div>${it.detail || ""}</div>
-        </div>`
-      ).join("")
-    : "<em>Sin ítems observados</em>";
-
-  // ---- FIRMA ----
-  const firmaHtml = rec.firmaUrl
-    ? `<div class="firma"><img src="${rec.firmaUrl}" style="width:100%;max-width:260px"></div>`
-    : `<div class="firma" style="height:80px;display:flex;align-items:center;justify-content:center;color:#64748b">SIN FIRMA</div>`;
-
-  // ---- CÓDIGO GC (si lo guardas en el registro) ----
-  const gc = rec.gc || rec.codigoGC || ""; // adapta al nombre real del campo si ya lo tienes
-
-  // ---- PLANTILLA COMPLETA (TEXTO DE LA CARTA) ----
-  return `
-    <div style="font-size:13px;line-height:1.4">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="flex:1;text-align:center;font-weight:bold;font-size:18px">
-          RETROALIMENTACIÓN
-        </div>
-        <div>
-          <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media&token=730b1e7c-abbf-4369-9e8c-fafad2b39883"
-               style="height:50px;">
-        </div>
-      </div>
-
-      <p>
-        Por medio de la presente se deja constancia que el
-        <strong>${fechaTexto}</strong> se realiza una
-        <strong>RETROALIMENTACIÓN</strong> al/la colaborador(a)
-        <strong>${rec.asesor}</strong> con código
-        <strong>${gc}</strong> quien ejerce la función de
-        <strong>${rec.cargo || ""}</strong>, para el cumplimiento
-        de los parámetros de la llamada.
-      </p>
-
-      <h4>Cliente</h4>
-      <div style="margin-left:8px;margin-bottom:8px">
-        <div><strong>DNI:</strong> ${rec.cliente?.dni || ""}</div>
-        <div><strong>Nombre:</strong> ${rec.cliente?.nombre || ""}</div>
-        <div><strong>Número:</strong> ${rec.cliente?.tel || ""}</div>
-        <div><strong>Tipificación:</strong> ${rec.tipificacion || ""}</div>
-        <div><strong>Comentario:</strong> ${rec.observacionCliente || "NINGUNA"}</div>
-      </div>
-
-      <h4>Gestión monitoreada</h4>
-      <div style="margin-left:8px;margin-bottom:8px">
-        <div><strong>ID Llamada:</strong> ${rec.idLlamada || ""}</div>
-        <div><strong>ID Contacto:</strong> ${rec.idContacto || ""}</div>
-        <div><strong>Tipo:</strong> ${rec.tipo || ""}</div>
-        <div style="margin-top:6px">
-          <strong>Resumen:</strong>
-          <div style="padding:6px 8px;background:#f8fafc;border-radius:4px;margin-top:2px">
-            ${rec.resumen || ""}
-          </div>
-        </div>
-      </div>
-
-      <h4>Items observados</h4>
-      <div style="margin-left:8px;margin-bottom:8px">
-        ${itemsHtml}
-      </div>
-
-      <h4>Nota obtenida</h4>
-      <div style="margin-left:8px;margin-bottom:8px">
-        <span style="display:inline-block;padding:6px 10px;border-radius:16px;
-                     border:1px solid #ffbdbd;background:#ffecec;color:#b30000;
-                     font-weight:bold;">
-          ${rec.nota || 0}%
-        </span>
-      </div>
-
-      <h4>Evidencias</h4>
-      <div style="margin-left:8px;margin-bottom:8px">
-        ${imgsHtml}
-      </div>
-
-      <h4>Compromiso del agente</h4>
-      <div style="margin-left:8px;margin-bottom:8px;padding:8px;border:1px dashed #e6eef9;border-radius:6px">
-        ${rec.compromiso || "<em>Vacío</em>"}
-      </div>
-
-      <div style="margin-top:10px;color:#64748b;font-size:11px">
-        ID de registro: <strong>${rec.id}</strong>
-      </div>
+  let itemsHtml = (r.items || []).map(it => `
+    <div class="item-block">
+      <b>${it.name}</b> (${it.perc}%)
+      <div>${it.detail || ""}</div>
     </div>
+  `).join("");
+
+  let evidencias = (r.imagenes || []).map(im => `
+    <img class="evidence-img" src="${im.url}">
+  `).join("");
+
+  document.getElementById("detailContent").innerHTML = `
+    <p><b>Registrado por:</b> ${r.registrado_por || "-"}</p>
+    <p><b>Asesor:</b> ${r.asesor} (GC: ${r.gc || ""})</p>
+    <p><b>Fecha:</b> ${r.fechaObj.toLocaleString("es-PE")}</p>
+
+    <div class="section-title">Cliente</div>
+    DNI: ${r.cliente?.dni || ""}<br>
+    Nombre: ${r.cliente?.nombre || ""}<br>
+    Teléfono: ${r.cliente?.tel || ""}<br>
+
+    <div class="section-title">Resumen</div>
+    ${r.resumen || ""}
+
+    <div class="section-title">Ítems observados</div>
+    ${itemsHtml || "<em>Sin ítems</em>"}
+
+    <div class="section-title">Nota final</div>
+    <b style="font-size:22px">${r.nota}%</b>
+
+    <div class="section-title">Evidencias</div>
+    ${evidencias}
   `;
-}
 
-/* ================================
-   MOSTRAR FEEDBACK SELECCIONADO
-================================ */
-async function showFeedbackById(id){
-  try{
-    const snap = await getDoc(doc(db, "registros", id));
-    if(!snap.exists()){
-      alert("No se encontró el registro");
-      return;
-    }
-    const rec = snap.data();
-    rec.id = id;
-    rec.imagenes = await loadImages(rec.imagenes || []);
-    const html = buildTemplate(rec);
-    document.getElementById("preview").innerHTML = html;
-  }catch(err){
-    console.error(err);
-    alert("Error obteniendo datos");
-  }
-}
+  document.getElementById("detailBox").style.display = "block";
 
-/* ================================
-   EXPORTAR PDF
-================================ */
-function downloadPDF(){
-  if(!currentRecordId){
-    alert("Primero selecciona un feedback en la tabla");
-    return;
-  }
-  const elemento = document.getElementById("preview");
-  if(!elemento.innerHTML.trim()){
-    alert("No hay contenido para exportar");
-    return;
-  }
-  const opt = {
-    margin: 10,
-    filename: `${currentRecordId}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-  };
-  html2pdf().set(opt).from(elemento).save();
-}
+  // Save current to export
+  window._CURRENT_FEEDBACK_ID = id;
+};
 
-/* ================================
-   EXponer funciones al scope global
-================================ */
-function selectFeedback(id){
-  currentRecordId = id;
-  showFeedbackById(id);
-}
+/* ---------------- PDF EXPORT ---------------- */
+document.getElementById("pdfBtn").onclick = async () => {
+  const element = document.getElementById("detailBox");
 
-window.applyFilters = applyFilters;
-window.selectFeedback = selectFeedback;
-window.downloadPDF = downloadPDF;
+  const canvas = await html2canvas(element, { scale: 2 });
+  const imgData = canvas.toDataURL("image/png");
 
-/* ================================
-   INICIO
-================================ */
-loadData();
+  const pdf = new jspdf.jsPDF("p", "mm", "a4");
+  const width = pdf.internal.pageSize.getWidth();
+  const height = (canvas.height * 190) / canvas.width;
+
+  pdf.addImage(imgData, "PNG", 10, 10, width - 20, height);
+  pdf.save(`feedback_${window._CURRENT_FEEDBACK_ID}.pdf`);
+};
 </script>
 </body>
 </html>
-
-

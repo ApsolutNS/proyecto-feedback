@@ -224,94 +224,114 @@ async function loadImages(list){
 /* ================================
    TEMPLATE DEL DOCUMENTO
 ================================ */
-function buildTemplate(rec){
-  const fechaObj = parseFechaRec(rec);
-  const fecha = isNaN(fechaObj.getTime())
-    ? "Fecha no registrada"
-    : fechaObj.toLocaleString("es-PE");
+function buildTemplate(rec) {
+  // ---- FECHA LARGA (domingo, 23 de noviembre de 2025) ----
+  const fechaRaw = rec.fechaHora
+    ? new Date(rec.fechaHora)
+    : (rec.fecha ? new Date(rec.fecha) : new Date());
 
-  const imgsHtml = (rec.imagenes && rec.imagenes.length)
-    ? rec.imagenes.map(im => `
-        <img src="${im.data}"
-             style="width:100%;max-width:600px;border-radius:8px;margin-top:10px">
-      `).join("")
+  const dias = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  const meses = ["enero","febrero","marzo","abril","mayo","junio",
+                 "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+  const fechaTexto = `${dias[fechaRaw.getDay()]}, ${fechaRaw.getDate()} de ${meses[fechaRaw.getMonth()]} de ${fechaRaw.getFullYear()}`;
+
+  // ---- IMÁGENES ----
+  const imgsHtml = rec.imagenes?.length
+    ? rec.imagenes.map(im =>
+        `<img src="${im.data}" style="width:100%;max-width:600px;border-radius:8px;margin-top:10px">`
+      ).join("")
     : "<em>Sin imágenes</em>";
 
-  const itemsHtml = (rec.items && rec.items.length)
+  // ---- ITEMS ----
+  const itemsHtml = rec.items?.length
     ? rec.items.map(it => `
         <div style="margin-bottom:6px">
           <strong>${it.name}</strong> (${it.perc}%)
           <div>${it.detail || ""}</div>
-        </div>
-      `).join("")
-    : "<em>Sin ítems</em>";
+        </div>`
+      ).join("")
+    : "<em>Sin ítems observados</em>";
 
+  // ---- FIRMA ----
   const firmaHtml = rec.firmaUrl
-    ? `<div class="firma">
-         <img src="${rec.firmaUrl}" style="width:100%;max-width:260px">
-       </div>`
-    : `<div class="firma" style="height:80px;display:flex;align-items:center;
-                                justify-content:center;color:#64748b">
-         SIN FIRMA
-       </div>`;
+    ? `<div class="firma"><img src="${rec.firmaUrl}" style="width:100%;max-width:260px"></div>`
+    : `<div class="firma" style="height:80px;display:flex;align-items:center;justify-content:center;color:#64748b">SIN FIRMA</div>`;
 
+  // ---- CÓDIGO GC (si lo guardas en el registro) ----
+  const gc = rec.gc || rec.codigoGC || ""; // adapta al nombre real del campo si ya lo tienes
+
+  // ---- PLANTILLA COMPLETA (TEXTO DE LA CARTA) ----
   return `
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <img src="${LOGO_BASE64}" style="height:70px;">
-        <div style="font-size:22px;font-weight:bold;color:#0f4c81">
-          REPORTE DE FEEDBACK
+    <div style="font-size:13px;line-height:1.4">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="flex:1;text-align:center;font-weight:bold;font-size:18px">
+          RETROALIMENTACIÓN
+        </div>
+        <div>
+          <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media&token=730b1e7c-abbf-4369-9e8c-fafad2b39883"
+               style="height:50px;">
         </div>
       </div>
 
-      <div style="display:flex;justify-content:space-between;gap:16px">
-        <div style="flex:1">
-          <div><strong>Fecha:</strong> ${fecha}</div>
-          <div style="margin-top:8px"><strong>Asesor:</strong> ${rec.asesor || ""}</div>
-          <div><strong>Cargo:</strong> ${rec.cargo || ""}</div>
+      <p>
+        Por medio de la presente se deja constancia que el
+        <strong>${fechaTexto}</strong> se realiza una
+        <strong>RETROALIMENTACIÓN</strong> al/la colaborador(a)
+        <strong>${rec.asesor}</strong> con código
+        <strong>${gc}</strong> quien ejerce la función de
+        <strong>${rec.cargo || ""}</strong>, para el cumplimiento
+        de los parámetros de la llamada.
+      </p>
 
-          <div style="margin-top:8px">
-            <strong>Cliente:</strong>
-            ${rec.cliente?.nombre || ""} (DNI: ${rec.cliente?.dni || ""})
-          </div>
+      <h4>Cliente</h4>
+      <div style="margin-left:8px;margin-bottom:8px">
+        <div><strong>DNI:</strong> ${rec.cliente?.dni || ""}</div>
+        <div><strong>Nombre:</strong> ${rec.cliente?.nombre || ""}</div>
+        <div><strong>Número:</strong> ${rec.cliente?.tel || ""}</div>
+        <div><strong>Tipificación:</strong> ${rec.tipificacion || ""}</div>
+        <div><strong>Comentario:</strong> ${rec.observacionCliente || "NINGUNA"}</div>
+      </div>
 
-          <div style="margin-top:8px">
-            <strong>Resumen:</strong>
-            <div style="padding:8px;background:#fbfdff;border-radius:6px">
-              ${rec.resumen || ""}
-            </div>
-          </div>
-
-          <div style="margin-top:8px">
-            <strong>Items observados:</strong><br>
-            ${itemsHtml}
-          </div>
-
-          <div style="margin-top:8px">
-            <strong>Evidencias:</strong><br>
-            ${imgsHtml}
-          </div>
-
-          <div style="margin-top:8px">
-            <strong>Compromiso del agente:</strong>
-            <div style="padding:8px;border:1px dashed #e6eef9;border-radius:6px">
-              ${rec.compromiso || "<em>Vacío</em>"}
-            </div>
+      <h4>Gestión monitoreada</h4>
+      <div style="margin-left:8px;margin-bottom:8px">
+        <div><strong>ID Llamada:</strong> ${rec.idLlamada || ""}</div>
+        <div><strong>ID Contacto:</strong> ${rec.idContacto || ""}</div>
+        <div><strong>Tipo:</strong> ${rec.tipo || ""}</div>
+        <div style="margin-top:6px">
+          <strong>Resumen:</strong>
+          <div style="padding:6px 8px;background:#f8fafc;border-radius:4px;margin-top:2px">
+            ${rec.resumen || ""}
           </div>
         </div>
+      </div>
 
-        <div style="width:260px;text-align:center">
-          <div class="nota" style="font-size:28px">
-            ${rec.nota || 0}%
-          </div>
-          <div style="margin-top:12px">${firmaHtml}</div>
-          <div style="margin-top:12px;color:#64748b">
-            ID:<br><strong>${rec.id}</strong>
-          </div>
-          <div style="margin-top:8px;color:#64748b;font-size:11px">
-            Estado: <strong>${rec.estado || "PENDIENTE"}</strong>
-          </div>
-        </div>
+      <h4>Items observados</h4>
+      <div style="margin-left:8px;margin-bottom:8px">
+        ${itemsHtml}
+      </div>
+
+      <h4>Nota obtenida</h4>
+      <div style="margin-left:8px;margin-bottom:8px">
+        <span style="display:inline-block;padding:6px 10px;border-radius:16px;
+                     border:1px solid #ffbdbd;background:#ffecec;color:#b30000;
+                     font-weight:bold;">
+          ${rec.nota || 0}%
+        </span>
+      </div>
+
+      <h4>Evidencias</h4>
+      <div style="margin-left:8px;margin-bottom:8px">
+        ${imgsHtml}
+      </div>
+
+      <h4>Compromiso del agente</h4>
+      <div style="margin-left:8px;margin-bottom:8px;padding:8px;border:1px dashed #e6eef9;border-radius:6px">
+        ${rec.compromiso || "<em>Vacío</em>"}
+      </div>
+
+      <div style="margin-top:10px;color:#64748b;font-size:11px">
+        ID de registro: <strong>${rec.id}</strong>
       </div>
     </div>
   `;
@@ -380,4 +400,5 @@ loadData();
 </script>
 </body>
 </html>
+
 

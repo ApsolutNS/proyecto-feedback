@@ -76,7 +76,6 @@
   }
   .weekly{overflow:auto;max-height:260px}
   .small{font-size:13px;color:#94a3b8}
-
   /* Vista ejecutiva – tarjetas */
   .exec-grid{
     display:grid;
@@ -147,8 +146,7 @@
     margin-left:4px;
   }
   canvas{max-height:220px}
-
-  /* Filtro registrado_por */
+  /* Filtro registradoPor */
   .filters-row{
     display:flex;
     flex-wrap:wrap;
@@ -175,7 +173,7 @@
 <header>
   <div>
     <h1>Panel Principal - Calidad & Monitoreo</h1>
-    <small>Vista ejecutiva + detalle mensual (con filtro por registrado_por)</small>
+    <small>Vista ejecutiva + detalle mensual (con filtro por "Registrado por")</small>
   </div>
   <div style="font-size:13px">Usuario: <strong>Supervisor</strong></div>
 </header>
@@ -230,9 +228,9 @@
         <span class="tiny-tag">B2 · Semáforo 85%</span>
       </h3>
       <div class="small">
-        Promedio mensual por asesor (con todos los cálculos básicos):
-        <b>promedio</b>, <b>cantidad de feedbacks</b>, <b>aprobados</b>, <b>no aprobados</b>,
-        <b>mejor nota</b> y <b>peor nota</b>.
+        Promedio mensual por asesor (cálculo completo):
+        promedio, cantidad de feedbacks, aprobados (≥85), no aprobados (&lt;85),
+        mejor nota y peor nota.  
         Semáforo:
         <span style="color:#4ade80;font-weight:bold">🟢 85–100</span> /
         <span style="color:#fb7185;font-weight:bold">🔴 0–84</span>.
@@ -262,7 +260,13 @@
       <h3>Últimos registros</h3>
       <table id="recentTable">
         <thead>
-          <tr><th>Fecha Hora</th><th>Asesor</th><th>Nota</th><th>Tipo</th><th>Registrado por</th></tr>
+          <tr>
+            <th>Fecha Hora</th>
+            <th>Asesor</th>
+            <th>Nota</th>
+            <th>Tipo</th>
+            <th>Registrado por</th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -280,7 +284,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 /* ------------------------------
-   PARSE FECHAS
+   HELPER: FECHAS
 ------------------------------ */
 function parseFecha(fecha) {
   if (!fecha) return new Date();
@@ -295,6 +299,17 @@ function parseFecha(fecha) {
     return new Date(fecha);
   }
   return new Date(fecha);
+}
+
+/* ------------------------------
+   HELPER: NORMALIZAR TEXTO
+------------------------------ */
+function normalize(str) {
+  return (str || "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
 }
 
 /* ------------------------------
@@ -330,7 +345,8 @@ async function getMergedData() {
   const asesores = await loadAsesores();
   return registros.map(r => ({
     ...r,
-    gc: asesores[r.asesor?.trim()] || "SIN GC"
+    gc: asesores[r.asesor?.trim()] || "SIN GC",
+    registradoPor: r.registradoPor || ""   // 👈 usamos camelCase del registro
   }));
 }
 
@@ -372,8 +388,8 @@ const chart = new Chart(document.getElementById("chartMonth"), {
 /* ------------------------------
    ESTADO GLOBAL
 ------------------------------ */
-let rawData = [];      // todos los registros del mes
-let filteredData = []; // registros luego de aplicar filtro registrado_por
+let rawData = [];      // todos los registros del mes (ya cruzados con GC)
+let filteredData = []; // registros luego de aplicar filtro registradoPor
 
 /* ------------------------------
    VISTA EJECUTIVA B2 (CÁLCULO COMPLETO POR ASESOR)
@@ -455,12 +471,12 @@ function renderExecView(data) {
 }
 
 /* ------------------------------
-   KPIs, TABLAS Y GRÁFICO (según filteredData)
+   RENDER KPIs, TABLAS Y GRÁFICO DESDE filteredData
 ------------------------------ */
 function renderFromFilteredData() {
   const data = filteredData;
 
-  // resumen filtro
+  // Resumen del filtro
   const sel = document.getElementById("filterRegistrado");
   const summary = document.getElementById("filterSummary");
   const value = sel.value;
@@ -479,35 +495,43 @@ function renderFromFilteredData() {
     FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
   };
   data.forEach(r => {
-    counts[r.tipo] = (counts[r.tipo] || 0) + 1;
+    const tipo = (r.tipo || "OTRO").toUpperCase();
+    if (!counts.hasOwnProperty(tipo)) counts.OTRO++;
+    else counts[tipo]++;
   });
-  document.getElementById("cntEfectiva").innerText = counts.EFECTIVA;
+  document.getElementById("cntEfectiva").innerText   = counts.EFECTIVA;
   document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
-  document.getElementById("cntXperto").innerText = counts.XPERTO;
-  document.getElementById("cntFb").innerText = counts.FACEBOOK;
-  document.getElementById("cntIg").innerText = counts.INSTAGRAM;
-  document.getElementById("cntMail").innerText = counts.CORREO;
+  document.getElementById("cntXperto").innerText     = counts.XPERTO;
+  document.getElementById("cntFb").innerText         = counts.FACEBOOK;
+  document.getElementById("cntIg").innerText         = counts.INSTAGRAM;
+  document.getElementById("cntMail").innerText       = counts.CORREO;
 
   // Últimos registros
-  const recent = data.slice().sort((a,b)=>parseFecha(b.fecha)-parseFecha(a.fecha)).slice(0,8);
+  const recent = data
+    .slice()
+    .sort((a,b)=>parseFecha(b.fecha)-parseFecha(a.fecha))
+    .slice(0,8);
+
   document.querySelector("#recentTable tbody").innerHTML =
     recent.map(r => `
       <tr>
         <td>${parseFecha(r.fecha).toLocaleString("es-PE")}</td>
         <td>${r.asesor} — ${r.gc}</td>
         <td>${r.nota || 0}%</td>
-        <td>${r.tipo}</td>
-        <td>${r.registrado_por || "-"}</td>
+        <td>${r.tipo || "-"}</td>
+        <td>${r.registradoPor || "-"}</td>
       </tr>
     `).join("") || `<tr><td colspan="5">Sin registros</td></tr>`;
 
   // Tabla semanal
   const weeks = getWeeksOfMonth();
   const asesoresUnicos = [...new Set(data.map(r => r.asesor))].filter(Boolean);
+
   document.getElementById("weeklyHead").innerHTML =
     `<tr><th>ASESOR</th>` +
     weeks.map((_, i) => `<th>S${i+1} C1</th><th>S${i+1} C2</th>`).join("") +
     `</tr>`;
+
   document.getElementById("weeklyBody").innerHTML =
     asesoresUnicos.map(a => {
       const reg = data.find(r => r.asesor === a);
@@ -538,6 +562,7 @@ function renderFromFilteredData() {
     const avg = recs.reduce((t, r) => t + (parseFloat(r.nota) || 0), 0) / recs.length;
     return Math.round(avg);
   });
+
   chart.data.labels = weeks.map((_, i) => `S${i+1}`);
   chart.data.datasets[0].data = values;
   chart.update();
@@ -548,11 +573,15 @@ function renderFromFilteredData() {
 ------------------------------ */
 function applyFilters() {
   const sel = document.getElementById("filterRegistrado");
-  const value = sel.value;
-  if (!value) {
-    filteredData = rawData.slice();
+  const filterValue = normalize(sel.value);
+
+  if (!filterValue) {
+    filteredData = rawData.slice(); // sin filtro
   } else {
-    filteredData = rawData.filter(r => r.registrado_por === value);
+    filteredData = rawData.filter(r => {
+      const val = normalize(r.registradoPor);
+      return val === filterValue;
+    });
   }
   renderFromFilteredData();
 }
@@ -585,4 +614,3 @@ refreshDashboard();
 </script>
 </body>
 </html>
-

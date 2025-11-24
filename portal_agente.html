@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Portal del Agente — Dark Mode</title>
-
 <style>
   /* -------------------- DARK THEME -------------------- */
   body{
@@ -24,9 +23,8 @@
     box-shadow:0 0 25px rgba(0,0,0,0.35);
   }
   h2{margin-top:0;color:#fff;font-weight:700}
-
+  h3{margin-top:10px;color:#fff}
   label{display:block;margin-top:10px;font-weight:600;color:#cbd5e1}
-
   input,select,textarea{
     width:100%;
     padding:8px;
@@ -35,8 +33,10 @@
     margin-top:6px;
     background:#0f172a;
     color:#e2e8f0;
+    box-sizing:border-box;
+    font-size:13px;
   }
-
+  textarea{resize:vertical;min-height:70px}
   /* TABLE */
   table{
     width:100%;
@@ -49,13 +49,19 @@
     padding:8px;
     color:#e2e8f0;
     border-bottom:1px solid #475569;
+    text-align:left;
   }
   td{
     padding:8px;
     border-bottom:1px solid #334155;
     color:#cbd5e1;
   }
-
+  tr:nth-child(even) td{
+    background:#111827;
+  }
+  tr:nth-child(odd) td{
+    background:#020617;
+  }
   /* BUTTONS */
   .btn{
     background:#3b82f6;
@@ -75,7 +81,7 @@
     color:#93c5fd;
   }
   .btn.sm{padding:6px 10px;font-size:12px}
-
+  .btn.sm + .btn.sm{margin-left:4px}
   .letter-header{
     display:flex;
     justify-content:space-between;
@@ -97,7 +103,6 @@
   .section-title{
     font-weight:bold;margin-top:10px;color:#fff;
   }
-
   .signature-preview img{
     max-width:260px;
     border:1px solid #475569;
@@ -109,7 +114,6 @@
     display:flex;align-items:center;justify-content:center;
     color:#64748b;font-size:12px;margin-top:6px
   }
-
   /* Modal */
   .modal-backdrop{
     position:fixed;inset:0;background:rgba(0,0,0,0.6);
@@ -122,7 +126,6 @@
   #sigCanvas{
     border:1px solid #475569;border-radius:6px;display:block;margin:8px auto;background:#fff;
   }
-
   /* Badge pendings */
   .badgePending{
     display:inline-block;
@@ -133,25 +136,46 @@
     font-weight:bold;
     color:white;
   }
+  .pill{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:999px;
+    font-size:11px;
+    border:1px solid #475569;
+    background:#020617;
+    color:#e5e7eb;
+  }
 </style>
 </head>
-
 <body>
-
 <div class="card">
   <h2>
     Portal del Agente
     <span id="pendingBadge" style="float:right"></span>
   </h2>
 
-  <label>Seleccionar Asesor</label>
-  <select id="selAgent" onchange="loadAgentList()">
-    <option value="">-- selecciona --</option>
-  </select>
+  <!-- FILTROS SUPERIORES -->
+  <div style="display:flex;flex-wrap:wrap;gap:12px">
+    <div style="flex:1 1 220px;min-width:220px">
+      <label>Seleccionar Asesor</label>
+      <select id="selAgent" onchange="loadAgentList()">
+        <option value="">-- selecciona --</option>
+      </select>
+    </div>
+    <div style="flex:1 1 220px;min-width:220px">
+      <label>Filtrar por quien registró</label>
+      <select id="selRegistrador" onchange="loadAgentList()">
+        <option value="">Todos</option>
+        <!-- Los valores deben coincidir con registro.html -->
+        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
+        <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
+        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
+      </select>
+    </div>
+  </div>
 
   <div style="margin-top:12px">
     <strong style="color:#fff">Feedbacks del agente</strong>
-
     <table id="agentTable">
       <thead>
         <tr>
@@ -159,6 +183,7 @@
           <th>Fecha</th>
           <th>Nota</th>
           <th>Estado</th>
+          <th>Registrado por</th>
           <th>Acción</th>
         </tr>
       </thead>
@@ -167,26 +192,23 @@
   </div>
 
   <div id="detailBlock" style="display:none;margin-top:12px">
-    <h3 style="color:white">Detalle del Feedback</h3>
-
+    <h3>Detalle del Feedback</h3>
     <div id="feedbackInfo" style="border:1px solid #334155;border-radius:6px;padding:16px;background:#0f172a"></div>
 
-    <!-- COMPROMISO + FIRMA (solo si está pendiente) -->
+    <!-- ZONA EDITABLE (solo si está PENDIENTE) -->
     <div id="editableZone">
       <label style="margin-top:12px">Compromiso del agente</label>
       <textarea id="compromiso" rows="4"></textarea>
 
       <label style="margin-top:12px">Firma del agente</label>
-
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="btn sm" onclick="openDrawModal()">Dibujar firma</button>
-        <button class="btn ghost sm" onclick="triggerUpload()">Subir firma</button>
+        <button class="btn sm" type="button" onclick="openDrawModal()">Dibujar firma</button>
+        <button class="btn ghost sm" type="button" onclick="triggerUpload()">Subir firma</button>
         <input type="file" id="fileSignature" accept="image/*" style="display:none">
       </div>
 
       <div id="signaturePreview" class="signature-preview-empty">Sin firma seleccionada</div>
-
-      <button class="btn" onclick="saveSignature()">Enviar firma y completar</button>
+      <button class="btn" type="button" onclick="saveSignature()">Enviar firma y completar</button>
     </div>
 
     <div id="agentMsg" style="margin-top:10px;font-size:13px"></div>
@@ -199,16 +221,15 @@
     <h3 style="color:white">Dibujar firma del agente</h3>
     <canvas id="sigCanvas" width="700" height="160"></canvas>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
-      <button class="btn ghost sm" onclick="clearCanvas()">Limpiar</button>
-      <button class="btn ghost sm" onclick="closeDrawModal()">Cancelar</button>
-      <button class="btn sm" onclick="saveDrawnSignature()">Usar esta firma</button>
+      <button class="btn ghost sm" type="button" onclick="clearCanvas()">Limpiar</button>
+      <button class="btn ghost sm" type="button" onclick="closeDrawModal()">Cancelar</button>
+      <button class="btn sm" type="button" onclick="saveDrawnSignature()">Usar esta firma</button>
     </div>
   </div>
 </div>
 
-
 <script type="module">
-/* FIREBASE IMPORTS */
+/* ================= FIREBASE IMPORTS ================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore, collection, getDocs, query, where,
@@ -218,7 +239,7 @@ import {
   getStorage, ref, uploadString, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-/* FIREBASE CONFIG */
+/* ================= FIREBASE CONFIG ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
@@ -227,19 +248,21 @@ const firebaseConfig = {
   messagingSenderId: "512179147778",
   appId: "1:512179147778:web:795e4a8b177fe766d3431b"
 };
-initializeApp(firebaseConfig);
-const db = getFirestore();
-const storage = getStorage();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-/* LOAD ADVISORS */
-let asesores = {};
+/* ================= CARGAR ASESORES ================= */
+let asesores = {}; // { nombre: GC }
+
 async function loadAdvisors(){
   const snap = await getDocs(collection(db,"asesores"));
   snap.forEach(d=>{
     const a = d.data();
-    if(a.nombre) asesores[a.nombre] = a.GC || "SIN GC";
+    if(a.nombre){
+      asesores[a.nombre] = a.GC || "SIN GC";
+    }
   });
-
   const sel = document.getElementById("selAgent");
   sel.innerHTML = "<option value=''>-- selecciona --</option>";
   Object.keys(asesores).sort().forEach(n=>{
@@ -248,139 +271,206 @@ async function loadAdvisors(){
 }
 loadAdvisors();
 
-/* COUNT PENDING */
-function updatePendingBadge(list){
-  const p = list.filter(x=>x.estado==="PENDIENTE").length;
+/* ================= BADGE PENDIENTES ================= */
+function updatePendingBadge(fullList){
+  const p = fullList.filter(x=>x.estado==="PENDIENTE").length;
   const badge = document.getElementById("pendingBadge");
-  if(p===0){
+  if(p === 0){
     badge.innerHTML = "";
   } else {
     badge.innerHTML = `<span class="badgePending">${p} pendientes</span>`;
   }
 }
 
-/* LIST FEEDBACKS */
+/* ================= LISTAR FEEDBACKS ================= */
 window.loadAgentList = async function(){
-  const advisor = selAgent.value;
+  const advisor = document.getElementById("selAgent").value;
+  const registradorFiltro = document.getElementById("selRegistrador").value;
   const tbody = document.querySelector("#agentTable tbody");
+
   if(!advisor){
-    tbody.innerHTML = "<tr><td colspan='5'>Selecciona un asesor</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='6'>Selecciona un asesor</td></tr>";
     updatePendingBadge([]);
+    document.getElementById("detailBlock").style.display = "none";
     return;
   }
 
   const qRef = query(collection(db,"registros"), where("asesor","==",advisor));
   const snap = await getDocs(qRef);
 
-  const list = [];
+  const fullList = [];
   snap.forEach(d=>{
     const r = d.data();
-    list.push({
+    fullList.push({
       id: d.id,
-      fecha: new Date(r.fecha),
+      fecha: r.fecha ? new Date(r.fecha) : new Date(),
       nota: r.nota ?? 0,
-      estado: r.estado || "PENDIENTE"
+      estado: r.estado || "PENDIENTE",
+      registradoPor: r.registradoPor || "No especificado"
     });
   });
 
-  list.sort((a,b)=>b.fecha - a.fecha);
-  updatePendingBadge(list);
+  fullList.sort((a,b)=> b.fecha - a.fecha);
+  updatePendingBadge(fullList);
 
-  tbody.innerHTML = list.map(r=>`
+  // aplicar filtro de quien registró (si hay)
+  const displayList = registradorFiltro
+    ? fullList.filter(x => x.registradoPor === registradorFiltro)
+    : fullList;
+
+  if(displayList.length === 0){
+    tbody.innerHTML = "<tr><td colspan='6'>Sin registros para este filtro</td></tr>";
+    document.getElementById("detailBlock").style.display = "none";
+    return;
+  }
+
+  tbody.innerHTML = displayList.map(r=>`
     <tr>
       <td>${r.id}</td>
       <td>${r.fecha.toLocaleString("es-PE")}</td>
       <td>${r.nota}%</td>
       <td>${r.estado}</td>
-      <td><button class="btn sm" onclick="openDetail('${r.id}')">Abrir</button></td>
+      <td>${r.registradoPor}</td>
+      <td><button class="btn sm" type="button" onclick="openDetail('${r.id}')">Abrir</button></td>
     </tr>
   `).join("");
 };
 
-/* OPEN DETAIL */
+/* ================= DETALLE FEEDBACK ================= */
 let currentID = null;
 let signatureData = null;
 
 window.openDetail = async function(id){
   currentID = id;
-
   const snap = await getDoc(doc(db,"registros",id));
   if(!snap.exists()) return alert("No existe este registro");
+
   const r = snap.data();
-
-  document.getElementById("detailBlock").style.display = "block";
-
-  const itemsHtml = (r.items||[]).map(it=>`
-    <div style="margin-bottom:4px">
-      <strong>${it.name}</strong> (${it.perc}%)
-      <div style="margin-left:8px">${it.detail || ""}</div>
-    </div>
-  `).join("");
+  const fecha = r.fecha ? new Date(r.fecha) : new Date();
+  const itemsHtml = (r.items||[]).map(it=>{
+    const percTxt = (typeof it.perc !== "undefined") ? ` (${it.perc}%)` : "";
+    return `
+      <div style="margin-bottom:4px">
+        <strong>${it.name}</strong>${percTxt}
+        <div style="margin-left:8px">${it.detail || ""}</div>
+      </div>
+    `;
+  }).join("") || "<em>Sin ítems observados</em>";
 
   const imgsHtml = (r.imagenes||[]).map(im=>`
     <img src="${im.url}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
-  `).join("");
+  `).join("") || "<em>Sin evidencias adjuntas</em>";
+
+  const registrador = r.registradoPor || "No especificado";
 
   document.getElementById("feedbackInfo").innerHTML = `
     <div class="letter-header">
-      <div class="letter-title">RETROALIMENTACIÓN</div>
+      <div class="letter-title">
+        RETROALIMENTACIÓN
+        <div style="margin-top:4px;font-size:11px;color:#9ca3af">
+          Registrado por: <span class="pill">${registrador}</span>
+        </div>
+      </div>
       <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media&token=730b1e7c-abbf-4369-9e8c-fafad2b39883"
            style="max-height:42px">
     </div>
-
     <div class="letter-body">
       <p>
-        Retroalimentación realizada a <strong>${r.asesor}</strong> (GC: ${r.gc || ""}).
+        Retroalimentación realizada a <strong>${r.asesor}</strong> (GC: ${r.gc || ""}) el
+        <strong>${fecha.toLocaleString("es-PE")}</strong>.
       </p>
 
       <div class="section-title">Cliente</div>
-      DNI: ${r.cliente?.dni || ""}<br>
-      Nombre: ${r.cliente?.nombre || ""}<br>
-      Tel: ${r.cliente?.tel || ""}<br>
+      <div style="margin-left:8px;margin-bottom:6px">
+        <div><strong>DNI:</strong> ${r.cliente?.dni || ""}</div>
+        <div><strong>Nombre:</strong> ${r.cliente?.nombre || ""}</div>
+        <div><strong>Teléfono:</strong> ${r.cliente?.tel || ""}</div>
+        <div><strong>Tipificación:</strong> ${r.tipificacion || ""}</div>
+        <div><strong>Comentario cliente:</strong> ${r.observacionCliente || ""}</div>
+      </div>
 
-      <div class="section-title">Items observados</div>
-      ${itemsHtml}
+      <div class="section-title">Gestión monitoreada</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        <div><strong>ID Llamada:</strong> ${r.idLlamada || ""}</div>
+        <div><strong>ID Contacto:</strong> ${r.idContacto || ""}</div>
+        <div><strong>Tipo:</strong> ${r.tipo || ""}</div>
+        <div style="margin-top:6px">
+          <strong>Resumen:</strong>
+          <div style="padding:6px 8px;background:#020617;border-radius:4px;margin-top:2px">
+            ${r.resumen || ""}
+          </div>
+        </div>
+      </div>
 
-      <div class="section-title">Nota</div>
-      <div style="font-size:22px;font-weight:bold">${r.nota}%</div>
+      <div class="section-title">Ítems observados</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        ${itemsHtml}
+      </div>
+
+      <div class="section-title">Nota obtenida</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        <div style="display:inline-block;padding:6px 10px;border-radius:999px;
+                    border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;
+                    font-weight:bold;">
+          ${r.nota || 0}%
+        </div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:4px">
+          Estado: <strong>${r.estado || "PENDIENTE"}</strong>
+        </div>
+      </div>
+
+      <div class="section-title">Compromiso del agente</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        ${r.compromiso ? r.compromiso : "<em>Pendiente</em>"}
+      </div>
 
       <div class="section-title">Evidencias</div>
-      ${imgsHtml}
+      <div style="margin-left:8px;margin-bottom:6px">
+        ${imgsHtml}
+      </div>
     </div>
   `;
 
-  /* If COMPLETED → disable edition */
+  document.getElementById("detailBlock").style.display = "block";
+
+  const editableZone = document.getElementById("editableZone");
+  const agentMsg = document.getElementById("agentMsg");
+
   if(r.estado === "COMPLETADO"){
-    document.getElementById("editableZone").style.display = "none";
+    editableZone.style.display = "none";
+    agentMsg.style.color = "#22c55e";
+    agentMsg.textContent = "Este feedback ya fue completado. La firma y el compromiso no pueden modificarse.";
   } else {
-    document.getElementById("editableZone").style.display = "block";
+    editableZone.style.display = "block";
+    agentMsg.textContent = "";
     document.getElementById("compromiso").value = r.compromiso || "";
     signatureData = r.firmaUrl || null;
     updateSignaturePreview();
   }
 };
 
-/* SIGNATURE */
+/* ================= FIRMA: PREVIEW ================= */
 function updateSignaturePreview(){
   const box = document.getElementById("signaturePreview");
   if(signatureData){
     box.className = "signature-preview";
-    box.innerHTML = `<img src="${signatureData}">`;
+    box.innerHTML = `<img src="${signatureData}" alt="Firma del agente">`;
   } else {
     box.className = "signature-preview-empty";
-    box.innerHTML = "Sin firma seleccionada";
+    box.textContent = "Sin firma seleccionada";
   }
 }
 
-/* SAVE SIGNATURE */
+/* ================= GUARDAR FIRMA + COMPROMISO ================= */
 window.saveSignature = async function(){
-  const compromiso = compromiso.value.trim();
-  if(!compromiso) return alert("Debe escribir el compromiso");
-  if(!signatureData) return alert("Debe adjuntar o dibujar una firma");
+  if(!currentID) return alert("No hay registro abierto");
+  const compromisoText = document.getElementById("compromiso").value.trim();
+  if(!compromisoText) return alert("El compromiso es obligatorio");
+  if(!signatureData) return alert("Debes dibujar o subir la firma del agente");
 
   const msg = document.getElementById("agentMsg");
   msg.style.color = "#4ade80";
-  msg.textContent = "Guardando...";
+  msg.textContent = "Guardando firma y compromiso...";
 
   try{
     const sigRef = ref(storage, `firmas/${currentID}.png`);
@@ -388,40 +478,46 @@ window.saveSignature = async function(){
     const url = await getDownloadURL(sigRef);
 
     await updateDoc(doc(db,"registros",currentID),{
-      compromiso,
-      firmaUrl:url,
-      estado:"COMPLETADO"
+      compromiso: compromisoText,
+      firmaUrl: url,
+      estado: "COMPLETADO"
     });
 
-    msg.textContent = "Completado correctamente ✓";
-    loadAgentList();
+    msg.style.color = "#4ade80";
+    msg.textContent = "Feedback completado correctamente ✓";
     document.getElementById("editableZone").style.display = "none";
-
+    loadAgentList();
   }catch(e){
+    console.error(e);
     msg.style.color = "red";
-    msg.textContent = "Error: "+e.message;
+    msg.textContent = "Error guardando firma: " + e.message;
   }
 };
 
-
-/* DRAW SIGNATURE */
+/* ================= DIBUJAR FIRMA (CANVAS) ================= */
 const modal = document.getElementById("signatureModal");
 const canvas = document.getElementById("sigCanvas");
 const ctx = canvas.getContext("2d");
 let drawing = false;
 
-function pos(e){
+function getPos(e){
   const r = canvas.getBoundingClientRect();
-  const x = (e.touches? e.touches[0].clientX : e.clientX) - r.left;
-  const y = (e.touches? e.touches[0].clientY : e.clientY) - r.top;
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
   return {x,y};
 }
 
-canvas.addEventListener("mousedown", e=>{drawing=true;ctx.moveTo(pos(e).x,pos(e).y);});
-canvas.addEventListener("mouseup", ()=>drawing=false);
+canvas.addEventListener("mousedown", e=>{
+  drawing = true;
+  const p = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(p.x,p.y);
+});
+canvas.addEventListener("mouseup", ()=> drawing=false);
+canvas.addEventListener("mouseleave", ()=> drawing=false);
 canvas.addEventListener("mousemove", e=>{
   if(!drawing) return;
-  const p = pos(e);
+  const p = getPos(e);
   ctx.lineWidth = 2;
   ctx.lineCap = "round";
   ctx.strokeStyle = "#000";
@@ -429,39 +525,53 @@ canvas.addEventListener("mousemove", e=>{
   ctx.stroke();
 });
 
-canvas.addEventListener("touchstart", e=>{drawing=true;ctx.moveTo(pos(e).x,pos(e).y);});
-canvas.addEventListener("touchend", ()=>drawing=false);
+canvas.addEventListener("touchstart", e=>{
+  drawing = true;
+  const p = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(p.x,p.y);
+},{passive:false});
+canvas.addEventListener("touchend", ()=> drawing=false,{passive:false});
+canvas.addEventListener("touchcancel", ()=> drawing=false,{passive:false});
 canvas.addEventListener("touchmove", e=>{
   if(!drawing) return;
   e.preventDefault();
-  const p = pos(e);
+  const p = getPos(e);
   ctx.lineTo(p.x,p.y);
   ctx.stroke();
-});
+},{passive:false});
 
-window.openDrawModal = ()=>{ctx.clearRect(0,0,canvas.width,canvas.height);modal.style.display="flex";};
-window.closeDrawModal = ()=> modal.style.display="none";
-
-window.saveDrawnSignature = ()=>{
+window.openDrawModal = function(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  modal.style.display = "flex";
+};
+window.closeDrawModal = function(){
+  modal.style.display = "none";
+};
+window.saveDrawnSignature = function(){
   signatureData = canvas.toDataURL("image/png");
   updateSignaturePreview();
-  modal.style.display="none";
+  modal.style.display = "none";
+};
+window.clearCanvas = function(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 };
 
-window.clearCanvas = ()=> ctx.clearRect(0,0,canvas.width,canvas.height);
-
-window.triggerUpload = ()=> fileSignature.click();
-fileSignature.addEventListener("change", e=>{
-  const f = e.target.files[0];
+/* ================= SUBIR FIRMA DESDE ARCHIVO ================= */
+window.triggerUpload = function(){
+  document.getElementById("fileSignature").click();
+};
+document.getElementById("fileSignature").addEventListener("change", e=>{
+  const file = e.target.files[0];
+  if(!file) return;
   const reader = new FileReader();
   reader.onload = ev=>{
     signatureData = ev.target.result;
     updateSignaturePreview();
   };
-  reader.readAsDataURL(f);
+  reader.readAsDataURL(file);
 });
 
 </script>
-
 </body>
 </html>

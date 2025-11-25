@@ -338,11 +338,14 @@ window.verDetalle = function(id){
 
     <div class="section-title">Constancia</div>
     <p>
-      Por medio de la presente se deja constancia que el ${fechaLarga} se realiza una 
-      ${palabraRetro} al/la colaborador (a) <b>${r.asesor}</b> con DNI <b>${dniColab}</b>,
-      quien ejerce la función de Asesor (a) Financiero (a), para el cumplimiento de los 
-      parámetros de la llamada.
-    </p>
+        Retroalimentación realizada a <strong>${r.asesor}</strong> (GC: ${r.gc || ""}) el
+        Por medio de la presente se deja constancia que el 
+        <strong>${fechaLarga}</strong> se realiza una 
+        <strong>${tituloRetro}</strong> al/la colaborador (a) 
+        <strong>${r.asesor}</strong> con DNI <strong>${dniDesdeGC}</strong>,
+        quien ejerce la función de Asesor (a) Financiero (a), para el cumplimiento
+        de los parámetros de la llamada.
+      </p>
 
     <div class="section-title">Gestión monitoreada</div>
     <b>ID Llamada:</b> ${r.idLlamada}<br>

@@ -37,6 +37,7 @@
     font-size:13px;
   }
   textarea{resize:vertical;min-height:70px}
+
   /* TABLE */
   table{
     width:100%;
@@ -62,6 +63,7 @@
   tr:nth-child(odd) td{
     background:#020617;
   }
+
   /* BUTTONS */
   .btn{
     background:#3b82f6;
@@ -82,27 +84,42 @@
   }
   .btn.sm{padding:6px 10px;font-size:12px}
   .btn.sm + .btn.sm{margin-left:4px}
+
+  /* Letter / detalle (LIGHT Box) */
   .letter-header{
     display:flex;
     justify-content:space-between;
     align-items:flex-start;
-    margin-bottom:8px
+    margin-bottom:12px;
   }
   .letter-title{
     font-size:18px;
     font-weight:bold;
     text-align:center;
     width:100%;
-    color:#fff;
+    color:#111827;
   }
   .letter-body{
     font-size:13px;
-    line-height:1.4;
-    color:#cbd5e1;
+    line-height:1.5;
+    color:#1f2937;
   }
   .section-title{
-    font-weight:bold;margin-top:10px;color:#fff;
+    font-weight:bold;
+    margin-top:12px;
+    color:#111827;
   }
+
+  /* Recuadro LIGHT del feedback */
+  #feedbackInfo{
+    border:1px solid #d1d5db;
+    border-radius:10px;
+    padding:18px;
+    background:#ffffff;
+    color:#111827;
+    box-shadow:0 0 18px rgba(0,0,0,0.3);
+  }
+
   .signature-preview img{
     max-width:260px;
     border:1px solid #475569;
@@ -114,6 +131,7 @@
     display:flex;align-items:center;justify-content:center;
     color:#64748b;font-size:12px;margin-top:6px
   }
+
   /* Modal */
   .modal-backdrop{
     position:fixed;inset:0;background:rgba(0,0,0,0.6);
@@ -126,6 +144,7 @@
   #sigCanvas{
     border:1px solid #475569;border-radius:6px;display:block;margin:8px auto;background:#fff;
   }
+
   /* Badge pendings */
   .badgePending{
     display:inline-block;
@@ -193,7 +212,9 @@
 
   <div id="detailBlock" style="display:none;margin-top:12px">
     <h3>Detalle del Feedback</h3>
-    <div id="feedbackInfo" style="border:1px solid #334155;border-radius:6px;padding:16px;background:#0f172a"></div>
+
+    <!-- Recuadro LIGHT del feedback -->
+    <div id="feedbackInfo"></div>
 
     <!-- ZONA EDITABLE (solo si está PENDIENTE) -->
     <div id="editableZone">
@@ -206,8 +227,8 @@
         <button class="btn ghost sm" type="button" onclick="triggerUpload()">Subir firma</button>
         <input type="file" id="fileSignature" accept="image/*" style="display:none">
       </div>
-
       <div id="signaturePreview" class="signature-preview-empty">Sin firma seleccionada</div>
+
       <button class="btn" type="button" onclick="saveSignature()">Enviar firma y completar</button>
     </div>
 
@@ -248,6 +269,7 @@ const firebaseConfig = {
   messagingSenderId: "512179147778",
   appId: "1:512179147778:web:795e4a8b177fe766d3431b"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -297,7 +319,6 @@ window.loadAgentList = async function(){
 
   const qRef = query(collection(db,"registros"), where("asesor","==",advisor));
   const snap = await getDocs(qRef);
-
   const fullList = [];
   snap.forEach(d=>{
     const r = d.data();
@@ -306,7 +327,7 @@ window.loadAgentList = async function(){
       fecha: r.fecha ? new Date(r.fecha) : new Date(),
       nota: r.nota ?? 0,
       estado: r.estado || "PENDIENTE",
-      registradoPor: r.registradoPor || "No especificado"
+      registradoPor: r.registrado_por || r.registradoPor || "No especificado"
     });
   });
 
@@ -336,6 +357,14 @@ window.loadAgentList = async function(){
   `).join("");
 };
 
+/* ================= HELPER: FECHA LARGA ================= */
+function formatearFechaLarga(date){
+  const opts = { weekday:"long", year:"numeric", month:"long", day:"numeric" };
+  let str = date.toLocaleDateString("es-PE", opts); 
+  // Capitalizar la primera letra (Lunes, Martes, etc.)
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 /* ================= DETALLE FEEDBACK ================= */
 let currentID = null;
 let signatureData = null;
@@ -344,9 +373,10 @@ window.openDetail = async function(id){
   currentID = id;
   const snap = await getDoc(doc(db,"registros",id));
   if(!snap.exists()) return alert("No existe este registro");
-
   const r = snap.data();
   const fecha = r.fecha ? new Date(r.fecha) : new Date();
+
+  // Ítems
   const itemsHtml = (r.items||[]).map(it=>{
     const percTxt = (typeof it.perc !== "undefined") ? ` (${it.perc}%)` : "";
     return `
@@ -357,26 +387,51 @@ window.openDetail = async function(id){
     `;
   }).join("") || "<em>Sin ítems observados</em>";
 
+  // Evidencias
   const imgsHtml = (r.imagenes||[]).map(im=>`
     <img src="${im.url}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
   `).join("") || "<em>Sin evidencias adjuntas</em>";
 
-  const registrador = r.registradoPor || "No especificado";
+  const registrador = r.registrado_por || r.registradoPor || "No especificado";
 
+  // -------- RETROALIMENTACIÓN vs REAFIRMACIÓN ----------
+  const esReafirmacion = Number(r.nota) === 100;
+  const tituloRetro = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
+
+  // DNI desde GC (solo números, sin letras GC)
+  let dniDesdeGC = "";
+  if (r.gc) {
+    dniDesdeGC = r.gc.replace(/[^0-9]/g, ""); // solo dígitos
+  }
+  dniDesdeGC = dniDesdeGC || "-";
+
+  const fechaLarga = formatearFechaLarga(fecha);
+
+  // CONTENIDO DEL RECUADRO BLANCO
   document.getElementById("feedbackInfo").innerHTML = `
     <div class="letter-header">
       <div class="letter-title">
-        RETROALIMENTACIÓN
-        <div style="margin-top:4px;font-size:11px;color:#9ca3af">
+        ${tituloRetro}
+        <div style="margin-top:4px;font-size:11px;color:#6b7280">
           Registrado por: <span class="pill">${registrador}</span>
         </div>
       </div>
       <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media&token=730b1e7c-abbf-4369-9e8c-fafad2b39883"
            style="max-height:42px">
     </div>
+
     <div class="letter-body">
       <p>
-        Retroalimentación realizada a <strong>${r.asesor}</strong> (GC: ${r.gc || ""}) el
+        Por medio de la presente se deja constancia que el 
+        <strong>${fechaLarga}</strong> se realiza una 
+        <strong>${tituloRetro}</strong> al/la colaborador (a) 
+        <strong>${r.asesor}</strong> con DNI <strong>${dniDesdeGC}</strong>,
+        quien ejerce la función de Asesor (a) Financiero (a), para el cumplimiento
+        de los parámetros de la llamada.
+      </p>
+
+      <p>
+        ${tituloRetro} realizada a <strong>${r.asesor}</strong> (GC: ${r.gc || ""}) el
         <strong>${fecha.toLocaleString("es-PE")}</strong>.
       </p>
 
@@ -396,7 +451,7 @@ window.openDetail = async function(id){
         <div><strong>Tipo:</strong> ${r.tipo || ""}</div>
         <div style="margin-top:6px">
           <strong>Resumen:</strong>
-          <div style="padding:6px 8px;background:#020617;border-radius:4px;margin-top:2px">
+          <div style="padding:6px 8px;background:#e5e7eb;border-radius:4px;margin-top:2px">
             ${r.resumen || ""}
           </div>
         </div>
@@ -414,7 +469,7 @@ window.openDetail = async function(id){
                     font-weight:bold;">
           ${r.nota || 0}%
         </div>
-        <div style="font-size:11px;color:#9ca3af;margin-top:4px">
+        <div style="font-size:11px;color:#6b7280;margin-top:4px">
           Estado: <strong>${r.estado || "PENDIENTE"}</strong>
         </div>
       </div>
@@ -433,6 +488,7 @@ window.openDetail = async function(id){
 
   document.getElementById("detailBlock").style.display = "block";
 
+  // Zona editable (solo si está pendiente)
   const editableZone = document.getElementById("editableZone");
   const agentMsg = document.getElementById("agentMsg");
 
@@ -571,7 +627,6 @@ document.getElementById("fileSignature").addEventListener("change", e=>{
   };
   reader.readAsDataURL(file);
 });
-
 </script>
 </body>
 </html>

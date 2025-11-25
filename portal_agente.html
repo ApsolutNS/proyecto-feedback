@@ -2,342 +2,440 @@
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Visualización de Feedback — PREMIUM DARK/LIGHT MIX</title>
-
-<!-- jsPDF + html2canvas -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Portal del Agente — Dark Mode</title>
 <style>
-/* ------------------- DARK MODE GENERAL ------------------- */
-body{
-  font-family:Arial,Helvetica,sans-serif;
-  background:#0f172a;
-  margin:0;
-  padding:20px;
-  color:#e2e8f0;
-}
-.card{
-  max-width:1300px;
-  margin:auto;
-  background:#1e293b;
-  padding:20px;
-  border-radius:12px;
-  border:1px solid #334155;
-  box-shadow:0 0 20px rgba(0,0,0,0.4);
-}
+  /* -------------------- DARK THEME -------------------- */
+  body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:#0f172a;
+    margin:0;
+    padding:18px;
+    color:#e2e8f0;
+  }
+  .card{
+    max-width:980px;
+    margin:auto;
+    background:#1e293b;
+    padding:18px;
+    border-radius:10px;
+    border:1px solid #334155;
+    box-shadow:0 0 25px rgba(0,0,0,0.35);
+  }
+  h2{margin-top:0;color:#fff;font-weight:700}
+  h3{margin-top:10px;color:#fff}
+  label{display:block;margin-top:10px;font-weight:600;color:#cbd5e1}
+  input,select,textarea{
+    width:100%;
+    padding:8px;
+    border-radius:6px;
+    border:1px solid #475569;
+    margin-top:6px;
+    background:#0f172a;
+    color:#e2e8f0;
+    box-sizing:border-box;
+    font-size:13px;
+  }
+  textarea{resize:vertical;min-height:70px}
 
-/* Titles */
-h2{
-  margin-top:0;
-  font-size:24px;
-  text-align:center;
-  color:white;
-}
+  /* TABLE */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:12px;
+    font-size:13px;
+  }
+  th{
+    background:#334155;
+    padding:8px;
+    color:#e2e8f0;
+    border-bottom:1px solid #475569;
+    text-align:left;
+  }
+  td{
+    padding:8px;
+    border-bottom:1px solid #334155;
+    color:#cbd5e1;
+  }
+  tr:nth-child(even) td{
+    background:#111827;
+  }
+  tr:nth-child(odd) td{
+    background:#020617;
+  }
 
-/* Inputs */
-label{
-  display:block;
-  margin-top:10px;
-  font-weight:600;
-  color:#cbd5e1;
-}
-select{
-  width:100%;
-  padding:10px;
-  border-radius:6px;
-  border:1px solid #475569;
-  background:#0f172a;
-  color:#e2e8f0;
-}
+  /* BUTTONS */
+  .btn{
+    background:#3b82f6;
+    color:#fff;
+    border:none;
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    margin-top:10px;
+    font-size:13px;
+    transition:0.2s;
+  }
+  .btn:hover{background:#2563eb}
+  .btn.ghost{
+    background:transparent;
+    border:1px solid #64748b;
+    color:#93c5fd;
+  }
+  .btn.sm{padding:6px 10px;font-size:12px}
+  .btn.sm + .btn.sm{margin-left:4px}
 
-/* Table (initially hidden) */
-#tablaFeedback{
-  display:none;
-  margin-top:15px;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:13px;
-}
-th{
-  background:#334155;
-  padding:8px;
-  color:#e2e8f0;
-  border-bottom:1px solid #475569;
-}
-td{
-  padding:8px;
-  border-bottom:1px solid #334155;
-}
+  /* Letter / detalle (LIGHT Box) */
+  .letter-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:8px
+    margin-bottom:12px;
+  }
+  .letter-title{
+    font-size:18px;
+    font-weight:bold;
+    text-align:center;
+    width:100%;
+    color:#fff;
+    color:#111827;
+  }
+  .letter-body{
+    font-size:13px;
+    line-height:1.4;
+    color:#cbd5e1;
+    line-height:1.5;
+    color:#1f2937;
+  }
+  .section-title{
+    font-weight:bold;margin-top:10px;color:#fff;
+    font-weight:bold;
+    margin-top:12px;
+    color:#111827;
+  }
 
-/* ------------------- LIGHT DETAIL BOX ------------------- */
-#detailBox{
-  margin-top:25px;
-  display:none;
-  background:white;
-  padding:25px;
-  border-radius:14px;
-  border:1px solid #d1d5db;
-  color:#1e293b;
-}
+  /* Recuadro LIGHT del feedback */
+  #feedbackInfo{
+    border:1px solid #d1d5db;
+    border-radius:10px;
+    padding:18px;
+    background:#ffffff;
+    color:#111827;
+    box-shadow:0 0 18px rgba(0,0,0,0.3);
+  }
 
-/* Title white box (RETROALIMENTACIÓN / REAFIRMACIÓN) */
-.detail-title{
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
-  color:black;
-  margin-bottom:10px;
-}
+  .signature-preview img{
+    max-width:260px;
+    border:1px solid #475569;
+    border-radius:6px;
+    margin-top:6px;
+  }
+  .signature-preview-empty{
+    height:80px;border:1px dashed #475569;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    color:#64748b;font-size:12px;margin-top:6px
+  }
 
-/* Logo */
-.logo{
-  text-align:right;
-  margin-bottom:20px;
-}
-.logo img{
-  max-height:50px;
-}
+  /* Modal */
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,0.6);
+    display:none;align-items:center;justify-content:center;z-index:999;
+  }
+  .modal-box{
+    background:#1e293b;border-radius:10px;padding:16px;max-width:760px;width:95%;
+    border:1px solid #334155;
+  }
+  #sigCanvas{
+    border:1px solid #475569;border-radius:6px;display:block;margin:8px auto;background:#fff;
+  }
 
-/* Sections */
-.section-title{
-  margin-top:15px;
-  font-size:15px;
-  font-weight:700;
-  color:#0f172a;
-}
-
-/* Ítems */
-.item-block{
-  padding-left:6px;
-  border-left:3px solid #2563eb;
-  margin-bottom:6px;
-}
-
-/* Signature */
-.firma-box{
-  width:320px;
-  height:140px;
-  border:2px solid #000;
-  border-radius:4px;
-  background:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin-top:10px;
-}
-.firma-box img{
-  max-width:300px;
-  max-height:130px;
-  object-fit:contain;
-}
-
-/* Evidence */
-.evidence-img{
-  max-width:650px;
-  width:100%;
-  border-radius:6px;
-  margin-top:8px;
-  border:1px solid #d1d5db;
-}
-
-/* Button */
-.btn{
-  background:#10b981;
-  color:white;
-  border:none;
-  padding:10px 16px;
-  border-radius:6px;
-  font-weight:bold;
-  cursor:pointer;
-  margin-top:20px;
-}
-.btn:hover{background:#059669}
-.btn.sm{
-  padding:6px 10px;
-  font-size:12px;
-}
+  /* Badge pendings */
+  .badgePending{
+    display:inline-block;
+    background:#ef4444;
+    padding:4px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:bold;
+    color:white;
+  }
+  .pill{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:999px;
+    font-size:11px;
+    border:1px solid #475569;
+    background:#020617;
+    color:#e5e7eb;
+  }
 </style>
 </head>
 <body>
-
 <div class="card">
-  <h2>Visualización de Feedback</h2>
+  <h2>
+    Portal del Agente
+    <span id="pendingBadge" style="float:right"></span>
+  </h2>
 
-  <!-- SELECTOR DE ASESOR -->
-  <label>Filtrar por asesor</label>
-  <select id="filtroAsesor">
-    <option value="">— Selecciona un asesor —</option>
-  </select>
+  <!-- FILTROS SUPERIORES -->
+  <div style="display:flex;flex-wrap:wrap;gap:12px">
+    <div style="flex:1 1 220px;min-width:220px">
+      <label>Seleccionar Asesor</label>
+      <select id="selAgent" onchange="loadAgentList()">
+        <option value="">-- selecciona --</option>
+      </select>
+    </div>
+    <div style="flex:1 1 220px;min-width:220px">
+      <label>Filtrar por quien registró</label>
+      <select id="selRegistrador" onchange="loadAgentList()">
+        <option value="">Todos</option>
+        <!-- Los valores deben coincidir con registro.html -->
+        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
+        <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
+        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
+      </select>
+    </div>
+  </div>
 
-  <!-- FILTRO REGISTRADO POR -->
-  <label>Filtrar por quién registró</label>
-  <select id="filtroRegistrado">
-    <option value="">— Todos —</option>
-    <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
-      Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
-    </option>
-    <option value="César Alonso Torres Montes - Supervisor">
-      César Alonso Torres Montes - Supervisor
-    </option>
-    <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
-      Karen Vanessa Vital Cordova - Lílder de Operaciones
-    </option>
-  </select>
+  <div style="margin-top:12px">
+    <strong style="color:#fff">Feedbacks del agente</strong>
+    <table id="agentTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Nota</th>
+          <th>Estado</th>
+          <th>Registrado por</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  <!-- TABLA (SE OCULTA HASTA SELECCIONAR ASESOR) -->
-  <table id="tablaFeedback">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Fecha</th>
-        <th>Nota</th>
-        <th>Registrado por</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div id="detailBlock" style="display:none;margin-top:12px">
+    <h3>Detalle del Feedback</h3>
+    <div id="feedbackInfo" style="border:1px solid #334155;border-radius:6px;padding:16px;background:#0f172a"></div>
 
-  <!-- DETALLE -->
-  <div id="detailBox">
-    <div class="logo">
-      <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media">
+    <!-- Recuadro LIGHT del feedback -->
+    <div id="feedbackInfo"></div>
+
+    <!-- ZONA EDITABLE (solo si está PENDIENTE) -->
+    <div id="editableZone">
+      <label style="margin-top:12px">Compromiso del agente</label>
+      <textarea id="compromiso" rows="4"></textarea>
+
+      <label style="margin-top:12px">Firma del agente</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn sm" type="button" onclick="openDrawModal()">Dibujar firma</button>
+        <button class="btn ghost sm" type="button" onclick="triggerUpload()">Subir firma</button>
+        <input type="file" id="fileSignature" accept="image/*" style="display:none">
+      </div>
+
+      <div id="signaturePreview" class="signature-preview-empty">Sin firma seleccionada</div>
+
+      <button class="btn" type="button" onclick="saveSignature()">Enviar firma y completar</button>
     </div>
 
-    <div class="detail-title" id="tituloRetro">RETROALIMENTACIÓN</div>
+    <div id="agentMsg" style="margin-top:10px;font-size:13px"></div>
+  </div>
+</div>
 
-    <div id="detailContent"></div>
-
-    <button id="pdfBtn" class="btn">Exportar PDF</button>
+<!-- MODAL PARA DIBUJAR FIRMA -->
+<div id="signatureModal" class="modal-backdrop">
+  <div class="modal-box">
+    <h3 style="color:white">Dibujar firma del agente</h3>
+    <canvas id="sigCanvas" width="700" height="160"></canvas>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
+      <button class="btn ghost sm" type="button" onclick="clearCanvas()">Limpiar</button>
+      <button class="btn ghost sm" type="button" onclick="closeDrawModal()">Cancelar</button>
+      <button class="btn sm" type="button" onclick="saveDrawnSignature()">Usar esta firma</button>
+    </div>
   </div>
 </div>
 
 <script type="module">
+/* ================= FIREBASE IMPORTS ================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import {
+  getFirestore, collection, getDocs, query, where,
+  doc, getDoc, updateDoc
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import {
+  getStorage, ref, uploadString, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
+/* ================= FIREBASE CONFIG ================= */
 const firebaseConfig = {
-  apiKey:"AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
-  authDomain:"feedback-app-ac30e.firebaseapp.com",
-  projectId:"feedback-app-ac30e",
-  storageBucket:"feedback-app-ac30e.firebasestorage.app"
+  apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
+  authDomain: "feedback-app-ac30e.firebaseapp.com",
+  projectId: "feedback-app-ac30e",
+  storageBucket: "feedback-app-ac30e.firebasestorage.app",
+  messagingSenderId: "512179147778",
+  appId: "1:512179147778:web:795e4a8b177fe766d3431b"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-let registros = [];
+/* ================= CARGAR ASESORES ================= */
+let asesores = {}; // { nombre: GC }
 
-/* ---------------- LOAD RECORDS ---------------- */
-async function cargarRegistros(){
-  const snap = await getDocs(collection(db,"registros"));
-  registros = [];
-
+async function loadAdvisors(){
+  const snap = await getDocs(collection(db,"asesores"));
   snap.forEach(d=>{
-    const r = d.data();
-    registros.push({
-      id: d.id,
-      ...r,
-      fechaObj: new Date(r.fecha),
-      registradoPor: r.registrado_por || r.registradoPor || "",
-      firmaUrl: r.firmaUrl || r.firma || "",
-      idLlamada: r.id_llamada || r.idLlamada || "-",
-      idContacto: r.id_contacto || r.idContacto || "-"
-    });
+    const a = d.data();
+    if(a.nombre){
+      asesores[a.nombre] = a.GC || "SIN GC";
+    }
   });
-
-  registros.sort((a,b)=>b.fechaObj - a.fechaObj);
-}
-
-/* ---------------- LOAD ADVISORS ---------------- */
-function cargarAsesoresFiltro(){
-  const asesores = [...new Set(registros.map(r => r.asesor))].sort();
-  filtroAsesor.innerHTML = `<option value="">— Selecciona un asesor —</option>`;
-  asesores.forEach(a => {
-    filtroAsesor.innerHTML += `<option value="${a}">${a}</option>`;
+  const sel = document.getElementById("selAgent");
+  sel.innerHTML = "<option value=''>-- selecciona --</option>";
+  Object.keys(asesores).sort().forEach(n=>{
+    sel.innerHTML += `<option value="${n}">${n} — ${asesores[n]}</option>`;
   });
 }
+loadAdvisors();
 
-/* ---------------- RENDER TABLE ---------------- */
-function renderTabla(){
-  const filAs = filtroAsesor.value;
-  const filReg = filtroRegistrado.value;
+/* ================= BADGE PENDIENTES ================= */
+function updatePendingBadge(fullList){
+  const p = fullList.filter(x=>x.estado==="PENDIENTE").length;
+  const badge = document.getElementById("pendingBadge");
+  if(p === 0){
+    badge.innerHTML = "";
+  } else {
+    badge.innerHTML = `<span class="badgePending">${p} pendientes</span>`;
+  }
+}
 
-  const table = document.getElementById("tablaFeedback");
-  const tbody = table.querySelector("tbody");
-  tbody.innerHTML = "";
+/* ================= LISTAR FEEDBACKS ================= */
+window.loadAgentList = async function(){
+  const advisor = document.getElementById("selAgent").value;
+  const registradorFiltro = document.getElementById("selRegistrador").value;
+  const tbody = document.querySelector("#agentTable tbody");
 
-  if(!filAs){
-    table.style.display = "none";
+  if(!advisor){
+    tbody.innerHTML = "<tr><td colspan='6'>Selecciona un asesor</td></tr>";
+    updatePendingBadge([]);
+    document.getElementById("detailBlock").style.display = "none";
     return;
   }
 
-  table.style.display = "table";
+  const qRef = query(collection(db,"registros"), where("asesor","==",advisor));
+  const snap = await getDocs(qRef);
 
-  registros
-    .filter(r => r.asesor === filAs)
-    .filter(r => !filReg || r.registradoPor === filReg)
-    .forEach(r=>{
-      tbody.innerHTML += `
-        <tr>
-          <td>${r.id}</td>
-          <td>${r.fechaObj.toLocaleString("es-PE")}</td>
-          <td>${r.nota}%</td>
-          <td>${r.registradoPor || "-"}</td>
-          <td><button class="btn sm" onclick="verDetalle('${r.id}')">Ver</button></td>
-        </tr>
-      `;
+  const fullList = [];
+  snap.forEach(d=>{
+    const r = d.data();
+    fullList.push({
+      id: d.id,
+      fecha: r.fecha ? new Date(r.fecha) : new Date(),
+      nota: r.nota ?? 0,
+      estado: r.estado || "PENDIENTE",
+      registradoPor: r.registradoPor || "No especificado"
+      registradoPor: r.registrado_por || r.registradoPor || "No especificado"
     });
-}
+  });
 
-/* ---------------- HELPER: FECHA LARGA ---------------- */
+  fullList.sort((a,b)=> b.fecha - a.fecha);
+  updatePendingBadge(fullList);
+
+  // aplicar filtro de quien registró (si hay)
+  const displayList = registradorFiltro
+    ? fullList.filter(x => x.registradoPor === registradorFiltro)
+    : fullList;
+
+  if(displayList.length === 0){
+    tbody.innerHTML = "<tr><td colspan='6'>Sin registros para este filtro</td></tr>";
+    document.getElementById("detailBlock").style.display = "none";
+    return;
+  }
+
+  tbody.innerHTML = displayList.map(r=>`
+    <tr>
+      <td>${r.id}</td>
+      <td>${r.fecha.toLocaleString("es-PE")}</td>
+      <td>${r.nota}%</td>
+      <td>${r.estado}</td>
+      <td>${r.registradoPor}</td>
+      <td><button class="btn sm" type="button" onclick="openDetail('${r.id}')">Abrir</button></td>
+    </tr>
+  `).join("");
+};
+
+/* ================= HELPER: FECHA LARGA ================= */
 function formatearFechaLarga(date){
   const opts = { weekday:"long", year:"numeric", month:"long", day:"numeric" };
-  let str = date.toLocaleDateString("es-PE", opts); // ej: "jueves, 20 de noviembre de 2025"
+  let str = date.toLocaleDateString("es-PE", opts); 
+  // Capitalizar la primera letra (Lunes, Martes, etc.)
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-/* ---------------- SHOW DETAIL ---------------- */
-window.verDetalle = function(id){
-  const r = registros.find(x=>x.id===id);
-  if(!r) return;
+/* ================= DETALLE FEEDBACK ================= */
+let currentID = null;
+let signatureData = null;
 
-  const titulo = document.getElementById("tituloRetro");
+window.openDetail = async function(id){
+  currentID = id;
+  const snap = await getDoc(doc(db,"registros",id));
+  if(!snap.exists()) return alert("No existe este registro");
+
+  const r = snap.data();
+  const fecha = r.fecha ? new Date(r.fecha) : new Date();
+
+  // Ítems
+  const itemsHtml = (r.items||[]).map(it=>{
+    const percTxt = (typeof it.perc !== "undefined") ? ` (${it.perc}%)` : "";
+    return `
+      <div style="margin-bottom:4px">
+        <strong>${it.name}</strong>${percTxt}
+        <div style="margin-left:8px">${it.detail || ""}</div>
+      </div>
+    `;
+  }).join("") || "<em>Sin ítems observados</em>";
+
+  // Evidencias
+  const imgsHtml = (r.imagenes||[]).map(im=>`
+    <img src="${im.url}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
+  `).join("") || "<em>Sin evidencias adjuntas</em>";
+
+  const registrador = r.registradoPor || "No especificado";
+  const registrador = r.registrado_por || r.registradoPor || "No especificado";
+
+  // -------- RETROALIMENTACIÓN vs REAFIRMACIÓN ----------
   const esReafirmacion = Number(r.nota) === 100;
-  const palabraRetro = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
+  const tituloRetro = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
 
-  // Cambia el título grande del recuadro
-  titulo.textContent = palabraRetro;
+  // DNI desde GC (solo números, sin letras GC)
+  let dniDesdeGC = "";
+  if (r.gc) {
+    dniDesdeGC = r.gc.replace(/[^0-9]/g, ""); // solo dígitos
+  }
+  dniDesdeGC = dniDesdeGC || "-";
 
-  const itemsHtml = (r.items||[])
-      .map(it=>`
-        <div class="item-block">
-          <b>${it.name}</b> (${it.perc}%)
-          <div>${it.detail||""}</div>
+  const fechaLarga = formatearFechaLarga(fecha);
+
+  // CONTENIDO DEL RECUADRO BLANCO
+  document.getElementById("feedbackInfo").innerHTML = `
+    <div class="letter-header">
+      <div class="letter-title">
+        RETROALIMENTACIÓN
+        <div style="margin-top:4px;font-size:11px;color:#9ca3af">
+        ${tituloRetro}
+        <div style="margin-top:4px;font-size:11px;color:#6b7280">
+          Registrado por: <span class="pill">${registrador}</span>
         </div>
-      `).join("");
+      </div>
+      <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media&token=730b1e7c-abbf-4369-9e8c-fafad2b39883"
+           style="max-height:42px">
+    </div>
 
-  const evidenciasHtml = (r.imagenes||[])
-      .map(img=>`<img class="evidence-img" src="${img.url}">`)
-      .join("");
-
-  const firmaHtml = r.firmaUrl
-      ? `<div class="firma-box"><img src="${r.firmaUrl}"></div>`
-      : `<div class="firma-box">Sin firma</div>`;
-
-  const fechaLarga = formatearFechaLarga(r.fechaObj);
-  const dniColab = r.dni_asesor || r.dniAsesor || r.dni || (r.cliente?.dni) || "-";
-
-  document.getElementById("detailContent").innerHTML = `
-    <p><b>Registrado por:</b> ${r.registradoPor || "-"}</p>
-    <p>${palabraRetro} realizada a <b>${r.asesor}</b> (GC: ${r.gc || ""}) el ${r.fechaObj.toLocaleString("es-PE")}.</p>
-
-    <div class="section-title">Constancia</div>
-     <p>
+    <div class="letter-body">
+      <p>
+        Retroalimentación realizada a <strong>${r.asesor}</strong> (GC: ${r.gc || ""}) el
         Por medio de la presente se deja constancia que el 
         <strong>${fechaLarga}</strong> se realiza una 
         <strong>${tituloRetro}</strong> al/la colaborador (a) 
@@ -346,70 +444,206 @@ window.verDetalle = function(id){
         de los parámetros de la llamada.
       </p>
 
-    <div class="section-title">Gestión monitoreada</div>
-    <b>ID Llamada:</b> ${r.idLlamada}<br>
-    <b>ID Contacto:</b> ${r.idContacto}<br>
-    <b>Tipo:</b> ${r.tipo || ""}<br>
+      <p>
+        ${tituloRetro} realizada a <strong>${r.asesor}</strong> (GC: ${r.gc || ""}) el
+        <strong>${fecha.toLocaleString("es-PE")}</strong>.
+      </p>
 
-    <div class="section-title">Cliente</div>
-    DNI: ${r.cliente?.dni||""}<br>
-    Nombre: ${r.cliente?.nombre||""}<br>
-    Teléfono: ${r.cliente?.tel||""}<br>
+      <div class="section-title">Cliente</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        <div><strong>DNI:</strong> ${r.cliente?.dni || ""}</div>
+        <div><strong>Nombre:</strong> ${r.cliente?.nombre || ""}</div>
+        <div><strong>Teléfono:</strong> ${r.cliente?.tel || ""}</div>
+        <div><strong>Tipificación:</strong> ${r.tipificacion || ""}</div>
+        <div><strong>Comentario cliente:</strong> ${r.observacionCliente || ""}</div>
+      </div>
 
-    <div class="section-title">Resumen</div>
-    <div style="background:#e5e7eb;padding:10px;border-radius:6px;">
-      ${r.resumen || ""}
+      <div class="section-title">Gestión monitoreada</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        <div><strong>ID Llamada:</strong> ${r.idLlamada || ""}</div>
+        <div><strong>ID Contacto:</strong> ${r.idContacto || ""}</div>
+        <div><strong>Tipo:</strong> ${r.tipo || ""}</div>
+        <div style="margin-top:6px">
+          <strong>Resumen:</strong>
+          <div style="padding:6px 8px;background:#020617;border-radius:4px;margin-top:2px">
+          <div style="padding:6px 8px;background:#e5e7eb;border-radius:4px;margin-top:2px">
+            ${r.resumen || ""}
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Ítems observados</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        ${itemsHtml}
+      </div>
+
+      <div class="section-title">Nota obtenida</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        <div style="display:inline-block;padding:6px 10px;border-radius:999px;
+                    border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;
+                    font-weight:bold;">
+          ${r.nota || 0}%
+        </div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:4px">
+        <div style="font-size:11px;color:#6b7280;margin-top:4px">
+          Estado: <strong>${r.estado || "PENDIENTE"}</strong>
+        </div>
+      </div>
+
+      <div class="section-title">Compromiso del agente</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        ${r.compromiso ? r.compromiso : "<em>Pendiente</em>"}
+      </div>
+
+      <div class="section-title">Evidencias</div>
+      <div style="margin-left:8px;margin-bottom:6px">
+        ${imgsHtml}
+      </div>
     </div>
-
-    <div class="section-title">Ítems observados</div>
-    ${itemsHtml || "Sin ítems"}
-
-    <div class="section-title">Nota obtenida</div>
-    <div style="font-size:22px;font-weight:bold;">${r.nota}%</div>
-
-    <div class="section-title">Compromiso del agente</div>
-    ${r.compromiso || "<em>Sin compromiso registrado</em>"}
-
-    <div class="section-title">Firma del agente</div>
-    ${firmaHtml}
-
-    <div class="section-title">Evidencias</div>
-    ${evidenciasHtml || "<em>Sin evidencias adjuntas</em>"}
   `;
 
-  document.getElementById("detailBox").style.display = "block";
-  window._CURRENT_FEEDBACK_ID = id;
+  document.getElementById("detailBlock").style.display = "block";
+
+  // Zona editable (solo si está pendiente)
+  const editableZone = document.getElementById("editableZone");
+  const agentMsg = document.getElementById("agentMsg");
+
+  if(r.estado === "COMPLETADO"){
+    editableZone.style.display = "none";
+    agentMsg.style.color = "#22c55e";
+    agentMsg.textContent = "Este feedback ya fue completado. La firma y el compromiso no pueden modificarse.";
+  } else {
+    editableZone.style.display = "block";
+    agentMsg.textContent = "";
+    document.getElementById("compromiso").value = r.compromiso || "";
+    signatureData = r.firmaUrl || null;
+    updateSignaturePreview();
+  }
 };
 
-/* ---------------- EXPORT TO PDF ---------------- */
-document.getElementById("pdfBtn").onclick = async ()=>{
-  const element = document.getElementById("detailBox");
+/* ================= FIRMA: PREVIEW ================= */
+function updateSignaturePreview(){
+  const box = document.getElementById("signaturePreview");
+  if(signatureData){
+    box.className = "signature-preview";
+    box.innerHTML = `<img src="${signatureData}" alt="Firma del agente">`;
+  } else {
+    box.className = "signature-preview-empty";
+    box.textContent = "Sin firma seleccionada";
+  }
+}
 
-  const canvas = await html2canvas(element,{
-    scale:2,
-    useCORS:true,
-    allowTaint:true,
-    backgroundColor:"#ffffff"
-  });
+/* ================= GUARDAR FIRMA + COMPROMISO ================= */
+window.saveSignature = async function(){
+  if(!currentID) return alert("No hay registro abierto");
+  const compromisoText = document.getElementById("compromiso").value.trim();
+  if(!compromisoText) return alert("El compromiso es obligatorio");
+  if(!signatureData) return alert("Debes dibujar o subir la firma del agente");
 
-  const img = canvas.toDataURL("image/png");
-  const pdf = new jspdf.jsPDF("p","mm","a4");
+  const msg = document.getElementById("agentMsg");
+  msg.style.color = "#4ade80";
+  msg.textContent = "Guardando firma y compromiso...";
 
-  const width = pdf.internal.pageSize.getWidth() - 20;
-  const height = (canvas.height * width) / canvas.width;
+  try{
+    const sigRef = ref(storage, `firmas/${currentID}.png`);
+    await uploadString(sigRef, signatureData, "data_url");
+    const url = await getDownloadURL(sigRef);
 
-  pdf.addImage(img,"PNG",10,10,width,height);
-  pdf.save(`feedback_${window._CURRENT_FEEDBACK_ID}.pdf`);
+    await updateDoc(doc(db,"registros",currentID),{
+      compromiso: compromisoText,
+      firmaUrl: url,
+      estado: "COMPLETADO"
+    });
+
+    msg.style.color = "#4ade80";
+    msg.textContent = "Feedback completado correctamente ✓";
+    document.getElementById("editableZone").style.display = "none";
+    loadAgentList();
+  }catch(e){
+    console.error(e);
+    msg.style.color = "red";
+    msg.textContent = "Error guardando firma: " + e.message;
+  }
 };
 
-/* ---------------- INIT ---------------- */
-window.onload = async ()=>{
-  await cargarRegistros();
-  cargarAsesoresFiltro();
-  renderTabla();
-  filtroAsesor.onchange = renderTabla;
-  filtroRegistrado.onchange = renderTabla;
+/* ================= DIBUJAR FIRMA (CANVAS) ================= */
+const modal = document.getElementById("signatureModal");
+const canvas = document.getElementById("sigCanvas");
+const ctx = canvas.getContext("2d");
+let drawing = false;
+
+function getPos(e){
+  const r = canvas.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+  return {x,y};
+}
+
+canvas.addEventListener("mousedown", e=>{
+  drawing = true;
+  const p = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(p.x,p.y);
+});
+canvas.addEventListener("mouseup", ()=> drawing=false);
+canvas.addEventListener("mouseleave", ()=> drawing=false);
+canvas.addEventListener("mousemove", e=>{
+  if(!drawing) return;
+  const p = getPos(e);
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#000";
+  ctx.lineTo(p.x,p.y);
+  ctx.stroke();
+});
+
+canvas.addEventListener("touchstart", e=>{
+  drawing = true;
+  const p = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(p.x,p.y);
+},{passive:false});
+canvas.addEventListener("touchend", ()=> drawing=false,{passive:false});
+canvas.addEventListener("touchcancel", ()=> drawing=false,{passive:false});
+canvas.addEventListener("touchmove", e=>{
+  if(!drawing) return;
+  e.preventDefault();
+  const p = getPos(e);
+  ctx.lineTo(p.x,p.y);
+  ctx.stroke();
+},{passive:false});
+
+window.openDrawModal = function(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  modal.style.display = "flex";
 };
+window.closeDrawModal = function(){
+  modal.style.display = "none";
+};
+window.saveDrawnSignature = function(){
+  signatureData = canvas.toDataURL("image/png");
+  updateSignaturePreview();
+  modal.style.display = "none";
+};
+window.clearCanvas = function(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+};
+
+/* ================= SUBIR FIRMA DESDE ARCHIVO ================= */
+window.triggerUpload = function(){
+  document.getElementById("fileSignature").click();
+};
+document.getElementById("fileSignature").addEventListener("change", e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    signatureData = ev.target.result;
+    updateSignaturePreview();
+  };
+  reader.readAsDataURL(file);
+});
+
 </script>
 </body>
 </html>

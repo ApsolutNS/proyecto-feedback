@@ -302,6 +302,7 @@ function formatearFechaLarga(date){
 }
 
 /* ---------------- SHOW DETAIL ---------------- */
+/* ---------------- SHOW DETAIL ---------------- */
 window.verDetalle = function(id){
   const r = registros.find(x=>x.id===id);
   if(!r) return;
@@ -310,8 +311,12 @@ window.verDetalle = function(id){
   const esReafirmacion = Number(r.nota) === 100;
   const palabraRetro = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
 
-  // Cambia el título grande del recuadro
+  // Cambia el título de la tarjeta
   titulo.textContent = palabraRetro;
+
+  // ---- EXTRAER EL DNI DESDE GC ----
+  // Ejemplo: "GC77144634" → "77144634"
+  const dniDesdeGC = (r.gc || "").replace(/GC/gi, "").trim();
 
   const itemsHtml = (r.items||[])
       .map(it=>`
@@ -330,22 +335,21 @@ window.verDetalle = function(id){
       : `<div class="firma-box">Sin firma</div>`;
 
   const fechaLarga = formatearFechaLarga(r.fechaObj);
-  const dniColab = r.dni_asesor || r.dniAsesor || r.dni || (r.cliente?.dni) || "-";
 
   document.getElementById("detailContent").innerHTML = `
     <p><b>Registrado por:</b> ${r.registradoPor || "-"}</p>
-    <p>${palabraRetro} realizada a <b>${r.asesor}</b> (GC: ${r.gc || ""}) el ${r.fechaObj.toLocaleString("es-PE")}.</p>
+    <p>${palabraRetro} realizada a <b>${r.asesor}</b> (GC: ${r.gc || ""}) el 
+    ${r.fechaObj.toLocaleString("es-PE")}.</p>
 
     <div class="section-title">Constancia</div>
     <p>
-        Retroalimentación realizada a <strong>${r.asesor}</strong> (GC: ${r.gc || ""}) el
-        Por medio de la presente se deja constancia que el 
-        <strong>${fechaLarga}</strong> se realiza una 
-        <strong>${tituloRetro}</strong> al/la colaborador (a) 
-        <strong>${r.asesor}</strong> con DNI <strong>${dniDesdeGC}</strong>,
-        quien ejerce la función de Asesor (a) Financiero (a), para el cumplimiento
-        de los parámetros de la llamada.
-      </p>
+      Por medio de la presente se deja constancia que el 
+      <strong>${fechaLarga}</strong> se realiza una 
+      <strong>${palabraRetro}</strong> al/la colaborador(a) 
+      <strong>${r.asesor}</strong> con DNI 
+      <strong>${dniDesdeGC}</strong>, quien ejerce la función de 
+      Asesor(a) Financiero(a), para el cumplimiento de los parámetros de la llamada.
+    </p>
 
     <div class="section-title">Gestión monitoreada</div>
     <b>ID Llamada:</b> ${r.idLlamada}<br>
@@ -381,6 +385,7 @@ window.verDetalle = function(id){
   document.getElementById("detailBox").style.display = "block";
   window._CURRENT_FEEDBACK_ID = id;
 };
+
 
 /* ---------------- EXPORT TO PDF ---------------- */
 document.getElementById("pdfBtn").onclick = async ()=>{

@@ -289,14 +289,25 @@
             background: var(--warning);
         }
         /* MULTI SELECT ASESOR */
-        .select-multi {
-            width: 100%;
+        .checkbox-list {
+            background: var(--card);
+            border: 1px solid var(--border);
             padding: 10px;
             border-radius: 10px;
-            border: 1px solid var(--border);
-            background: var(--card);
-            color: var(--text);
-            min-height: 80px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+            font-size: 13px;
+        }
+        
+        .checkbox-item input {
+            transform: scale(1.1);
         }
         /* DASHBOARD + FILTROS */
         .metrics-row {
@@ -537,16 +548,17 @@
                     </div>
 
                     <!-- === ASESOR(ES) DESDE FIRESTORE === -->
-                    <div>
+                   <div>
                         <label>Asesores capacitados</label>
-                        <select id="asesoresSelect" class="select-multi" multiple>
-                            <option>Cargando asesores...</option>
-                        </select>
+                        <div id="asesoresContainer" class="chips-container">
+                            <!-- Se llenará desde JS -->
+                        </div>
                         <div class="hint" style="margin-top:4px;">
-                            Puedes seleccionar uno o varios asesores. Datos desde colección <b>asesores</b>.
+                            Selecciona uno o varios asesores. Datos desde colección <b>asesores</b>.
                         </div>
                     </div>
 
+                    </div>
                     <div>
                         <label>Responsable</label>
                         <input id="responsable" value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación" readonly>
@@ -568,7 +580,7 @@
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button class="btn-secondary" type="button" id="btnLimpiar">Limpiar</button>
-                        <button class="btn" type="button" id="btnGuardar">💾 Guardar refuerzo</button>
+                        <button class="btn" type="button" id="btnGuardar" onclick="guardarRefuerzo()">💾 Guardar refuerzo</button>
                     </div>
                 </div>
             </section>
@@ -699,45 +711,50 @@
 
         /* ----------------- CARGAR ASESORES ----------------- */
         async function cargarAsesores() {
-            const select = document.getElementById("asesoresSelect");
+            const cont = document.getElementById("asesoresLista");
+        
             try {
                 setLoading(true, "Cargando asesores…");
+        
                 const snap = await getDocs(colAsesores);
                 const lista = snap.docs.map(d => ({
                     id: d.id,
                     ...d.data()
                 }));
-
-                // ordenar por nombre
+        
                 lista.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
-
+        
                 asesoresMap = {};
-                select.innerHTML = "";
-
+                cont.innerHTML = "";
+        
                 if (!lista.length) {
-                    select.innerHTML = "<option>No hay asesores registrados</option>";
-                    select.disabled = true;
+                    cont.innerHTML = "<div>No hay asesores registrados</div>";
                     return;
                 }
-
+        
                 lista.forEach(a => {
-                    const opt = document.createElement("option");
+                    const id = a.id;
                     const nombre = a.nombre || "(sin nombre)";
                     const gc = a.GC || a.gc || "";
-                    opt.value = a.id;
-                    opt.textContent = gc ? `${nombre} – ${gc}` : nombre;
-                    select.appendChild(opt);
-                    asesoresMap[a.id] = { nombre, gc };
+        
+                    asesoresMap[id] = { nombre, gc };
+        
+                    cont.innerHTML += `
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="${id}">
+                            <span>${nombre} ${gc ? "— " + gc : ""}</span>
+                        </label>
+                    `;
                 });
+        
             } catch (e) {
                 console.error(e);
+                cont.innerHTML = "<div>Error cargando asesores</div>";
                 alert("Error cargando asesores: " + e.message);
-                select.innerHTML = "<option>Error cargando asesores</option>";
             } finally {
                 setLoading(false);
             }
         }
-
         /* ----------------- CARGAR REFUERZOS ----------------- */
         async function cargarRefuerzos() {
             setLoading(true, "Cargando refuerzos…");
@@ -878,9 +895,9 @@
             const detalle = document.getElementById("detalle").value.trim();
 
             // asesores seleccionados
-            const select = document.getElementById("asesoresSelect");
-            const seleccionados = Array.from(select.selectedOptions).map(opt => opt.value);
-            const asesoresSeleccionados = seleccionados
+            const checks = Array.from(document.querySelectorAll("#asesoresLista input[type='checkbox']:checked"))
+                    .map(ch => ch.value);
+            const asesoresSeleccionados = checks
                 .map(id => {
                     const info = asesoresMap[id];
                     if (!info) return null;
@@ -891,7 +908,7 @@
                     };
                 })
                 .filter(x => x);
-
+            
             const publico = asesoresSeleccionados.map(a => a.nombre).join(", ");
 
             if (!fechaInput || !tipo || !tema || !objetivo) {

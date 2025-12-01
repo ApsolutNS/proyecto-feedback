@@ -1,8 +1,17 @@
 [
   {
     "origin": ["*"],
-    "method": ["GET", "HEAD"],
-    "responseHeader": ["Content-Type", "X-User-Agent", "X-Goog-Storage-Class"],
+    "method": ["GET", "HEAD", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type",
+      "Access-Control-Allow-Origin",
+      "Access-Control-Allow-Headers",
+      "Access-Control-Allow-Methods",
+      "Access-Control-Expose-Headers",
+      "X-Goog-Meta-Name",
+      "X-Goog-Generate-Upload-Url",
+      "X-Goog-Upload-Protocol"
+    ],
     "maxAgeSeconds": 3600
   }
 ]

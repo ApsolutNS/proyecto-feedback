@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <title>Refuerzos & Capacitaciones – Calidad FE</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <style>
         :root {
             --bg: #f3f4f6;
@@ -20,7 +19,7 @@
             --success: #16a34a;
             --warning: #f97316;
             --danger: #dc2626;
-            --chip-bg: #e5f0ff;
+            --chip-bg: #e5f0ff
         }
 
         body.dark {
@@ -33,20 +32,20 @@
             --accent-soft: #0ea5e9;
             --border: #1f2937;
             --shadow: 0 22px 60px rgba(0, 0, 0, 0.85);
-            --chip-bg: #0f172a;
+            --chip-bg: #0f172a
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
-            padding: 0;
+            padding: 0
         }
 
         body {
             font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
             background: radial-gradient(circle at top, rgba(37, 99, 235, 0.12), transparent 55%), var(--bg);
             color: var(--text);
-            min-height: 100vh;
+            min-height: 100vh
         }
 
         header {
@@ -60,13 +59,13 @@
             justify-content: space-between;
             position: sticky;
             top: 0;
-            z-index: 20;
+            z-index: 20
         }
 
         .header-left {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 4px
         }
 
         .header-title {
@@ -74,7 +73,7 @@
             font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 10px
         }
 
         .header-title span.logo {
@@ -87,19 +86,19 @@
             justify-content: center;
             font-size: 15px;
             font-weight: 700;
-            color: #0b1120;
+            color: #0b1120
         }
 
         .header-sub {
             font-size: 12px;
-            color: #9ca3af;
+            color: #9ca3af
         }
 
         .header-meta {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-top: 4px;
+            margin-top: 4px
         }
 
         .pill {
@@ -110,20 +109,20 @@
             background: rgba(15, 23, 42, 0.3);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 6px
         }
 
         .pill-dot {
             width: 6px;
             height: 6px;
             border-radius: 999px;
-            background: #22c55e;
+            background: #22c55e
         }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 8px
         }
 
         .btn-sm,
@@ -138,25 +137,25 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            border: 1px solid rgba(148, 163, 184, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.6)
         }
 
         .container {
             max-width: 1180px;
             margin: 0 auto;
-            padding: 18px 16px 32px;
+            padding: 18px 16px 32px
         }
 
         .layout-grid {
             display: grid;
             grid-template-columns: minmax(1fr) minmax(1fr);
             gap: 10px;
-            margin-top: 5px;
+            margin-top: 5px
         }
 
         @media(max-width:960px) {
             .layout-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr
             }
         }
 
@@ -167,7 +166,7 @@
             box-shadow: var(--shadow);
             padding: 18px 18px 20px;
             position: relative;
-            overflow: hidden;
+            overflow: hidden
         }
 
         .card-header {
@@ -175,18 +174,18 @@
             justify-content: space-between;
             align-items: flex-start;
             gap: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 12px
         }
 
         .card-title {
             font-size: 15px;
-            font-weight: 600;
+            font-weight: 600
         }
 
         .card-sub {
             font-size: 12px;
             color: var(--muted);
-            margin-top: 2px;
+            margin-top: 2px
         }
 
         .chip {
@@ -195,14 +194,14 @@
             border-radius: 999px;
             background: var(--chip-bg);
             color: var(--accent-soft);
-            border: 1px solid rgba(148, 163, 184, 0.4);
+            border: 1px solid rgba(148, 163, 184, 0.4)
         }
 
         .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
             gap: 10px 12px;
-            margin-top: 6px;
+            margin-top: 6px
         }
 
         input,
@@ -217,7 +216,7 @@
             font-size: 13px;
             outline: none;
             resize: vertical;
-            min-height: 38px;
+            min-height: 38px
         }
 
         input:focus,
@@ -225,7 +224,7 @@
         textarea:focus {
             border-color: var(--accent-soft);
             box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.40);
-            background: var(--card);
+            background: var(--card)
         }
 
         .form-footer {
@@ -234,12 +233,12 @@
             justify-content: space-between;
             align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
+            flex-wrap: wrap
         }
 
         .hint {
             font-size: 11px;
-            color: var(--muted);
+            color: var(--muted)
         }
 
         .btn {
@@ -254,18 +253,18 @@
             background: linear-gradient(135deg, var(--accent-soft), #0ea5e9);
             color: #f9fafb;
             box-shadow: 0 14px 35px rgba(37, 99, 235, 0.42);
-            transition: .15s;
+            transition: .15s
         }
 
         .btn:hover {
-            transform: translateY(-1px);
+            transform: translateY(-1px)
         }
 
         .btn-secondary {
             background: transparent;
             color: var(--muted);
             border: 1px dashed var(--border);
-            box-shadow: none;
+            box-shadow: none
         }
 
         .badge-inline {
@@ -276,43 +275,43 @@
             color: var(--muted);
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 4px
         }
 
         .badge-dot-success,
         .badge-dot-warning {
             width: 7px;
             height: 7px;
-            border-radius: 999px;
+            border-radius: 999px
         }
 
         .badge-dot-success {
-            background: var(--success);
+            background: var(--success)
         }
 
         .badge-dot-warning {
-            background: var(--warning);
+            background: var(--warning)
         }
 
         .chips-wrapper {
-            grid-column: 1 / -1;
+            grid-column: 1/-1;
             display: flex;
             flex-direction: column;
             gap: 6px;
-            margin-top: 4px;
+            margin-top: 4px
         }
 
         .chips-label-row {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            gap: 8px;
+            gap: 8px
         }
 
         .chips-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 8px
         }
 
         .asesor-chip {
@@ -328,34 +327,34 @@
             gap: 2px;
             text-align: left;
             font-size: 13px;
-            transition: 0.15s ease;
+            transition: 0.15s ease
         }
 
         .asesor-chip:hover {
             transform: translateY(-1px);
-            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18)
         }
 
         .asesor-chip.selected {
             border-color: var(--accent-soft);
             background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(56, 189, 248, 0.08));
-            box-shadow: 0 16px 40px rgba(37, 99, 235, 0.35);
+            box-shadow: 0 16px 40px rgba(37, 99, 235, 0.35)
         }
 
         .asesor-chip-name {
-            font-weight: 600;
+            font-weight: 600
         }
 
         .asesor-chip-gc {
             font-size: 11px;
-            color: var(--muted);
+            color: var(--muted)
         }
 
         .metrics-row {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 10px
         }
 
         .metric-pill {
@@ -366,28 +365,28 @@
             background: rgba(148, 163, 184, 0.06);
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 6px
         }
 
         .metric-value {
-            font-weight: 600;
+            font-weight: 600
         }
 
         .filters-row {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 8px;
+            margin-bottom: 8px
         }
 
         .filters-row>* {
             flex: 1;
-            min-width: 150px;
+            min-width: 150px
         }
 
         .filters-row .compact {
             max-width: 160px;
-            flex: 0 0 auto;
+            flex: 0 0 auto
         }
 
         .search-input {
@@ -395,7 +394,7 @@
             border-radius: 999px;
             border: 1px solid var(--border);
             background: var(--bg);
-            font-size: 13px;
+            font-size: 13px
         }
 
         .table-wrapper {
@@ -403,13 +402,13 @@
             border-radius: 12px;
             border: 1px solid var(--border);
             overflow: hidden;
-            background: linear-gradient(to bottom, rgba(148, 163, 184, 0.06), transparent);
+            background: linear-gradient(to bottom, rgba(148, 163, 184, 0.06), transparent)
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
+            font-size: 12px
         }
 
         th,
@@ -417,11 +416,11 @@
             padding: 8px 9px;
             border-bottom: 1px solid var(--border);
             text-align: left;
-            vertical-align: top;
+            vertical-align: top
         }
 
         tr:hover td {
-            background: rgba(148, 163, 184, 0.06);
+            background: rgba(148, 163, 184, 0.06)
         }
 
         .estado-pill {
@@ -430,31 +429,31 @@
             border-radius: 999px;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 5px
         }
 
         .estado-ok {
             background: rgba(22, 163, 74, 0.08);
             color: var(--success);
-            border: 1px solid rgba(22, 163, 74, 0.30);
+            border: 1px solid rgba(22, 163, 74, 0.30)
         }
 
         .estado-pend {
             background: rgba(249, 115, 22, 0.08);
             color: var(--warning);
-            border: 1px solid rgba(249, 115, 22, 0.30);
+            border: 1px solid rgba(249, 115, 22, 0.30)
         }
 
         .estado-incomp {
             background: rgba(220, 38, 38, 0.08);
             color: var(--danger);
-            border: 1px solid rgba(220, 38, 38, 0.30);
+            border: 1px solid rgba(220, 38, 38, 0.30)
         }
 
         .actions {
             display: flex;
             flex-wrap: wrap;
-            gap: 4px;
+            gap: 4px
         }
 
         .btn-xs {
@@ -464,16 +463,16 @@
             border: none;
             cursor: pointer;
             background: rgba(148, 163, 184, 0.16);
-            color: var(--text);
+            color: var(--text)
         }
 
         .btn-xs.primary {
-            background: rgba(37, 99, 235, 0.18);
+            background: rgba(37, 99, 235, 0.18)
         }
 
         .btn-xs.success {
             background: rgba(22, 163, 74, 0.16);
-            color: var(--success);
+            color: var(--success)
         }
 
         #loadingOverlay {
@@ -487,7 +486,7 @@
             color: #e5e7eb;
             font-size: 13px;
             flex-direction: column;
-            gap: 10px;
+            gap: 10px
         }
 
         .loader-bar {
@@ -495,7 +494,7 @@
             height: 4px;
             border-radius: 999px;
             background: rgba(148, 163, 184, 0.45);
-            overflow: hidden;
+            overflow: hidden
         }
 
         .loader-bar-inner {
@@ -503,20 +502,20 @@
             height: 100%;
             border-radius: 999px;
             background: linear-gradient(90deg, #38bdf8, #22c55e);
-            animation: loading 1.05s infinite;
+            animation: loading 1.05s infinite
         }
 
         @keyframes loading {
             0% {
-                transform: translateX(-100%);
+                transform: translateX(-100%)
             }
 
             50% {
-                transform: translateX(30%);
+                transform: translateX(30%)
             }
 
             100% {
-                transform: translateX(200%);
+                transform: translateX(200%)
             }
         }
 
@@ -524,12 +523,12 @@
             header {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 8px;
+                gap: 8px
             }
 
             .header-right {
                 align-self: stretch;
-                justify-content: flex-end;
+                justify-content: flex-end
             }
         }
 
@@ -540,7 +539,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 60;
+            z-index: 60
         }
 
         .modal-content {
@@ -553,7 +552,7 @@
             max-height: 90vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden
         }
 
         .modal-header {
@@ -565,7 +564,7 @@
             background: linear-gradient(to right, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
             color: #e5e7eb;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 600
         }
 
         .modal-close {
@@ -575,19 +574,19 @@
             cursor: pointer;
             font-size: 16px;
             padding: 2px 6px;
-            border-radius: 999px;
+            border-radius: 999px
         }
 
         .modal-close:hover {
             background: rgba(148, 163, 184, 0.16);
-            color: #e5e7eb;
+            color: #e5e7eb
         }
 
         .modal-body {
             padding: 12px;
             flex: 1;
             background: #111827;
-            overflow: auto;
+            overflow: auto
         }
 
         .modal-footer {
@@ -596,7 +595,7 @@
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            background: var(--bg-soft);
+            background: var(--bg-soft)
         }
 
         .pdf-content {
@@ -609,30 +608,30 @@
             border-radius: 12px;
             box-shadow: 0 0 0 1px #e5e7eb;
             font-size: 13px;
-            line-height: 1.5;
+            line-height: 1.5
         }
 
         .pdf-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 12px;
+            margin-bottom: 12px
         }
 
         .pdf-title-block {
-            flex: 1;
+            flex: 1
         }
 
         .pdf-main-title {
             font-size: 18px;
             font-weight: 700;
-            text-transform: uppercase;
+            text-transform: uppercase
         }
 
         .pdf-subtitle {
             font-size: 12px;
             color: #4b5563;
-            margin-top: 2px;
+            margin-top: 2px
         }
 
         .pdf-badge-fe {
@@ -641,7 +640,7 @@
             border-radius: 999px;
             border: 1px solid #e5e7eb;
             background: #f9fafb;
-            color: #2563eb;
+            color: #2563eb
         }
 
         .pdf-section-title {
@@ -649,23 +648,23 @@
             margin-top: 14px;
             margin-bottom: 4px;
             font-size: 13px;
-            text-transform: uppercase;
+            text-transform: uppercase
         }
 
         .pdf-section-body {
             margin-left: 4px;
-            font-size: 13px;
+            font-size: 13px
         }
 
         .pdf-field-row {
             display: flex;
             flex-wrap: wrap;
             gap: 16px;
-            margin: 2px 0;
+            margin: 2px 0
         }
 
         .pdf-field {
-            font-size: 13px;
+            font-size: 13px
         }
 
         .pdf-objective-box,
@@ -675,25 +674,25 @@
             border-radius: 8px;
             background: #f3f4f6;
             border: 1px solid #e5e7eb;
-            font-size: 13px;
+            font-size: 13px
         }
 
         .pdf-signatures {
             margin-top: 24px;
             display: flex;
             gap: 20px;
-            align-items: flex-start;
+            align-items: flex-start
         }
 
         .pdf-sign-resp {
             flex: 0 0 220px;
             text-align: center;
-            font-size: 12px;
+            font-size: 12px
         }
 
         .pdf-sign-resp-title {
             font-weight: 600;
-            margin-bottom: 4px;
+            margin-bottom: 4px
         }
 
         .pdf-sign-resp img {
@@ -702,23 +701,23 @@
             object-fit: contain;
             border-radius: 4px;
             border: 1px solid #e5e7eb;
-            background: #ffffff;
+            background: #ffffff
         }
 
         .pdf-sign-resp-line {
             border-top: 1px solid #111827;
-            margin: 10px 0 4px;
+            margin: 10px 0 4px
         }
 
         .pdf-sign-resp-role {
-            color: #6b7280;
+            color: #6b7280
         }
 
         .pdf-sign-grid {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            gap: 10px;
+            gap: 10px
         }
 
         .pdf-sign-card {
@@ -729,24 +728,24 @@
             font-size: 11px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 4px
         }
 
         .pdf-sign-card-header {
             display: flex;
             justify-content: space-between;
             gap: 6px;
-            align-items: baseline;
+            align-items: baseline
         }
 
         .pdf-sign-name {
             font-weight: 600;
-            font-size: 12px;
+            font-size: 12px
         }
 
         .pdf-sign-gc {
             color: #6b7280;
-            font-size: 10px;
+            font-size: 10px
         }
 
         .pdf-sign-status {
@@ -756,13 +755,13 @@
             border: 1px solid #e5e7eb;
             background: #eef2ff;
             color: #1d4ed8;
-            white-space: nowrap;
+            white-space: nowrap
         }
 
         .pdf-sign-status-ok {
             background: #dcfce7;
             border-color: #22c55e;
-            color: #15803d;
+            color: #15803d
         }
 
         .pdf-sign-img {
@@ -774,26 +773,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow: hidden
         }
 
         .pdf-sign-img img {
             max-height: 58px;
             width: 100%;
-            object-fit: contain;
+            object-fit: contain
         }
 
         .pdf-sign-img-empty {
             font-size: 10px;
             color: #9ca3af;
             border-style: dashed;
-            background: #f3f4f6;
+            background: #f3f4f6
         }
 
         .pdf-sign-date {
             margin-top: 2px;
             font-size: 10px;
-            color: #6b7280;
+            color: #6b7280
         }
     </style>
 </head>
@@ -801,110 +800,63 @@
 <body>
     <header>
         <div class="header-left">
-            <div class="header-title">
-                <span class="logo">FE</span>
-                Refuerzos & Capacitaciones
-            </div>
-            <div class="header-sub">
-                Registro oficial de acciones de Calidad & Formación – Financiera Efectiva.
-            </div>
+            <div class="header-title"><span class="logo">FE</span>Refuerzos & Capacitaciones</div>
+            <div class="header-sub">Registro oficial de acciones de Calidad & Formación – Financiera Efectiva.</div>
             <div class="header-meta">
-                <div class="pill">
-                    <span class="pill-dot"></span>
-                    Módulo interno de Calidad
-                </div>
+                <div class="pill"><span class="pill-dot"></span>Módulo interno de Calidad</div>
                 <div class="pill">Responsable: Alex Paolo Nuñez Sulca – Líder de Calidad y Formación</div>
             </div>
         </div>
-        <div class="header-right">
-            <button id="btnIrBuscador" class="btn-sm">🔎 Ir al Dashboard</button>
-            <button id="themeToggle" class="btn-toggle">🌙 Modo oscuro</button>
-        </div>
+        <div class="header-right"><button id="btnIrBuscador" class="btn-sm">🔎 Ir al Dashboard</button><button id="themeToggle" class="btn-toggle">🌙 Modo oscuro</button></div>
     </header>
-
     <div class="container">
         <div class="layout-grid">
-            <!-- FORM -->
             <section class="card">
                 <div class="card-header">
                     <div>
                         <div class="card-title">Nuevo refuerzo / capacitación</div>
-                        <div class="card-sub">
-                            Registra solo acciones formales de refuerzo, feedback o capacitación asociadas a Calidad.
-                        </div>
-                    </div>
-                    <span class="chip">Solo Calidad & Formación</span>
+                        <div class="card-sub">Registra solo acciones formales de refuerzo, feedback o capacitación asociadas a Calidad.</div>
+                    </div><span class="chip">Solo Calidad & Formación</span>
                 </div>
                 <div class="form-grid">
-                    <div>
-                        <label>Fecha del refuerzo</label>
-                        <input type="date" id="fecha">
-                    </div>
-                    <div>
-                        <label>Tipo de acción</label>
-                        <select id="tipo">
+                    <div><label>Fecha del refuerzo</label><input type="date" id="fecha"></div>
+                    <div><label>Tipo de acción</label><select id="tipo">
                             <option value="">Seleccione</option>
                             <option>Capacitación grupal</option>
                             <option>Refuerzo 1:1</option>
                             <option>Feedback de calidad</option>
                             <option>Recordatorio normativo</option>
                             <option>Coaching / role play</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Tema / título</label>
-                        <input id="tema" placeholder="Ej. Manejo de objeciones SBS / Script de bienvenida">
-                    </div>
-                    <div>
-                        <label>Canal</label>
-                        <select id="canal">
+                        </select></div>
+                    <div><label>Tema / título</label><input id="tema" placeholder="Ej. Manejo de objeciones SBS / Script de bienvenida"></div>
+                    <div><label>Canal</label><select id="canal">
                             <option value="">Seleccione</option>
                             <option>Presencial</option>
                             <option>Teams</option>
                             <option>Llamada</option>
                             <option>Otro</option>
-                        </select>
-                    </div>
+                        </select></div>
                     <div class="chips-wrapper">
-                        <div class="chips-label-row">
-                            <span class="hint"><b>Asesores capacitados</b> (selección múltiple)</span>
-                            <span class="hint">Datos en tiempo real desde colección <b>asesores</b></span>
-                        </div>
+                        <div class="chips-label-row"><span class="hint"><b>Asesores capacitados</b> (selección múltiple)</span><span class="hint">Datos en tiempo real desde colección <b>asesores</b></span></div>
                         <div id="asesoresContainer" class="chips-container"></div>
                     </div>
-                    <div>
-                        <label>Responsable</label>
-                        <input id="responsable" value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación" readonly>
-                    </div>
+                    <div><label>Responsable</label><input id="responsable" value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación" readonly></div>
                 </div>
-                <div style="margin-top:10px;">
-                    <label>Objetivo del refuerzo</label>
-                    <textarea id="objetivo" rows="2" placeholder="Ej. Reforzar cumplimiento SBS en fase de ofrecimiento, reducir errores de cierre, etc."></textarea>
-                </div>
-                <div style="margin-top:10px;">
-                    <label>Detalle / acuerdos clave</label>
-                    <textarea id="detalle" rows="3" placeholder="Puntos específicos tratados, compromisos, indicadores a monitorear, etc."></textarea>
-                </div>
+                <div style="margin-top:10px;"><label>Objetivo del refuerzo</label><textarea id="objetivo" rows="2" placeholder="Ej. Reforzar cumplimiento SBS en fase de ofrecimiento, reducir errores de cierre, etc."></textarea></div>
+                <div style="margin-top:10px;"><label>Detalle / acuerdos clave</label><textarea id="detalle" rows="3" placeholder="Puntos específicos tratados, compromisos, indicadores a monitorear, etc."></textarea></div>
                 <div class="form-footer">
                     <div class="hint">
                         <div>✔ Luego el agente podrá firmar este refuerzo desde <b>portal_agente.html</b>.</div>
                         <div>✔ El PDF se genera desde aquí con las firmas de Alex + agentes.</div>
                     </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="btn-secondary" type="button" id="btnLimpiar">Limpiar</button>
-                        <button class="btn" type="button" id="btnGuardar">💾 Guardar refuerzo</button>
-                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn-secondary" type="button" id="btnLimpiar">Limpiar</button><button class="btn" type="button" id="btnGuardar">💾 Guardar refuerzo</button></div>
                 </div>
             </section>
-
-            <!-- LISTADO -->
             <section class="card">
                 <div class="card-header">
                     <div>
                         <div class="card-title">Historial de refuerzos</div>
-                        <div class="card-sub">
-                            Vista ejecutiva del avance de firmas y estado de cada acción de calidad.
-                        </div>
+                        <div class="card-sub">Vista ejecutiva del avance de firmas y estado de cada acción de calidad.</div>
                     </div>
                 </div>
                 <div class="metrics-row">
@@ -912,15 +864,12 @@
                     <div class="metric-pill">Firmados: <span class="metric-value" id="metricFirmados">0</span></div>
                     <div class="metric-pill">Pendientes de firma: <span class="metric-value" id="metricPendientes">0</span></div>
                 </div>
-                <div class="filters-row">
-                    <input id="searchTabla" class="search-input" placeholder="Buscar por agente, tema, tipo, público…">
-                    <select id="filtroEstado" class="compact">
+                <div class="filters-row"><input id="searchTabla" class="search-input" placeholder="Buscar por agente, tema, tipo, público…"><select id="filtroEstado" class="compact">
                         <option value="todos">Estado: todos</option>
                         <option value="pendiente">Pendiente de firma</option>
                         <option value="firmado">Firmado</option>
                         <option value="incompleto">Datos incompletos</option>
-                    </select>
-                </div>
+                    </select></div>
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -936,47 +885,26 @@
                         <tbody id="tablaRefuerzos"></tbody>
                     </table>
                 </div>
-                <div style="margin-top:8px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;">
-                    <span class="badge-inline">
-                        <span class="badge-dot-success"></span> Firmado por agente
-                    </span>
-                    <span class="badge-inline">
-                        <span class="badge-dot-warning"></span> Pendiente de firma / datos
-                    </span>
-                </div>
+                <div style="margin-top:8px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;"><span class="badge-inline"><span class="badge-dot-success"></span> Firmado por agente</span><span class="badge-inline"><span class="badge-dot-warning"></span> Pendiente de firma / datos</span></div>
             </section>
         </div>
     </div>
-
-    <!-- OVERLAY CARGA -->
     <div id="loadingOverlay">
         <div id="loadingText">Procesando…</div>
         <div class="loader-bar">
             <div class="loader-bar-inner"></div>
         </div>
     </div>
-
-    <!-- MODAL PDF -->
     <div id="pdfModal" class="modal-backdrop" style="display:none;">
         <div class="modal-content">
-            <div class="modal-header">
-                <span id="pdfModalTitle">Vista previa del refuerzo</span>
-                <button class="modal-close" onclick="cerrarModalPdf()">✕</button>
-            </div>
+            <div class="modal-header"><span id="pdfModalTitle">Vista previa del refuerzo</span><button class="modal-close" onclick="cerrarModalPdf()">✕</button></div>
             <div class="modal-body">
                 <div id="pdfContentRefuerzo" class="pdf-content"></div>
             </div>
-            <div class="modal-footer">
-                <button class="btn" type="button" onclick="descargarPdfActual()">⬇ Descargar PDF</button>
-                <button class="btn-secondary" type="button" onclick="cerrarModalPdf()">Cerrar</button>
-            </div>
+            <div class="modal-footer"><button class="btn" type="button" onclick="descargarPdfActual()">⬇ Descargar PDF</button><button class="btn-secondary" type="button" onclick="cerrarModalPdf()">Cerrar</button></div>
         </div>
     </div>
-
-    <!-- LIBRERÍA PDF (html2pdf + html2canvas + jsPDF bundle) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
-
-    <!-- FIREBASE + LÓGICA -->
     <script type="module">
         import {
             initializeApp
@@ -988,7 +916,6 @@
             addDoc,
             serverTimestamp
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
         const firebaseConfig = {
             apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
             authDomain: "feedback-app-ac30e.firebaseapp.com",
@@ -998,15 +925,11 @@
             appId: "1:512179147778:web:795e4a8b177fe766d3431b",
             measurementId: "G-X6MP0FFH9P"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const colRefuerzos = collection(db, "refuerzos_calidad");
         const colAsesores = collection(db, "asesores");
-
-        const FIRMA_ALEX_URL =
-            "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2Ffirma_alex.png?alt=media&token=5081e2c6-8e5e-46e6-a340-c13cace95864";
-
+        const FIRMA_ALEX_URL = "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2Ffirma_alex.png?alt=media&token=5081e2c6-8e5e-46e6-a340-c13cace95864";
         let refuerzosCache = [];
         let filtroTexto = "";
         let filtroEstado = "todos";
@@ -1017,16 +940,16 @@
             const overlay = document.getElementById("loadingOverlay");
             const label = document.getElementById("loadingText");
             label.textContent = text;
-            overlay.style.display = show ? "flex" : "none";
+            overlay.style.display = show ? "flex" : "none"
         }
 
         function setToday() {
             const inputFecha = document.getElementById("fecha");
-            const hoy = new Date();
+            const hoy = new Date;
             const yyyy = hoy.getFullYear();
             const mm = String(hoy.getMonth() + 1).padStart(2, "0");
             const dd = String(hoy.getDate()).padStart(2, "0");
-            inputFecha.value = `${yyyy}-${mm}-${dd}`;
+            inputFecha.value = `${yyyy}-${mm}-${dd}`
         }
 
         function formatearFechaLarga(fechaISO) {
@@ -1037,23 +960,22 @@
                 day: "numeric",
                 month: "long",
                 year: "numeric"
-            });
+            })
         }
 
         function formatearFechaCorta(fechaISO) {
             if (!fechaISO) return "-";
-            return new Date(fechaISO).toLocaleDateString("es-PE");
+            return new Date(fechaISO).toLocaleDateString("es-PE")
         }
 
         function formatearFechaHora(fechaISO) {
             if (!fechaISO) return "";
-            return new Date(fechaISO).toLocaleString("es-PE");
+            return new Date(fechaISO).toLocaleString("es-PE")
         }
-
         async function cargarAsesores() {
             const cont = document.getElementById("asesoresContainer");
             try {
-                setLoading(true, "Cargando asesores…");
+                setLoading(!0, "Cargando asesores…");
                 const snap = await getDocs(colAsesores);
                 const lista = snap.docs.map(d => ({
                     id: d.id,
@@ -1074,26 +996,22 @@
                     btn.type = "button";
                     btn.className = "asesor-chip";
                     btn.dataset.id = id;
-                    btn.innerHTML = `
-                        <span class="asesor-chip-name">${nombre}</span>
-                        <span class="asesor-chip-gc">${gc ? gc : "Sin GC"}</span>
-                    `;
+                    btn.innerHTML = `<span class="asesor-chip-name">${nombre}</span><span class="asesor-chip-gc">${gc?gc:"Sin GC"}</span>`;
                     btn.addEventListener("click", () => {
-                        btn.classList.toggle("selected");
+                        btn.classList.toggle("selected")
                     });
-                    cont.appendChild(btn);
-                });
+                    cont.appendChild(btn)
+                })
             } catch (e) {
                 console.error(e);
                 cont.innerHTML = "<div class='hint'>Error cargando asesores</div>";
-                alert("Error cargando asesores: " + e.message);
+                alert("Error cargando asesores: " + e.message)
             } finally {
-                setLoading(false);
+                setLoading(!1)
             }
         }
-
         async function cargarRefuerzos() {
-            setLoading(true, "Cargando refuerzos…");
+            setLoading(!0, "Cargando refuerzos…");
             try {
                 const snap = await getDocs(colRefuerzos);
                 refuerzosCache = snap.docs.map(d => ({
@@ -1103,19 +1021,19 @@
                 refuerzosCache.sort((a, b) => {
                     const fa = a.fechaRefuerzo ? new Date(a.fechaRefuerzo) : 0;
                     const fb = b.fechaRefuerzo ? new Date(b.fechaRefuerzo) : 0;
-                    return fb - fa;
+                    return fb - fa
                 });
-                renderTabla();
+                renderTabla()
             } catch (e) {
                 console.error(e);
-                alert("Error cargando refuerzos: " + e.message);
+                alert("Error cargando refuerzos: " + e.message)
             } finally {
-                setLoading(false);
+                setLoading(!1)
             }
         }
 
         function esIncompleto(r) {
-            return !r.fechaRefuerzo || !r.tipo || !r.tema || !r.publico || !r.objetivo;
+            return !r.fechaRefuerzo || !r.tipo || !r.tema || !r.publico || !r.objetivo
         }
 
         function filtrarLista() {
@@ -1123,17 +1041,9 @@
             let lista = [...refuerzosCache];
             if (q) {
                 lista = lista.filter(r => {
-                    const join = [
-                        r.tema || "",
-                        r.tipo || "",
-                        r.publico || "",
-                        r.detalle || "",
-                        r.objetivo || "",
-                        r.responsable || "",
-                        r.agenteNombre || ""
-                    ].join(" ").toLowerCase();
-                    return join.includes(q);
-                });
+                    const join = [r.tema || "", r.tipo || "", r.publico || "", r.detalle || "", r.objetivo || "", r.responsable || "", r.agenteNombre || ""].join(" ").toLowerCase();
+                    return join.includes(q)
+                })
             }
             if (filtroEstado !== "todos") {
                 lista = lista.filter(r => {
@@ -1142,10 +1052,10 @@
                     if (filtroEstado === "incompleto") return incompleto;
                     if (filtroEstado === "firmado") return firmado && !incompleto;
                     if (filtroEstado === "pendiente") return !firmado && !incompleto;
-                    return true;
-                });
+                    return !0
+                })
             }
-            return lista;
+            return lista
         }
 
         function actualizarMetricas() {
@@ -1154,7 +1064,7 @@
             const pendientes = refuerzosCache.filter(r => !r.firmado && !esIncompleto(r)).length;
             document.getElementById("metricTotal").textContent = total;
             document.getElementById("metricFirmados").textContent = firmados;
-            document.getElementById("metricPendientes").textContent = pendientes;
+            document.getElementById("metricPendientes").textContent = pendientes
         }
 
         function renderTabla() {
@@ -1163,60 +1073,30 @@
             actualizarMetricas();
             if (!lista.length) {
                 tbody.innerHTML = "<tr><td colspan='6'>Sin refuerzos registrados con los criterios actuales.</td></tr>";
-                return;
+                return
             }
             tbody.innerHTML = lista.map(r => {
-                const fechaStr = r.fechaRefuerzo ?
-                    new Date(r.fechaRefuerzo).toLocaleDateString("es-PE") :
-                    "-";
+                const fechaStr = r.fechaRefuerzo ? new Date(r.fechaRefuerzo).toLocaleDateString("es-PE") : "-";
                 const incompleto = esIncompleto(r);
                 const firmado = !!r.firmado;
                 let estadoClase = "estado-pend";
                 let estadoTexto = "Pendiente de firma";
                 if (incompleto) {
                     estadoClase = "estado-incomp";
-                    estadoTexto = "Datos incompletos";
+                    estadoTexto = "Datos incompletos"
                 } else if (firmado) {
                     estadoClase = "estado-ok";
-                    estadoTexto = "Firmado por agente";
+                    estadoTexto = "Firmado por agente"
                 }
                 const asesoresArr = Array.isArray(r.asesores) ? r.asesores : [];
                 const firmasArr = Array.isArray(r.firmas) ? r.firmas : [];
                 const totalA = asesoresArr.length;
                 const firmadas = firmasArr.filter(f => f && f.url).length;
-                const resumenFirmas = totalA ?
-                    `${firmadas}/${totalA} firmas` :
-                    (r.firmaNombre || "—");
-                const firmaFecha = r.firmaFecha ?
-                    new Date(r.firmaFecha).toLocaleString("es-PE") :
-                    (totalA ? "Pendiente" : "");
-                return `
-                    <tr>
-                        <td>${fechaStr}</td>
-                        <td>
-                            <div style="font-weight:500">${r.tema || ""}</div>
-                            <div style="font-size:11px;color:var(--muted);">${r.tipo || ""}</div>
-                        </td>
-                        <td>${r.publico || ""}</td>
-                        <td style="font-size:11px;">
-                            <div><b>${resumenFirmas}</b></div>
-                            <div style="color:var(--muted);">${firmaFecha}</div>
-                        </td>
-                        <td>
-                            <span class="estado-pill ${estadoClase}">
-                                ${estadoTexto}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="actions">
-                                <button class="btn-xs primary" onclick="verPdf('${r.id}')">📄 Ver PDF</button>
-                                <button class="btn-xs success" onclick="copiarLinkFirma('${r.id}')">✍️ Link firma</button>
-                            </div>
-                        </td>
-                    </tr>`;
-            }).join("");
+                const resumenFirmas = totalA ? `${firmadas}/${totalA} firmas` : r.firmaNombre || "—";
+                const firmaFecha = r.firmaFecha ? new Date(r.firmaFecha).toLocaleString("es-PE") : totalA ? "Pendiente" : "";
+                return `<tr><td>${fechaStr}</td><td><div style="font-weight:500">${r.tema||""}</div><div style="font-size:11px;color:var(--muted);">${r.tipo||""}</div></td><td>${r.publico||""}</td><td style="font-size:11px;"><div><b>${resumenFirmas}</b></div><div style="color:var(--muted);">${firmaFecha}</div></td><td><span class="estado-pill ${estadoClase}">${estadoTexto}</span></td><td><div class="actions"><button class="btn-xs primary" onclick="verPdf('${r.id}')">📄 Ver PDF</button><button class="btn-xs success" onclick="copiarLinkFirma('${r.id}')">✍️ Link firma</button></div></td></tr>`
+            }).join("")
         }
-
         async function guardarRefuerzo() {
             const fechaInput = document.getElementById("fecha").value;
             const tipo = document.getElementById("tipo").value;
@@ -1225,30 +1105,23 @@
             const responsable = document.getElementById("responsable").value;
             const objetivo = document.getElementById("objetivo").value.trim();
             const detalle = document.getElementById("detalle").value.trim();
-
             const chipsSeleccionados = Array.from(document.querySelectorAll(".asesor-chip.selected"));
-            const asesoresSeleccionados = chipsSeleccionados
-                .map(chip => {
-                    const id = chip.dataset.id;
-                    const info = asesoresMap[id];
-                    if (!info) return null;
-                    return {
-                        asesorId: id,
-                        nombre: info.nombre,
-                        gc: info.gc || ""
-                    };
-                })
-                .filter(x => x);
-
+            const asesoresSeleccionados = chipsSeleccionados.map(chip => {
+                const id = chip.dataset.id;
+                const info = asesoresMap[id];
+                if (!info) return null;
+                return {
+                    asesorId: id,
+                    nombre: info.nombre,
+                    gc: info.gc || ""
+                }
+            }).filter(x => x);
             const publico = asesoresSeleccionados.map(a => a.nombre).join(", ");
-
             if (!fechaInput || !tipo || !tema || !objetivo) {
                 alert("Completa al menos: Fecha, Tipo, Tema y Objetivo.");
-                return;
+                return
             }
-
             const fechaRefuerzo = new Date(fechaInput + "T00:00:00");
-
             const firmasIniciales = asesoresSeleccionados.map(a => ({
                 asesorId: a.asesorId,
                 nombre: a.nombre,
@@ -1257,7 +1130,6 @@
                 fechaFirma: null,
                 compromiso: ""
             }));
-
             const data = {
                 fechaRefuerzo: fechaRefuerzo.toISOString(),
                 tipo,
@@ -1268,25 +1140,24 @@
                 responsable,
                 objetivo,
                 detalle,
-                firmado: false,
+                firmado: !1,
                 firmaNombre: "",
                 firmaFecha: null,
                 agenteNombre: "",
                 firmas: firmasIniciales,
                 createdAt: serverTimestamp()
             };
-
             try {
-                setLoading(true, "Guardando refuerzo…");
+                setLoading(!0, "Guardando refuerzo…");
                 await addDoc(colRefuerzos, data);
                 alert("Refuerzo registrado correctamente.");
                 limpiarFormulario();
-                await cargarRefuerzos();
+                await cargarRefuerzos()
             } catch (e) {
                 console.error(e);
-                alert("Error al guardar: " + e.message);
+                alert("Error al guardar: " + e.message)
             } finally {
-                setLoading(false);
+                setLoading(!1)
             }
         }
 
@@ -1297,48 +1168,19 @@
             document.getElementById("canal").value = "";
             document.getElementById("objetivo").value = "";
             document.getElementById("detalle").value = "";
-            document.querySelectorAll(".asesor-chip.selected")
-                .forEach(ch => ch.classList.remove("selected"));
+            document.querySelectorAll(".asesor-chip.selected").forEach(ch => ch.classList.remove("selected"))
         }
 
         function construirTarjetasFirmas(ref) {
             const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
             const firmas = Array.isArray(ref.firmas) ? ref.firmas : [];
-
             return asesores.map(a => {
                 const f = firmas.find(x => x.asesorId === a.asesorId) || {};
                 const tieneFirma = !!f.url;
                 const fechaFirmaTxt = f.fechaFirma ? formatearFechaHora(f.fechaFirma) : "Pendiente";
                 const compromiso = f.compromiso || "<em>Sin compromiso registrado</em>";
-
-                return `
-                    <div class="pdf-sign-card">
-                        <div class="pdf-sign-card-header">
-                            <div>
-                                <div class="pdf-sign-name">${a.nombre}</div>
-                                <div class="pdf-sign-gc">${a.gc ? "GC: " + a.gc : ""}</div>
-                            </div>
-                            <div class="${tieneFirma ? "pdf-sign-status pdf-sign-status-ok" : "pdf-sign-status"}">
-                                ${tieneFirma ? "Firmado" : "Pendiente"}
-                            </div>
-                        </div>
-                        <div class="pdf-sign-img ${tieneFirma ? "" : "pdf-sign-img-empty"}">
-                            ${
-                                tieneFirma
-                                    ? `<img src="${f.url}">`
-                                    : "Sin firma registrada"
-                            }
-                        </div>
-                        <div class="pdf-sign-date">
-                            ${tieneFirma ? "Firmado el: " + fechaFirmaTxt : ""}
-                        </div>
-                        <div style="margin-top:4px;">
-                            <b>Compromiso:</b><br>
-                            ${compromiso}
-                        </div>
-                    </div>
-                `;
-            }).join("");
+                return `<div class="pdf-sign-card"><div class="pdf-sign-card-header"><div><div class="pdf-sign-name">${a.nombre}</div><div class="pdf-sign-gc">${a.gc?"GC: "+a.gc:""}</div></div><div class="${tieneFirma?"pdf-sign-status pdf-sign-status-ok":"pdf-sign-status"}">${tieneFirma?"Firmado":"Pendiente"}</div></div><div class="pdf-sign-img ${tieneFirma?"":"pdf-sign-img-empty"}">${tieneFirma?`<img src="${f.url}">`:"Sin firma registrada"}</div><div class="pdf-sign-date">${tieneFirma?"Firmado el: "+fechaFirmaTxt:""}</div><div style="margin-top:4px;"><b>Compromiso:</b><br>${compromiso}</div></div>`
+            }).join("")
         }
 
         function renderPdfContent(ref) {
@@ -1346,191 +1188,94 @@
             const fechaLarga = formatearFechaLarga(ref.fechaRefuerzo);
             const fechaCorta = formatearFechaCorta(ref.fechaRefuerzo);
             const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
-            const listadoAsesores = asesores.length ?
-                asesores.map(a => `${a.nombre} ${a.gc ? "(" + a.gc + ")" : ""}`).join(", ") :
-                ref.publico || "—";
-
-            cont.innerHTML = `
-                <div class="pdf-header">
-                    <div class="pdf-title-block">
-                        <div class="pdf-main-title">REFUERZO / CAPACITACIÓN</div>
-                        <div class="pdf-subtitle">
-                            Registro formal de acciones de Calidad & Formación – Financiera Efectiva.
-                        </div>
-                    </div>
-                    <div>
-                        <div class="pdf-badge-fe">Calidad & Formación FE</div>
-                    </div>
-                </div>
-                <div class="pdf-section-body">
-                    <div class="pdf-field-row">
-                        <div class="pdf-field"><b>Fecha del refuerzo:</b> ${fechaLarga}</div>
-                        <div class="pdf-field"><b>Fecha corta:</b> ${fechaCorta}</div>
-                    </div>
-                    <div class="pdf-field-row">
-                        <div class="pdf-field"><b>Tipo de acción:</b> ${ref.tipo || "—"}</div>
-                        <div class="pdf-field"><b>Canal:</b> ${ref.canal || "—"}</div>
-                    </div>
-                    <div class="pdf-field-row">
-                        <div class="pdf-field"><b>Tema / título:</b> ${ref.tema || "—"}</div>
-                    </div>
-                    <div class="pdf-field-row" style="margin-top:4px;">
-                        <div class="pdf-field"><b>Responsable:</b> ${ref.responsable || "—"}</div>
-                    </div>
-                </div>
-
-                <div class="pdf-section-title">Asesores capacitados</div>
-                <div class="pdf-section-body">
-                    <div class="pdf-objective-box">
-                        ${listadoAsesores}
-                    </div>
-                </div>
-
-                <div class="pdf-section-title">Objetivo del refuerzo</div>
-                <div class="pdf-section-body">
-                    <div class="pdf-objective-box">
-                        ${ref.objetivo || "—"}
-                    </div>
-                </div>
-
-                <div class="pdf-section-title">Detalle / acuerdos clave</div>
-                <div class="pdf-section-body">
-                    <div class="pdf-detail-box">
-                        ${ref.detalle || "—"}
-                    </div>
-                </div>
-
-                <div class="pdf-section-title">Firmas</div>
-                <div class="pdf-section-body">
-                    <div class="pdf-signatures">
-                        <div class="pdf-sign-resp">
-                            <div class="pdf-sign-resp-title">Responsable de Calidad</div>
-                            <div class="pdf-sign-img">
-                                <img src="${FIRMA_ALEX_URL}">
-                            </div>
-                            <div class="pdf-sign-resp-line"></div>
-                            <div><strong>Alex Paolo Nuñez Sulca</strong></div>
-                            <div class="pdf-sign-resp-role">Líder de Calidad y Formación</div>
-                        </div>
-                        <div class="pdf-sign-grid">
-                            ${construirTarjetasFirmas(ref)}
-                        </div>
-                    </div>
-                </div>
-            `;
+            const listadoAsesores = asesores.length ? asesores.map(a => `${a.nombre} ${a.gc?"("+a.gc+")":""}`).join(", ") : ref.publico || "—";
+            cont.innerHTML = `<div class="pdf-header"><div class="pdf-title-block"><div class="pdf-main-title">REFUERZO / CAPACITACIÓN</div><div class="pdf-subtitle">Registro formal de acciones de Calidad & Formación – Financiera Efectiva.</div></div><div><div class="pdf-badge-fe">Calidad & Formación FE</div></div></div><div class="pdf-section-body"><div class="pdf-field-row"><div class="pdf-field"><b>Fecha del refuerzo:</b> ${fechaLarga}</div><div class="pdf-field"><b>Fecha corta:</b> ${fechaCorta}</div></div><div class="pdf-field-row"><div class="pdf-field"><b>Tipo de acción:</b> ${ref.tipo||"—"}</div><div class="pdf-field"><b>Canal:</b> ${ref.canal||"—"}</div></div><div class="pdf-field-row"><div class="pdf-field"><b>Tema / título:</b> ${ref.tema||"—"}</div></div><div class="pdf-field-row" style="margin-top:4px;"><div class="pdf-field"><b>Responsable:</b> ${ref.responsable||"—"}</div></div></div><div class="pdf-section-title">Asesores capacitados</div><div class="pdf-section-body"><div class="pdf-objective-box">${listadoAsesores}</div></div><div class="pdf-section-title">Objetivo del refuerzo</div><div class="pdf-section-body"><div class="pdf-objective-box">${ref.objetivo||"—"}</div></div><div class="pdf-section-title">Detalle / acuerdos clave</div><div class="pdf-section-body"><div class="pdf-detail-box">${ref.detalle||"—"}</div></div><div class="pdf-section-title">Firmas</div><div class="pdf-section-body"><div class="pdf-signatures"><div class="pdf-sign-resp"><div class="pdf-sign-resp-title">Responsable de Calidad</div><div class="pdf-sign-img"><img src="${FIRMA_ALEX_URL}"></div><div class="pdf-sign-resp-line"></div><div><strong>Alex Paolo Nuñez Sulca</strong></div><div class="pdf-sign-resp-role">Líder de Calidad y Formación</div></div><div class="pdf-sign-grid">${construirTarjetasFirmas(ref)}</div></div></div>`
         }
 
         function abrirModalPdf(id) {
             pdfActualId = id;
             const modal = document.getElementById("pdfModal");
             const ref = refuerzosCache.find(x => x.id === id);
-            document.getElementById("pdfModalTitle").textContent =
-                `Vista previa del refuerzo (${id})`;
+            document.getElementById("pdfModalTitle").textContent = `Vista previa del refuerzo (${id})`;
             if (ref) {
-                renderPdfContent(ref);
+                renderPdfContent(ref)
             } else {
-                document.getElementById("pdfContentRefuerzo").innerHTML =
-                    "<p>No se encontró información del refuerzo.</p>";
+                document.getElementById("pdfContentRefuerzo").innerHTML = "<p>No se encontró información del refuerzo.</p>"
             }
-            modal.style.display = "flex";
+            modal.style.display = "flex"
         }
-
         window.cerrarModalPdf = function() {
-            document.getElementById("pdfModal").style.display = "none";
+            document.getElementById("pdfModal").style.display = "none"
         };
-
-        // EXPORTAR PDF (CLEAN + FIRMA + COMPROMISO)
         window.descargarPdfActual = async function() {
             if (!pdfActualId) return alert("No hay refuerzo seleccionado");
-
             const element = document.getElementById("pdfContentRefuerzo");
-
-            // Esperar imágenes cargadas
             const imgs = element.querySelectorAll("img");
-            await Promise.all(
-                Array.from(imgs).map(img =>
-                    new Promise(resolve => {
-                        if (img.complete) resolve();
-                        else img.onload = img.onerror = resolve;
-                    })
-                )
-            );
-
+            await Promise.all(Array.from(imgs).map(img => new Promise(resolve => {
+                if (img.complete) resolve();
+                else img.onload = img.onerror = resolve
+            })));
             const opt = {
                 margin: [10, 10, 10, 10],
                 filename: `refuerzo_${pdfActualId}.pdf`,
                 html2canvas: {
                     scale: 2,
-                    useCORS: true,
-                    allowTaint: true,
+                    useCORS: !0,
+                    allowTaint: !0,
                     imageTimeout: 15000,
                     backgroundColor: "#ffffff"
-                }, // ✅ COMA CORRECTA
+                },
                 jsPDF: {
                     unit: "mm",
                     format: "a4",
                     orientation: "portrait"
                 }
             };
-
-            html2pdf().set(opt).from(element).save();
+            html2pdf().set(opt).from(element).save()
         };
-
-
         window.verPdf = function(id) {
-            abrirModalPdf(id);
+            abrirModalPdf(id)
         };
-
         window.copiarLinkFirma = async function(id) {
             try {
-                const base = window.location.origin === "null" ?
-                    "" :
-                    window.location.origin;
-                const url = base ?
-                    `${base}/portal_agente.html?id=${id}` :
-                    `portal_agente.html?id=${id}`;
+                const base = window.location.origin === "null" ? "" : window.location.origin;
+                const url = base ? `${base}/portal_agente.html?id=${id}` : `portal_agente.html?id=${id}`;
                 await navigator.clipboard.writeText(url);
-                alert("Link de firma copiado:\n" + url);
+                alert("Link de firma copiado:\n" + url)
             } catch (e) {
-                alert("No se pudo copiar. URL:\nportal_agente.html?id=" + id);
+                alert("No se pudo copiar. URL:\nportal_agente.html?id=" + id)
             }
         };
-
         document.getElementById("searchTabla").addEventListener("input", e => {
             filtroTexto = e.target.value || "";
-            renderTabla();
+            renderTabla()
         });
         document.getElementById("filtroEstado").addEventListener("change", e => {
             filtroEstado = e.target.value;
-            renderTabla();
+            renderTabla()
         });
-
         document.getElementById("btnIrBuscador").onclick = () => {
-            window.location.href = "index.html";
+            window.location.href = "index.html"
         };
-
         const themeBtn = document.getElementById("themeToggle");
 
         function applyTheme(theme) {
             const body = document.body;
             if (theme === "dark") {
                 body.classList.add("dark");
-                themeBtn.textContent = "☀️ Modo claro";
+                themeBtn.textContent = "☀️ Modo claro"
             } else {
                 body.classList.remove("dark");
-                themeBtn.textContent = "🌙 Modo oscuro";
+                themeBtn.textContent = "🌙 Modo oscuro"
             }
         }
         const savedTheme = localStorage.getItem("fe_refuerzos_theme") || "light";
         applyTheme(savedTheme);
         themeBtn.onclick = () => {
-            const next = document.body.classList.contains("dark") ?
-                "light" :
-                "dark";
+            const next = document.body.classList.contains("dark") ? "light" : "dark";
             localStorage.setItem("fe_refuerzos_theme", next);
-            applyTheme(next);
+            applyTheme(next)
         };
-
         setToday();
         await cargarAsesores();
         await cargarRefuerzos();

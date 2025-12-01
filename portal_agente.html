@@ -221,7 +221,6 @@
             Portal del Agente
             <span id="pendingBadge" style="float:right"></span>
         </h2>
-
         <!-- FILTROS SUPERIORES -->
         <div style="display:flex;flex-wrap:wrap;gap:12px">
             <div style="flex:1 1 200px">
@@ -247,7 +246,6 @@
                 </select>
             </div>
         </div>
-
         <!-- TABLA -->
         <div style="margin-top:12px">
             <strong style="color:#fff">Documentos del agente</strong>
@@ -265,7 +263,6 @@
                 <tbody></tbody>
             </table>
         </div>
-
         <!-- DETALLE -->
         <div id="detailBlock" style="display:none;margin-top:12px">
             <h3 id="detailTitle">Detalle del documento</h3>
@@ -287,7 +284,6 @@
             </div>
         </div>
     </div>
-
     <!-- MODAL PARA DIBUJAR FIRMA -->
     <div id="signatureModal" class="modal-backdrop">
         <div class="modal-box">
@@ -300,7 +296,6 @@
             </div>
         </div>
     </div>
-
     <script type="module">
         /* FIREBASE */
         import {
@@ -375,6 +370,7 @@
             const filtro = document.getElementById("selRegistrador").value;
             const tipoDoc = document.getElementById("selTipoDoc").value || "registros";
             const tbody = document.querySelector("#agentTable tbody");
+
             currentCollection = tipoDoc;
             currentAdvisorName = advisor;
 
@@ -432,31 +428,27 @@
 
             // Ordenar por fecha desc
             list.sort((a, b) => b.fecha - a.fecha);
-
             updatePendingBadge(list);
 
-            const filtrada = filtro ?
-                list.filter(x => x.registradoPor === filtro) :
-                list;
-
+            const filtrada = filtro ? list.filter(x => x.registradoPor === filtro) : list;
             if (filtrada.length === 0) {
                 tbody.innerHTML = "<tr><td colspan='6'>Sin registros para este filtro</td></tr>";
                 return;
             }
 
             tbody.innerHTML = filtrada.map(r => `
-    <tr>
-      <td>${r.id}</td>
-      <td>${r.fecha.toLocaleString("es-PE")}</td>
-      <td>
-        ${r.detalle}
-        <span class="tag-doc">${r.etiqueta}</span>
-      </td>
-      <td>${r.estado}</td>
-      <td>${r.registradoPor}</td>
-      <td><button class="btn sm" onclick="openDetail('${r.collection}','${r.id}')">Abrir</button></td>
-    </tr>
-  `).join("");
+                <tr>
+                  <td>${r.id}</td>
+                  <td>${r.fecha.toLocaleString("es-PE")}</td>
+                  <td>
+                    ${r.detalle}
+                    <span class="tag-doc">${r.etiqueta}</span>
+                  </td>
+                  <td>${r.estado}</td>
+                  <td>${r.registradoPor}</td>
+                  <td><button class="btn sm" onclick="openDetail('${r.collection}','${r.id}')">Abrir</button></td>
+                </tr>
+            `).join("");
         };
 
         /* FECHA LARGA UTILIDAD */
@@ -478,6 +470,7 @@
             const detailTitle = document.getElementById("detailTitle");
             const advisor = document.getElementById("selAgent").value || "";
             currentAdvisorName = advisor;
+
             const feedbackDiv = document.getElementById("feedbackInfo");
             const detailBlock = document.getElementById("detailBlock");
             const editable = document.getElementById("editableZone");
@@ -488,6 +481,7 @@
                 alert("No existe este registro");
                 return;
             }
+
             const r = snap.data();
             currentDocData = r;
             signatureData = null;
@@ -501,73 +495,76 @@
                 const esReafirmacion = Number(r.nota) === 100;
                 const titulo = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
                 let dniGC = r.gc ? r.gc.replace(/[^0-9]/g, "") : "-";
+
                 const itemsHtml = (r.items || []).map(it => `
-      <div style="margin-bottom:4px">
-        <strong>${it.name}</strong> ${it.perc?`(${it.perc}%)`:""}
-        <div style="margin-left:8px">${it.detail||""}</div>
-      </div>
-    `).join("") || "<em>Sin ítems observados</em>";
+                    <div style="margin-bottom:4px">
+                        <strong>${it.name}</strong> ${it.perc ? `(${it.perc}%)` : ""}
+                        <div style="margin-left:8px">${it.detail || ""}</div>
+                    </div>
+                `).join("") || "<em>Sin ítems observados</em>";
+
                 const imgsHtml = (r.imagenes || []).map(im => `
-      <img src="${im.url}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
-    `).join("") || "<em>Sin evidencias adjuntas</em>";
+                    <img src="${im.url}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
+                `).join("") || "<em>Sin evidencias adjuntas</em>";
+
                 const registrador = r.registrado_por || r.registradoPor || "No especificado";
 
                 feedbackDiv.innerHTML = `
-      <div class="letter-header">
-        <div class="letter-title">${titulo}</div>
-        <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media" style="max-height:42px">
-      </div>
-      <p>
-        Por medio de la presente se deja constancia que el
-        <strong>${formatearFechaLarga(fecha)}</strong> se realiza una
-        <strong>${titulo}</strong> al/la colaborador(a)
-        <strong>${r.asesor}</strong> con DNI <strong>${dniGC}</strong>,
-        quien ejerce la función de Asesor (a) Financiero (a), para el cumplimiento
-        de los parámetros de la llamada.
-      </p>
-      <p>
-        Registrado por: <span class="pill">${registrador}</span>
-      </p>
-      <div class="section-title">Cliente</div>
-      <div style="margin-left:8px">
-        <div><strong>DNI:</strong> ${r.cliente?.dni || ""}</div>
-        <div><strong>Nombre:</strong> ${r.cliente?.nombre || ""}</div>
-        <div><strong>Teléfono:</strong> ${r.cliente?.tel || ""}</div>
-        <div><strong>Tipificación:</strong> ${r.tipificacion || ""}</div>
-        <div><strong>Comentario:</strong> ${r.observacionCliente || ""}</div>
-      </div>
-      <div class="section-title">Gestión monitoreada</div>
-      <div style="margin-left:8px">
-        <div><strong>ID Llamada:</strong> ${r.idLlamada || ""}</div>
-        <div><strong>ID Contacto:</strong> ${r.idContacto || ""}</div>
-        <div><strong>Tipo:</strong> ${r.tipo || ""}</div>
-        <div style="margin-top:6px">
-          <strong>Resumen:</strong>
-          <div style="padding:6px 8px;background:#e5e7eb;border-radius:4px;margin-top:2px">
-            ${r.resumen || ""}
-          </div>
-        </div>
-      </div>
-      <div class="section-title">Ítems observados</div>
-      <div style="margin-left:8px">${itemsHtml}</div>
-      <div class="section-title">Nota obtenida</div>
-      <div style="margin-left:8px;margin-bottom:6px">
-        <div style="
-          display:inline-block;padding:6px 10px;border-radius:999px;
-          border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;font-weight:bold;">
-          ${r.nota || 0}%
-        </div>
-        <div style="font-size:11px;color:#6b7280;margin-top:4px">
-          Estado: <strong>${r.estado || "PENDIENTE"}</strong>
-        </div>
-      </div>
-      <div class="section-title">Compromiso del agente</div>
-      <div style="margin-left:8px">
-        ${r.compromiso || "<em>Pendiente</em>"}
-      </div>
-      <div class="section-title">Evidencias</div>
-      <div style="margin-left:8px">${imgsHtml}</div>
-    `;
+                    <div class="letter-header">
+                        <div class="letter-title">${titulo}</div>
+                        <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media" style="max-height:42px">
+                    </div>
+                    <p>
+                        Por medio de la presente se deja constancia que el
+                        <strong>${formatearFechaLarga(fecha)}</strong> se realiza una
+                        <strong>${titulo}</strong> al/la colaborador(a)
+                        <strong>${r.asesor}</strong> con DNI <strong>${dniGC}</strong>,
+                        quien ejerce la función de Asesor (a) Financiero (a), para el cumplimiento
+                        de los parámetros de la llamada.
+                    </p>
+                    <p>
+                        Registrado por: <span class="pill">${registrador}</span>
+                    </p>
+                    <div class="section-title">Cliente</div>
+                    <div style="margin-left:8px">
+                        <div><strong>DNI:</strong> ${r.cliente?.dni || ""}</div>
+                        <div><strong>Nombre:</strong> ${r.cliente?.nombre || ""}</div>
+                        <div><strong>Teléfono:</strong> ${r.cliente?.tel || ""}</div>
+                        <div><strong>Tipificación:</strong> ${r.tipificacion || ""}</div>
+                        <div><strong>Comentario:</strong> ${r.observacionCliente || ""}</div>
+                    </div>
+                    <div class="section-title">Gestión monitoreada</div>
+                    <div style="margin-left:8px">
+                        <div><strong>ID Llamada:</strong> ${r.idLlamada || ""}</div>
+                        <div><strong>ID Contacto:</strong> ${r.idContacto || ""}</div>
+                        <div><strong>Tipo:</strong> ${r.tipo || ""}</div>
+                        <div style="margin-top:6px">
+                            <strong>Resumen:</strong>
+                            <div style="padding:6px 8px;background:#e5e7eb;border-radius:4px;margin-top:2px">
+                                ${r.resumen || ""}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-title">Ítems observados</div>
+                    <div style="margin-left:8px">${itemsHtml}</div>
+                    <div class="section-title">Nota obtenida</div>
+                    <div style="margin-left:8px;margin-bottom:6px">
+                        <div style="
+                            display:inline-block;padding:6px 10px;border-radius:999px;
+                            border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;font-weight:bold;">
+                            ${r.nota || 0}%
+                        </div>
+                        <div style="font-size:11px;color:#6b7280;margin-top:4px">
+                            Estado: <strong>${r.estado || "PENDIENTE"}</strong>
+                        </div>
+                    </div>
+                    <div class="section-title">Compromiso del agente</div>
+                    <div style="margin-left:8px">
+                        ${r.compromiso || "<em>Pendiente</em>"}
+                    </div>
+                    <div class="section-title">Evidencias</div>
+                    <div style="margin-left:8px">${imgsHtml}</div>
+                `;
 
                 // Zona editable según estado
                 if (r.estado === "COMPLETADO") {
@@ -580,7 +577,6 @@
                     signatureData = r.firmaUrl || null;
                     updateSignaturePreview();
                 }
-
             } else {
                 // --------- DETALLE REFUERZO (COLECCIÓN refuerzos_calidad) ----------
                 detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
@@ -589,7 +585,7 @@
                 const firmas = Array.isArray(r.firmas) ? r.firmas : [];
 
                 const asesoresTexto = asesoresRef.length ?
-                    asesoresRef.map(a => `${a.nombre}${a.gc ? " ("+a.gc+")" : ""}`).join(", ") :
+                    asesoresRef.map(a => `${a.nombre}${a.gc ? " (" + a.gc + ")" : ""}`).join(", ") :
                     (r.publico || "—");
 
                 const firmaAgente = firmas.find(f => f.nombre === advisor);
@@ -600,48 +596,44 @@
                     "";
 
                 feedbackDiv.innerHTML = `
-      <div class="letter-header">
-        <div class="letter-title">REFUERZO / CAPACITACIÓN</div>
-        <img src="${FIRMA_ALEX_URL}" style="max-height:42px">
-      </div>
-      <p>
-        Se deja constancia que el <strong>${formatearFechaLarga(fechaRef)}</strong>
-        se realizó un <strong>${r.tipo || "refuerzo / capacitación"}</strong> sobre
-        <strong>${r.tema || "—"}</strong>, dirigido a:
-      </p>
-      <p style="margin-left:8px">
-        ${asesoresTexto}
-      </p>
-      <p>
-        Responsable de la sesión:
-        <span class="pill">${r.responsable || "Calidad & Formación"}</span>
-      </p>
+                    <div class="letter-header">
+                        <div class="letter-title">REFUERZO / CAPACITACIÓN</div>
+                        <img src="${FIRMA_ALEX_URL}" style="max-height:42px">
+                    </div>
+                    <p>
+                        Se deja constancia que el <strong>${formatearFechaLarga(fechaRef)}</strong>
+                        se realizó un <strong>${r.tipo || "refuerzo / capacitación"}</strong> sobre
+                        <strong>${r.tema || "—"}</strong>, dirigido a:
+                    </p>
+                    <p style="margin-left:8px">
+                        ${asesoresTexto}
+                    </p>
+                    <p>
+                        Responsable de la sesión:
+                        <span class="pill">${r.responsable || "Calidad & Formación"}</span>
+                    </p>
+                    <div class="section-title">Objetivo del refuerzo</div>
+                    <div style="margin-left:8px">
+                        ${r.objetivo || "—"}
+                    </div>
+                    <div class="section-title">Detalle / acuerdos clave</div>
+                    <div style="margin-left:8px">
+                        ${r.detalle || "—"}
+                    </div>
+                    <div class="section-title">Compromiso del agente</div>
+                    <div style="margin-left:8px">
+                        ${compromisoAgente || "<em>Pendiente</em>"}
+                    </div>
+                    <div class="section-title">Firma actual del agente</div>
+                    <div style="margin-left:8px">
+                        ${firmaUrlAgente
+                            ? `<img src="${firmaUrlAgente}" style="max-width:260px;border:1px solid #475569;border-radius:6px;margin-top:6px"><div style="font-size:11px;color:#6b7280;margin-top:4px">Fecha de firma: ${fechaFirma}</div>`
+                            : "<em>Sin firma registrada</em>"
+                        }
+                    </div>
+                `;
 
-      <div class="section-title">Objetivo del refuerzo</div>
-      <div style="margin-left:8px">
-        ${r.objetivo || "—"}
-      </div>
-
-      <div class="section-title">Detalle / acuerdos clave</div>
-      <div style="margin-left:8px">
-        ${r.detalle || "—"}
-      </div>
-
-      <div class="section-title">Compromiso del agente</div>
-      <div style="margin-left:8px">
-        ${compromisoAgente || "<em>Pendiente</em>"}
-      </div>
-
-      <div class="section-title">Firma actual del agente</div>
-      <div style="margin-left:8px">
-        ${firmaUrlAgente
-          ? `<img src="${firmaUrlAgente}" style="max-width:260px;border:1px solid #475569;border-radius:6px;margin-top:6px"><div style="font-size:11px;color:#6b7280;margin-top:4px">Fecha de firma: ${fechaFirma}</div>`
-          : "<em>Sin firma registrada</em>"
-        }
-      </div>
-    `;
-
-                // Zona editable: el agente siempre puede completar si no tiene firma
+                // Zona editable: el agente puede completar si aún le falta algo
                 if (firmaUrlAgente && compromisoAgente) {
                     editable.style.display = "none";
                     msg.style.color = "#22c55e";
@@ -672,6 +664,7 @@
         /* GUARDAR FIRMA + COMPROMISO */
         window.saveSignature = async function() {
             if (!currentID || !currentCollection) return alert("No hay documento abierto");
+
             const compromiso = document.getElementById("compromiso").value.trim();
             if (!compromiso) return alert("El compromiso es obligatorio");
             if (!signatureData) return alert("Debes subir o dibujar firma");
@@ -701,36 +694,11 @@
 
                 if (currentCollection === "registros") {
                     // FEEDBACK: campos directos en el documento
-                    const refDoc = doc(db, "refuerzos_calidad", currentID);
-                    const snap = await getDoc(refDoc);
-
-                    if (!snap.exists()) {
-                        alert("No se encontró el refuerzo.");
-                        return;
-                    }
-
-                    const data = snap.data();
-                    let firmas = Array.isArray(data.firmas) ? data.firmas : [];
-
-                    // Actualiza SOLO la firma del asesor actual
-                    firmas = firmas.map(f => {
-                        if (f.asesorId === asesorIdActual) {
-                            return {
-                                ...f,
-                                url: url,
-                                fechaFirma: new Date().toISOString(),
-                                compromiso: compromiso
-                            };
-                        }
-                        return f;
+                    await updateDoc(docRef, {
+                        compromiso,
+                        firmaUrl: url,
+                        estado: "COMPLETADO"
                     });
-
-                    await updateDoc(refDoc, {
-                        firmas: firmas,
-                        firmado: firmas.every(f => f.url), // firmado solo si todos tienen firma
-                        firmaFecha: new Date().toISOString()
-                    });
-
                     msg.textContent = "Feedback completado ✓";
                 } else {
                     // REFUERZOS: actualizar entry en array "firmas"
@@ -738,6 +706,7 @@
                     const data = snap.data() || {};
                     const firmas = Array.isArray(data.firmas) ? data.firmas : [];
                     const nowIso = new Date().toISOString();
+
                     const nuevasFirmas = firmas.map(f => {
                         if (f.nombre === advisor) {
                             return {
@@ -764,7 +733,7 @@
                 }
 
                 document.getElementById("editableZone").style.display = "none";
-                // Actualizar tabla
+                // Actualizar tabla / estados
                 loadAgentList();
             } catch (e) {
                 console.error(e);
@@ -786,6 +755,7 @@
                 y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top
             };
         }
+
         canvas.onmousedown = e => {
             drawing = true;
             ctx.beginPath();
@@ -812,6 +782,7 @@
         }, {
             passive: false
         });
+
         window.openDrawModal = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             modal.style.display = "flex";

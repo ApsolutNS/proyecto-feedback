@@ -1,328 +1,450 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Portal del Agente — Feedback & Refuerzos</title>
-  <style>
-    body{
-      font-family:Arial,Helvetica,sans-serif;
-      background:#0f172a;
-      margin:0;
-      padding:18px;
-      color:#e2e8f0;
-    }
-    .card{
-      max-width:980px;
-      margin:auto;
-      background:#1e293b;
-      padding:18px;
-      border-radius:10px;
-      border:1px solid #334155;
-      box-shadow:0 0 25px rgba(0,0,0,0.35);
-    }
-    h2,h3{color:#fff;font-weight:700;margin-top:0}
-    label{display:block;margin-top:10px;font-weight:600;color:#cbd5e1}
-    input,select,textarea{
-      width:100%;padding:8px;border-radius:6px;
-      border:1px solid #475569;margin-top:6px;
-      background:#0f172a;color:#e2e8f0;font-size:13px;
-    }
-    textarea{resize:vertical;min-height:70px}
-    table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
-    th{
-      background:#334155;padding:8px;color:#e2e8f0;
-      border-bottom:1px solid #475569;text-align:left;
-    }
-    td{
-      padding:5px;border-bottom:1px solid #334155;color:#cbd5e1;
-    }
-    tr:nth-child(even) td{background:#111827}
-    tr:nth-child(odd) td{background:#020617}
-    .btn{
-      background:#3b82f6;color:#fff;border:none;
-      padding:8px 12px;border-radius:6px;
-      cursor:pointer;margin-top:10px;font-size:13px;
-      transition:0.2s;
-    }
-    .btn:hover{background:#2563eb}
-    .btn.ghost{
-      background:transparent;border:1px solid #64748b;color:#93c5fd;
-    }
-    .btn.sm{padding:6px 10px;font-size:12px}
-    /* RECUADRO LIGHT */
-    #feedbackInfo{
-      border:1px solid #d1d5db;
-      border-radius:10px;
-      padding:18px;
-      background:#ffffff;
-      color:#111827;
-      box-shadow:0 0 18px rgba(0,0,0,0.3);
-      margin-top:10px;
-    }
-    .letter-header{
-      display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px
-    }
-    .letter-title{
-      font-size:18px;font-weight:bold;text-align:center;width:100%;color:#111827
-    }
-    .section-title{font-weight:bold;margin-top:12px;color:#111827}
-    .signature-preview img{
-      max-width:260px;border:1px solid #475569;border-radius:6px;margin-top:6px;
-    }
-    .signature-preview-empty{
-      height:80px;border:1px dashed #475569;border-radius:6px;
-      display:flex;align-items:center;justify-content:center;
-      color:#64748b;font-size:12px;margin-top:6px;
-    }
-    .modal-backdrop{
-      position:fixed;inset:0;background:rgba(0,0,0,0.6);
-      display:none;align-items:center;justify-content:center;z-index:999;
-    }
-    .modal-box{
-      background:#1e293b;border-radius:10px;padding:16px;
-      max-width:760px;width:95%;border:1px solid #334155;
-    }
-    .badgePending{
-      display:inline-block;background:#ef4444;padding:4px 10px;
-      border-radius:20px;font-size:12px;font-weight:bold;color:white;
-    }
-    .pill{
-      display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;
-      border:1px solid #475569;background:#020617;color:#e5e7eb;
-    }
-    .tag-doc{
-      display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;
-      border:1px solid #64748b;background:#020617;color:#e5e7eb;margin-left:8px;
-    }
-  </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Portal del Agente — Feedback & Refuerzos</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0f172a;
+            margin: 0;
+            padding: 18px;
+            color: #e2e8f0;
+        }
+
+        .card {
+            max-width: 980px;
+            margin: auto;
+            background: #1e293b;
+            padding: 18px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.35);
+        }
+
+        h2,
+        h3 {
+            color: #fff;
+            font-weight: 700;
+            margin-top: 0
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: 600;
+            color: #cbd5e1
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #475569;
+            margin-top: 6px;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-size: 13px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 70px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px
+        }
+
+        th {
+            background: #334155;
+            padding: 8px;
+            color: #e2e8f0;
+            border-bottom: 1px solid #475569;
+            text-align: left;
+        }
+
+        td {
+            padding: 5px;
+            border-bottom: 1px solid #334155;
+            color: #cbd5e1;
+        }
+
+        tr:nth-child(even) td {
+            background: #111827
+        }
+
+        tr:nth-child(odd) td {
+            background: #020617
+        }
+
+        .btn {
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #2563eb
+        }
+
+        .btn.ghost {
+            background: transparent;
+            border: 1px solid #64748b;
+            color: #93c5fd;
+        }
+
+        .btn.sm {
+            padding: 6px 10px;
+            font-size: 12px
+        }
+
+        /* RECUADRO LIGHT */
+        #feedbackInfo {
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 18px;
+            background: #ffffff;
+            color: #111827;
+            box-shadow: 0 0 18px rgba(0, 0, 0, 0.3);
+            margin-top: 10px;
+        }
+
+        .letter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px
+        }
+
+        .letter-title {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            width: 100%;
+            color: #111827
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-top: 12px;
+            color: #111827
+        }
+
+        .signature-preview img {
+            max-width: 260px;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            margin-top: 6px;
+        }
+
+        .signature-preview-empty {
+            height: 80px;
+            border: 1px dashed #475569;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal-box {
+            background: #1e293b;
+            border-radius: 10px;
+            padding: 16px;
+            max-width: 760px;
+            width: 95%;
+            border: 1px solid #334155;
+        }
+
+        .badgePending {
+            display: inline-block;
+            background: #ef4444;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            border: 1px solid #475569;
+            background: #020617;
+            color: #e5e7eb;
+        }
+
+        .tag-doc {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            border: 1px solid #64748b;
+            background: #020617;
+            color: #e5e7eb;
+            margin-left: 8px;
+        }
+    </style>
 </head>
+
 <body>
-<div class="card">
-  <h2>
-    Portal del Agente
-    <span id="pendingBadge" style="float:right"></span>
-  </h2>
+    <div class="card">
+        <h2>
+            Portal del Agente
+            <span id="pendingBadge" style="float:right"></span>
+        </h2>
 
-  <!-- FILTROS SUPERIORES -->
-  <div style="display:flex;flex-wrap:wrap;gap:12px">
-    <div style="flex:1 1 200px">
-      <label>Tipo de documento</label>
-      <select id="selTipoDoc" onchange="loadAgentList()">
-        <option value="registros">Feedback de calidad</option>
-        <option value="refuerzos_calidad">Refuerzos / Capacitaciones</option>
-      </select>
+        <!-- FILTROS SUPERIORES -->
+        <div style="display:flex;flex-wrap:wrap;gap:12px">
+            <div style="flex:1 1 200px">
+                <label>Tipo de documento</label>
+                <select id="selTipoDoc" onchange="loadAgentList()">
+                    <option value="registros">Feedback de calidad</option>
+                    <option value="refuerzos_calidad">Refuerzos / Capacitaciones</option>
+                </select>
+            </div>
+            <div style="flex:1 1 220px">
+                <label>Seleccionar Asesor</label>
+                <select id="selAgent" onchange="loadAgentList()">
+                    <option value="">-- selecciona --</option>
+                </select>
+            </div>
+            <div style="flex:1 1 220px">
+                <label>Filtrar por quien registró</label>
+                <select id="selRegistrador" onchange="loadAgentList()">
+                    <option value="">Todos</option>
+                    <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
+                    <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
+                    <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- TABLA -->
+        <div style="margin-top:12px">
+            <strong style="color:#fff">Documentos del agente</strong>
+            <table id="agentTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Detalle</th>
+                        <th>Estado</th>
+                        <th>Registrado por</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- DETALLE -->
+        <div id="detailBlock" style="display:none;margin-top:12px">
+            <h3 id="detailTitle">Detalle del documento</h3>
+            <!-- RECUADRO LIGHT -->
+            <div id="feedbackInfo"></div>
+            <!-- ZONA EDITABLE -->
+            <div id="editableZone">
+                <label>Compromiso del agente</label>
+                <textarea id="compromiso"></textarea>
+                <label>Firma del agente</label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button class="btn sm" onclick="openDrawModal()">Dibujar firma</button>
+                    <button class="btn ghost sm" onclick="triggerUpload()">Subir firma</button>
+                    <input type="file" id="fileSignature" style="display:none" accept="image/*">
+                </div>
+                <div id="signaturePreview" class="signature-preview-empty">Sin firma seleccionada</div>
+                <button class="btn" onclick="saveSignature()">Enviar firma y completar</button>
+                <div id="agentMsg" style="margin-top:10px;font-size:13px"></div>
+            </div>
+        </div>
     </div>
-    <div style="flex:1 1 220px">
-      <label>Seleccionar Asesor</label>
-      <select id="selAgent" onchange="loadAgentList()">
-        <option value="">-- selecciona --</option>
-      </select>
+
+    <!-- MODAL PARA DIBUJAR FIRMA -->
+    <div id="signatureModal" class="modal-backdrop">
+        <div class="modal-box">
+            <h3 style="color:white">Dibujar firma del agente</h3>
+            <canvas id="sigCanvas" width="700" height="160"></canvas>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
+                <button class="btn ghost sm" onclick="clearCanvas()">Limpiar</button>
+                <button class="btn ghost sm" onclick="closeDrawModal()">Cancelar</button>
+                <button class="btn sm" onclick="saveDrawnSignature()">Usar esta firma</button>
+            </div>
+        </div>
     </div>
-    <div style="flex:1 1 220px">
-      <label>Filtrar por quien registró</label>
-      <select id="selRegistrador" onchange="loadAgentList()">
-        <option value="">Todos</option>
-        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
-        <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
-        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
-      </select>
-    </div>
-  </div>
 
-  <!-- TABLA -->
-  <div style="margin-top:12px">
-    <strong style="color:#fff">Documentos del agente</strong>
-    <table id="agentTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Fecha</th>
-          <th>Detalle</th>
-          <th>Estado</th>
-          <th>Registrado por</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <script type="module">
+        /* FIREBASE */
+        import {
+            initializeApp
+        } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            getDocs,
+            query,
+            where,
+            doc,
+            getDoc,
+            updateDoc
+        } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import {
+            getStorage,
+            ref,
+            uploadString,
+            getDownloadURL
+        } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-  <!-- DETALLE -->
-  <div id="detailBlock" style="display:none;margin-top:12px">
-    <h3 id="detailTitle">Detalle del documento</h3>
-    <!-- RECUADRO LIGHT -->
-    <div id="feedbackInfo"></div>
-    <!-- ZONA EDITABLE -->
-    <div id="editableZone">
-      <label>Compromiso del agente</label>
-      <textarea id="compromiso"></textarea>
-      <label>Firma del agente</label>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn sm" onclick="openDrawModal()">Dibujar firma</button>
-        <button class="btn ghost sm" onclick="triggerUpload()">Subir firma</button>
-        <input type="file" id="fileSignature" style="display:none" accept="image/*">
-      </div>
-      <div id="signaturePreview" class="signature-preview-empty">Sin firma seleccionada</div>
-      <button class="btn" onclick="saveSignature()">Enviar firma y completar</button>
-      <div id="agentMsg" style="margin-top:10px;font-size:13px"></div>
-    </div>
-  </div>
-</div>
+        /* CONFIG */
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
+            authDomain: "feedback-app-ac30e.firebaseapp.com",
+            projectId: "feedback-app-ac30e",
+            storageBucket: "feedback-app-ac30e.firebasestorage.app"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
 
-<!-- MODAL PARA DIBUJAR FIRMA -->
-<div id="signatureModal" class="modal-backdrop">
-  <div class="modal-box">
-    <h3 style="color:white">Dibujar firma del agente</h3>
-    <canvas id="sigCanvas" width="700" height="160"></canvas>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
-      <button class="btn ghost sm" onclick="clearCanvas()">Limpiar</button>
-      <button class="btn ghost sm" onclick="closeDrawModal()">Cancelar</button>
-      <button class="btn sm" onclick="saveDrawnSignature()">Usar esta firma</button>
-    </div>
-  </div>
-</div>
+        /* CONSTANTE: firma Alex para refuerzos */
+        const FIRMA_ALEX_URL = "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2Ffirma_alex.png?alt=media&token=5081e2c6-8e5e-46e6-a340-c13cace95864";
 
-<script type="module">
-/* FIREBASE */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  getDoc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import {
-  getStorage,
-  ref,
-  uploadString,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+        /* CARGA ASESORES */
+        let asesores = {};
+        async function loadAdvisors() {
+            const snap = await getDocs(collection(db, "asesores"));
+            snap.forEach(d => {
+                const a = d.data();
+                if (a.nombre) {
+                    asesores[a.nombre] = a.GC || "SIN GC";
+                }
+            });
+            const sel = document.getElementById("selAgent");
+            sel.innerHTML = "<option value=''>-- selecciona --</option>";
+            Object.keys(asesores).sort().forEach(n => {
+                sel.innerHTML += `<option value="${n}">${n} — ${asesores[n]}</option>`;
+            });
+        }
+        loadAdvisors();
 
-/* CONFIG */
-const firebaseConfig = {
-  apiKey:"AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
-  authDomain:"feedback-app-ac30e.firebaseapp.com",
-  projectId:"feedback-app-ac30e",
-  storageBucket:"feedback-app-ac30e.firebasestorage.app"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
+        /* VARIABLES DE ESTADO */
+        let currentID = null;
+        let currentCollection = null; // "registros" o "refuerzos_calidad"
+        let currentDocData = null;
+        let currentAdvisorName = "";
+        let signatureData = null;
 
-/* CONSTANTE: firma Alex para refuerzos */
-const FIRMA_ALEX_URL = "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2Ffirma_alex.png?alt=media&token=5081e2c6-8e5e-46e6-a340-c13cace95864";
+        /* BADGE PENDIENTES */
+        function updatePendingBadge(list) {
+            const pend = list.filter(x => x.estado === "PENDIENTE").length;
+            const badge = document.getElementById("pendingBadge");
+            badge.innerHTML = pend ? `<span class="badgePending">${pend} pendientes</span>` : "";
+        }
 
-/* CARGA ASESORES */
-let asesores = {};
-async function loadAdvisors(){
-  const snap = await getDocs(collection(db,"asesores"));
-  snap.forEach(d=>{
-    const a=d.data();
-    if(a.nombre){ asesores[a.nombre]=a.GC||"SIN GC"; }
-  });
-  const sel=document.getElementById("selAgent");
-  sel.innerHTML="<option value=''>-- selecciona --</option>";
-  Object.keys(asesores).sort().forEach(n=>{
-    sel.innerHTML += `<option value="${n}">${n} — ${asesores[n]}</option>`;
-  });
-}
-loadAdvisors();
+        /* LISTA (TABLA) */
+        window.loadAgentList = async function() {
+            const advisor = document.getElementById("selAgent").value;
+            const filtro = document.getElementById("selRegistrador").value;
+            const tipoDoc = document.getElementById("selTipoDoc").value || "registros";
+            const tbody = document.querySelector("#agentTable tbody");
+            currentCollection = tipoDoc;
+            currentAdvisorName = advisor;
 
-/* VARIABLES DE ESTADO */
-let currentID = null;
-let currentCollection = null;      // "registros" o "refuerzos_calidad"
-let currentDocData = null;
-let currentAdvisorName = "";
-let signatureData = null;
+            if (!advisor) {
+                tbody.innerHTML = "<tr><td colspan='6'>Selecciona un asesor</td></tr>";
+                updatePendingBadge([]);
+                document.getElementById("detailBlock").style.display = "none";
+                return;
+            }
 
-/* BADGE PENDIENTES */
-function updatePendingBadge(list){
-  const pend=list.filter(x=>x.estado==="PENDIENTE").length;
-  const badge=document.getElementById("pendingBadge");
-  badge.innerHTML = pend?`<span class="badgePending">${pend} pendientes</span>`:"";
-}
+            const list = [];
 
-/* LISTA (TABLA) */
-window.loadAgentList = async function(){
-  const advisor=document.getElementById("selAgent").value;
-  const filtro=document.getElementById("selRegistrador").value;
-  const tipoDoc = document.getElementById("selTipoDoc").value || "registros";
-  const tbody=document.querySelector("#agentTable tbody");
-  currentCollection = tipoDoc;
-  currentAdvisorName = advisor;
+            if (tipoDoc === "registros") {
+                // FEEDBACK CLÁSICO
+                const qRef = query(collection(db, "registros"), where("asesor", "==", advisor));
+                const snap = await getDocs(qRef);
+                snap.forEach(d => {
+                    const r = d.data();
+                    list.push({
+                        id: d.id,
+                        collection: "registros",
+                        fecha: r.fecha ? new Date(r.fecha) : new Date(),
+                        detalle: (r.nota ?? 0) + "%",
+                        estado: r.estado || "PENDIENTE",
+                        registradoPor: r.registrado_por || r.registradoPor || "No especificado",
+                        etiqueta: "Feedback",
+                        bruto: r
+                    });
+                });
+            } else {
+                // REFUERZOS / CAPACITACIONES
+                const snap = await getDocs(collection(db, "refuerzos_calidad"));
+                snap.forEach(d => {
+                    const r = d.data();
+                    const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
+                    const pertenece = asesoresRef.some(a => a.nombre === advisor);
+                    if (!pertenece) return;
 
-  if(!advisor){
-    tbody.innerHTML="<tr><td colspan='6'>Selecciona un asesor</td></tr>";
-    updatePendingBadge([]);
-    document.getElementById("detailBlock").style.display="none";
-    return;
-  }
+                    const firmas = Array.isArray(r.firmas) ? r.firmas : [];
+                    const firmaAgente = firmas.find(f => f.nombre === advisor);
+                    const estadoAgente = firmaAgente && firmaAgente.url ? "COMPLETADO" : "PENDIENTE";
 
-  const list = [];
+                    list.push({
+                        id: d.id,
+                        collection: "refuerzos_calidad",
+                        fecha: r.fechaRefuerzo ? new Date(r.fechaRefuerzo) : new Date(),
+                        detalle: r.tema || r.tipo || "Refuerzo / Capacitación",
+                        estado: estadoAgente,
+                        registradoPor: r.responsable || "No especificado",
+                        etiqueta: "Refuerzo",
+                        bruto: r
+                    });
+                });
+            }
 
-  if (tipoDoc === "registros") {
-    // FEEDBACK CLÁSICO
-    const qRef=query(collection(db,"registros"),where("asesor","==",advisor));
-    const snap=await getDocs(qRef);
-    snap.forEach(d=>{
-      const r=d.data();
-      list.push({
-        id:d.id,
-        collection:"registros",
-        fecha:r.fecha?new Date(r.fecha):new Date(),
-        detalle:(r.nota ?? 0) + "%",
-        estado:r.estado || "PENDIENTE",
-        registradoPor:r.registrado_por || r.registradoPor || "No especificado",
-        etiqueta:"Feedback",
-        bruto:r
-      });
-    });
-  } else {
-    // REFUERZOS / CAPACITACIONES
-    const snap=await getDocs(collection(db,"refuerzos_calidad"));
-    snap.forEach(d=>{
-      const r=d.data();
-      const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
-      const pertenece = asesoresRef.some(a => a.nombre === advisor);
-      if (!pertenece) return;
+            // Ordenar por fecha desc
+            list.sort((a, b) => b.fecha - a.fecha);
 
-      const firmas = Array.isArray(r.firmas) ? r.firmas : [];
-      const firmaAgente = firmas.find(f => f.nombre === advisor);
-      const estadoAgente = firmaAgente && firmaAgente.url ? "COMPLETADO" : "PENDIENTE";
+            updatePendingBadge(list);
 
-      list.push({
-        id:d.id,
-        collection:"refuerzos_calidad",
-        fecha:r.fechaRefuerzo ? new Date(r.fechaRefuerzo) : new Date(),
-        detalle:r.tema || r.tipo || "Refuerzo / Capacitación",
-        estado:estadoAgente,
-        registradoPor:r.responsable || "No especificado",
-        etiqueta:"Refuerzo",
-        bruto:r
-      });
-    });
-  }
+            const filtrada = filtro ?
+                list.filter(x => x.registradoPor === filtro) :
+                list;
 
-  // Ordenar por fecha desc
-  list.sort((a,b)=>b.fecha-a.fecha);
+            if (filtrada.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='6'>Sin registros para este filtro</td></tr>";
+                return;
+            }
 
-  updatePendingBadge(list);
-
-  const filtrada = filtro
-    ? list.filter(x=>x.registradoPor===filtro)
-    : list;
-
-  if(filtrada.length===0){
-    tbody.innerHTML="<tr><td colspan='6'>Sin registros para este filtro</td></tr>";
-    return;
-  }
-
-  tbody.innerHTML = filtrada.map(r=>`
+            tbody.innerHTML = filtrada.map(r => `
     <tr>
       <td>${r.id}</td>
       <td>${r.fecha.toLocaleString("es-PE")}</td>
@@ -335,57 +457,62 @@ window.loadAgentList = async function(){
       <td><button class="btn sm" onclick="openDetail('${r.collection}','${r.id}')">Abrir</button></td>
     </tr>
   `).join("");
-};
+        };
 
-/* FECHA LARGA UTILIDAD */
-function formatearFechaLarga(f){
-  const opts={weekday:"long",year:"numeric",month:"long",day:"numeric"};
-  let str=f.toLocaleDateString("es-PE",opts);
-  return str.charAt(0).toUpperCase()+str.slice(1);
-}
+        /* FECHA LARGA UTILIDAD */
+        function formatearFechaLarga(f) {
+            const opts = {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            };
+            let str = f.toLocaleDateString("es-PE", opts);
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
 
-/* DETALLE */
-window.openDetail = async function(collectionName, id){
-  currentCollection = collectionName;
-  currentID = id;
-  const detailTitle = document.getElementById("detailTitle");
-  const advisor = document.getElementById("selAgent").value || "";
-  currentAdvisorName = advisor;
-  const feedbackDiv = document.getElementById("feedbackInfo");
-  const detailBlock = document.getElementById("detailBlock");
-  const editable = document.getElementById("editableZone");
-  const msg = document.getElementById("agentMsg");
+        /* DETALLE */
+        window.openDetail = async function(collectionName, id) {
+            currentCollection = collectionName;
+            currentID = id;
+            const detailTitle = document.getElementById("detailTitle");
+            const advisor = document.getElementById("selAgent").value || "";
+            currentAdvisorName = advisor;
+            const feedbackDiv = document.getElementById("feedbackInfo");
+            const detailBlock = document.getElementById("detailBlock");
+            const editable = document.getElementById("editableZone");
+            const msg = document.getElementById("agentMsg");
 
-  const snap = await getDoc(doc(db, collectionName, id));
-  if(!snap.exists()){
-    alert("No existe este registro");
-    return;
-  }
-  const r = snap.data();
-  currentDocData = r;
-  signatureData = null;
-  msg.textContent = "";
-  msg.style.color = "#4ade80";
+            const snap = await getDoc(doc(db, collectionName, id));
+            if (!snap.exists()) {
+                alert("No existe este registro");
+                return;
+            }
+            const r = snap.data();
+            currentDocData = r;
+            signatureData = null;
+            msg.textContent = "";
+            msg.style.color = "#4ade80";
 
-  if (collectionName === "registros") {
-    // --------- DETALLE FEEDBACK (COLECCIÓN registros) ----------
-    detailTitle.textContent = "Detalle del Feedback";
-    const fecha=r.fecha?new Date(r.fecha):new Date();
-    const esReafirmacion = Number(r.nota)===100;
-    const titulo = esReafirmacion?"REAFIRMACIÓN":"RETROALIMENTACIÓN";
-    let dniGC = r.gc ? r.gc.replace(/[^0-9]/g,"") : "-";
-    const itemsHtml = (r.items||[]).map(it=>`
+            if (collectionName === "registros") {
+                // --------- DETALLE FEEDBACK (COLECCIÓN registros) ----------
+                detailTitle.textContent = "Detalle del Feedback";
+                const fecha = r.fecha ? new Date(r.fecha) : new Date();
+                const esReafirmacion = Number(r.nota) === 100;
+                const titulo = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
+                let dniGC = r.gc ? r.gc.replace(/[^0-9]/g, "") : "-";
+                const itemsHtml = (r.items || []).map(it => `
       <div style="margin-bottom:4px">
         <strong>${it.name}</strong> ${it.perc?`(${it.perc}%)`:""}
         <div style="margin-left:8px">${it.detail||""}</div>
       </div>
     `).join("") || "<em>Sin ítems observados</em>";
-    const imgsHtml = (r.imagenes||[]).map(im=>`
+                const imgsHtml = (r.imagenes || []).map(im => `
       <img src="${im.url}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
     `).join("") || "<em>Sin evidencias adjuntas</em>";
-    const registrador = r.registrado_por || r.registradoPor || "No especificado";
+                const registrador = r.registrado_por || r.registradoPor || "No especificado";
 
-    feedbackDiv.innerHTML = `
+                feedbackDiv.innerHTML = `
       <div class="letter-header">
         <div class="letter-title">${titulo}</div>
         <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media" style="max-height:42px">
@@ -442,37 +569,37 @@ window.openDetail = async function(collectionName, id){
       <div style="margin-left:8px">${imgsHtml}</div>
     `;
 
-    // Zona editable según estado
-    if(r.estado==="COMPLETADO"){
-      editable.style.display="none";
-      msg.style.color="#22c55e";
-      msg.textContent="Este feedback ya fue completado.";
-    } else {
-      editable.style.display="block";
-      document.getElementById("compromiso").value=r.compromiso||"";
-      signatureData = r.firmaUrl || null;
-      updateSignaturePreview();
-    }
+                // Zona editable según estado
+                if (r.estado === "COMPLETADO") {
+                    editable.style.display = "none";
+                    msg.style.color = "#22c55e";
+                    msg.textContent = "Este feedback ya fue completado.";
+                } else {
+                    editable.style.display = "block";
+                    document.getElementById("compromiso").value = r.compromiso || "";
+                    signatureData = r.firmaUrl || null;
+                    updateSignaturePreview();
+                }
 
-  } else {
-    // --------- DETALLE REFUERZO (COLECCIÓN refuerzos_calidad) ----------
-    detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
-    const fechaRef = r.fechaRefuerzo ? new Date(r.fechaRefuerzo) : new Date();
-    const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
-    const firmas = Array.isArray(r.firmas) ? r.firmas : [];
+            } else {
+                // --------- DETALLE REFUERZO (COLECCIÓN refuerzos_calidad) ----------
+                detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
+                const fechaRef = r.fechaRefuerzo ? new Date(r.fechaRefuerzo) : new Date();
+                const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
+                const firmas = Array.isArray(r.firmas) ? r.firmas : [];
 
-    const asesoresTexto = asesoresRef.length
-      ? asesoresRef.map(a => `${a.nombre}${a.gc ? " ("+a.gc+")" : ""}`).join(", ")
-      : (r.publico || "—");
+                const asesoresTexto = asesoresRef.length ?
+                    asesoresRef.map(a => `${a.nombre}${a.gc ? " ("+a.gc+")" : ""}`).join(", ") :
+                    (r.publico || "—");
 
-    const firmaAgente = firmas.find(f => f.nombre === advisor);
-    const compromisoAgente = firmaAgente?.compromiso || "";
-    const firmaUrlAgente = firmaAgente?.url || null;
-    const fechaFirma = firmaAgente?.fechaFirma
-      ? new Date(firmaAgente.fechaFirma).toLocaleString("es-PE")
-      : "";
+                const firmaAgente = firmas.find(f => f.nombre === advisor);
+                const compromisoAgente = firmaAgente?.compromiso || "";
+                const firmaUrlAgente = firmaAgente?.url || null;
+                const fechaFirma = firmaAgente?.fechaFirma ?
+                    new Date(firmaAgente.fechaFirma).toLocaleString("es-PE") :
+                    "";
 
-    feedbackDiv.innerHTML = `
+                feedbackDiv.innerHTML = `
       <div class="letter-header">
         <div class="letter-title">REFUERZO / CAPACITACIÓN</div>
         <img src="${FIRMA_ALEX_URL}" style="max-height:42px">
@@ -514,163 +641,202 @@ window.openDetail = async function(collectionName, id){
       </div>
     `;
 
-    // Zona editable: el agente siempre puede completar si no tiene firma
-    if(firmaUrlAgente && compromisoAgente){
-      editable.style.display="none";
-      msg.style.color="#22c55e";
-      msg.textContent="Este refuerzo ya fue firmado por este agente.";
-    } else {
-      editable.style.display="block";
-      document.getElementById("compromiso").value = compromisoAgente || "";
-      signatureData = firmaUrlAgente || null;
-      updateSignaturePreview();
-    }
-  }
+                // Zona editable: el agente siempre puede completar si no tiene firma
+                if (firmaUrlAgente && compromisoAgente) {
+                    editable.style.display = "none";
+                    msg.style.color = "#22c55e";
+                    msg.textContent = "Este refuerzo ya fue firmado por este agente.";
+                } else {
+                    editable.style.display = "block";
+                    document.getElementById("compromiso").value = compromisoAgente || "";
+                    signatureData = firmaUrlAgente || null;
+                    updateSignaturePreview();
+                }
+            }
 
-  detailBlock.style.display="block";
-};
+            detailBlock.style.display = "block";
+        };
 
-/* PREVIEW FIRMA */
-function updateSignaturePreview(){
-  const box=document.getElementById("signaturePreview");
-  if(signatureData){
-    box.className="signature-preview";
-    box.innerHTML=`<img src="${signatureData}">`;
-  } else {
-    box.className="signature-preview-empty";
-    box.textContent="Sin firma seleccionada";
-  }
-}
-
-/* GUARDAR FIRMA + COMPROMISO */
-window.saveSignature = async function(){
-  if(!currentID || !currentCollection) return alert("No hay documento abierto");
-  const compromiso=document.getElementById("compromiso").value.trim();
-  if(!compromiso) return alert("El compromiso es obligatorio");
-  if(!signatureData) return alert("Debes subir o dibujar firma");
-
-  const advisor = currentAdvisorName || document.getElementById("selAgent").value || "";
-  if(!advisor) return alert("No se encontró el nombre del asesor");
-
-  const msg=document.getElementById("agentMsg");
-  msg.style.color="#4ade80";
-  msg.textContent="Guardando...";
-
-  try{
-    // Ruta distinta para feedback vs refuerzos
-    let pathFolder = "firmas";
-    let fileName = `${currentID}.png`;
-    if(currentCollection === "refuerzos_calidad"){
-      pathFolder = "firmas_refuerzos";
-      const safeName = advisor.replace(/[^a-zA-Z0-9]/g,"_");
-      fileName = `${currentID}_${safeName}.png`;
-    }
-
-    const sigRef=ref(storage,`${pathFolder}/${fileName}`);
-    await uploadString(sigRef,signatureData,"data_url");
-    const url=await getDownloadURL(sigRef);
-
-    const docRef = doc(db,currentCollection,currentID);
-
-    if(currentCollection === "registros"){
-      // FEEDBACK: campos directos en el documento
-      await updateDoc(docRef,{
-        compromiso,
-        firmaUrl:url,
-        estado:"COMPLETADO"
-      });
-      msg.textContent="Feedback completado ✓";
-    } else {
-      // REFUERZOS: actualizar entry en array "firmas"
-      const snap = await getDoc(docRef);
-      const data = snap.data() || {};
-      const firmas = Array.isArray(data.firmas) ? data.firmas : [];
-      const nowIso = new Date().toISOString();
-      const nuevasFirmas = firmas.map(f=>{
-        if(f.nombre === advisor){
-          return {
-            ...f,
-            url: url,
-            fechaFirma: nowIso,
-            compromiso: compromiso
-          };
+        /* PREVIEW FIRMA */
+        function updateSignaturePreview() {
+            const box = document.getElementById("signaturePreview");
+            if (signatureData) {
+                box.className = "signature-preview";
+                box.innerHTML = `<img src="${signatureData}">`;
+            } else {
+                box.className = "signature-preview-empty";
+                box.textContent = "Sin firma seleccionada";
+            }
         }
-        return f;
-      });
 
-      const allFirmados = nuevasFirmas.length > 0 && nuevasFirmas.every(f => f.url);
+        /* GUARDAR FIRMA + COMPROMISO */
+        window.saveSignature = async function() {
+            if (!currentID || !currentCollection) return alert("No hay documento abierto");
+            const compromiso = document.getElementById("compromiso").value.trim();
+            if (!compromiso) return alert("El compromiso es obligatorio");
+            if (!signatureData) return alert("Debes subir o dibujar firma");
 
-      await updateDoc(docRef,{
-        firmas: nuevasFirmas,
-        firmado: allFirmados,
-        firmaNombre: advisor,
-        firmaFecha: nowIso,
-        agenteNombre: advisor
-      });
+            const advisor = currentAdvisorName || document.getElementById("selAgent").value || "";
+            if (!advisor) return alert("No se encontró el nombre del asesor");
 
-      msg.textContent="Refuerzo firmado ✓";
-    }
+            const msg = document.getElementById("agentMsg");
+            msg.style.color = "#4ade80";
+            msg.textContent = "Guardando...";
 
-    document.getElementById("editableZone").style.display="none";
-    // Actualizar tabla
-    loadAgentList();
-  } catch(e){
-    console.error(e);
-    msg.style.color="red";
-    msg.textContent="Error: "+e.message;
-  }
-};
+            try {
+                // Ruta distinta para feedback vs refuerzos
+                let pathFolder = "firmas";
+                let fileName = `${currentID}.png`;
+                if (currentCollection === "refuerzos_calidad") {
+                    pathFolder = "firmas_refuerzos";
+                    const safeName = advisor.replace(/[^a-zA-Z0-9]/g, "_");
+                    fileName = `${currentID}_${safeName}.png`;
+                }
 
-/* DIBUJAR FIRMA */
-const modal=document.getElementById("signatureModal");
-const canvas=document.getElementById("sigCanvas");
-const ctx=canvas.getContext("2d");
-let drawing=false;
-function getPos(e){
-  const r=canvas.getBoundingClientRect();
-  return{
-    x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,
-    y:(e.touches?e.touches[0].clientY:e.clientY)-r.top
-  };
-}
-canvas.onmousedown=e=>{
-  drawing=true;ctx.beginPath();let p=getPos(e);ctx.moveTo(p.x,p.y);
-};
-canvas.onmouseup=()=>drawing=false;
-canvas.onmouseleave=()=>drawing=false;
-canvas.onmousemove=e=>{
-  if(!drawing)return;
-  let p=getPos(e);
-  ctx.lineWidth=2;ctx.lineCap="round";ctx.strokeStyle="#000";
-  ctx.lineTo(p.x,p.y);ctx.stroke();
-};
-canvas.addEventListener("touchmove",e=>{
-  if(!drawing)return;
-  e.preventDefault();
-  let p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();
-},{passive:false});
-window.openDrawModal=()=>{
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  modal.style.display="flex";
-};
-window.closeDrawModal=()=>modal.style.display="none";
-window.saveDrawnSignature=()=>{
-  signatureData=canvas.toDataURL("image/png");
-  updateSignaturePreview();
-  modal.style.display="none";
-};
-window.clearCanvas=()=>ctx.clearRect(0,0,canvas.width,canvas.height);
+                const sigRef = ref(storage, `${pathFolder}/${fileName}`);
+                await uploadString(sigRef, signatureData, "data_url");
+                const url = await getDownloadURL(sigRef);
 
-/* SUBIR ARCHIVO */
-window.triggerUpload=()=>document.getElementById("fileSignature").click();
-document.getElementById("fileSignature").onchange=e=>{
-  const file=e.target.files[0];
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{signatureData=ev.target.result;updateSignaturePreview();};
-  reader.readAsDataURL(file);
-};
-</script>
+                const docRef = doc(db, currentCollection, currentID);
+
+                if (currentCollection === "registros") {
+                    // FEEDBACK: campos directos en el documento
+                    const refDoc = doc(db, "refuerzos_calidad", currentID);
+                    const snap = await getDoc(refDoc);
+
+                    if (!snap.exists()) {
+                        alert("No se encontró el refuerzo.");
+                        return;
+                    }
+
+                    const data = snap.data();
+                    let firmas = Array.isArray(data.firmas) ? data.firmas : [];
+
+                    // Actualiza SOLO la firma del asesor actual
+                    firmas = firmas.map(f => {
+                        if (f.asesorId === asesorIdActual) {
+                            return {
+                                ...f,
+                                url: url,
+                                fechaFirma: new Date().toISOString(),
+                                compromiso: compromiso
+                            };
+                        }
+                        return f;
+                    });
+
+                    await updateDoc(refDoc, {
+                        firmas: firmas,
+                        firmado: firmas.every(f => f.url), // firmado solo si todos tienen firma
+                        firmaFecha: new Date().toISOString()
+                    });
+
+                    msg.textContent = "Feedback completado ✓";
+                } else {
+                    // REFUERZOS: actualizar entry en array "firmas"
+                    const snap = await getDoc(docRef);
+                    const data = snap.data() || {};
+                    const firmas = Array.isArray(data.firmas) ? data.firmas : [];
+                    const nowIso = new Date().toISOString();
+                    const nuevasFirmas = firmas.map(f => {
+                        if (f.nombre === advisor) {
+                            return {
+                                ...f,
+                                url: url,
+                                fechaFirma: nowIso,
+                                compromiso: compromiso
+                            };
+                        }
+                        return f;
+                    });
+
+                    const allFirmados = nuevasFirmas.length > 0 && nuevasFirmas.every(f => f.url);
+
+                    await updateDoc(docRef, {
+                        firmas: nuevasFirmas,
+                        firmado: allFirmados,
+                        firmaNombre: advisor,
+                        firmaFecha: nowIso,
+                        agenteNombre: advisor
+                    });
+
+                    msg.textContent = "Refuerzo firmado ✓";
+                }
+
+                document.getElementById("editableZone").style.display = "none";
+                // Actualizar tabla
+                loadAgentList();
+            } catch (e) {
+                console.error(e);
+                msg.style.color = "red";
+                msg.textContent = "Error: " + e.message;
+            }
+        };
+
+        /* DIBUJAR FIRMA */
+        const modal = document.getElementById("signatureModal");
+        const canvas = document.getElementById("sigCanvas");
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+
+        function getPos(e) {
+            const r = canvas.getBoundingClientRect();
+            return {
+                x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left,
+                y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top
+            };
+        }
+        canvas.onmousedown = e => {
+            drawing = true;
+            ctx.beginPath();
+            let p = getPos(e);
+            ctx.moveTo(p.x, p.y);
+        };
+        canvas.onmouseup = () => drawing = false;
+        canvas.onmouseleave = () => drawing = false;
+        canvas.onmousemove = e => {
+            if (!drawing) return;
+            let p = getPos(e);
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = "#000";
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+        };
+        canvas.addEventListener("touchmove", e => {
+            if (!drawing) return;
+            e.preventDefault();
+            let p = getPos(e);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+        }, {
+            passive: false
+        });
+        window.openDrawModal = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            modal.style.display = "flex";
+        };
+        window.closeDrawModal = () => modal.style.display = "none";
+        window.saveDrawnSignature = () => {
+            signatureData = canvas.toDataURL("image/png");
+            updateSignaturePreview();
+            modal.style.display = "none";
+        };
+        window.clearCanvas = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        /* SUBIR ARCHIVO */
+        window.triggerUpload = () => document.getElementById("fileSignature").click();
+        document.getElementById("fileSignature").onchange = e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                signatureData = ev.target.result;
+                updateSignaturePreview();
+            };
+            reader.readAsDataURL(file);
+        };
+    </script>
 </body>
-</html>
 
+</html>

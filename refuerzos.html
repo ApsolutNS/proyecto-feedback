@@ -1418,58 +1418,47 @@
 
     /* ----------------- PDF ----------------- */
 
-    function construirTarjetasFirmas(ref) {
-        const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
-        const firmas = Array.isArray(ref.firmas) ? ref.firmas : [];
+function construirTarjetasFirmas(ref) {
+    const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
+    const firmas = Array.isArray(ref.firmas) ? ref.firmas : [];
 
-        if (!asesores.length) {
-            return `
+    return asesores.map(a => {
+        const f = firmas.find(x => x.asesorId === a.asesorId) || {};
+
+        const tieneFirma = !!f.url;
+        const fechaFirmaTxt = f.fechaFirma ? formatearFechaHora(f.fechaFirma) : "Pendiente";
+        const compromiso = f.compromiso || "<em>Sin compromiso registrado</em>";
+
+        return `
             <div class="pdf-sign-card">
                 <div class="pdf-sign-card-header">
-                    <div><div class="pdf-sign-name">Sin asesores</div></div>
-                </div>
-                <div class="pdf-sign-img pdf-sign-img-empty">
-                    No se registraron asesores en este refuerzo.
-                </div>
-            </div>`;
-        }
-
-        return asesores.map(a => {
-            const f = firmas.find(x =>
-                (x.asesorId === a.asesorId) ||
-                (x.nombre === a.nombre)
-            ) || {};
-
-            const tieneFirma = !!f.url;
-            const fechaFirmaTxt =
-                f.fechaFirma ? formatearFechaHora(f.fechaFirma) : "Pendiente";
-
-            const estadoClass = tieneFirma ?
-                "pdf-sign-status pdf-sign-status-ok" :
-                "pdf-sign-status";
-
-            const estadoTxt = tieneFirma ? "Firmado" : "Pendiente";
-
-            return `
-                <div class="pdf-sign-card">
-                    <div class="pdf-sign-card-header">
-                        <div>
-                            <div class="pdf-sign-name">${a.nombre}</div>
-                            <div class="pdf-sign-gc">${a.gc || ""}</div>
-                        </div>
-                        <div class="${estadoClass}">${estadoTxt}</div>
+                    <div>
+                        <div class="pdf-sign-name">${a.nombre}</div>
+                        <div class="pdf-sign-gc">${a.gc ? "GC: " + a.gc : ""}</div>
                     </div>
-                    <div class="pdf-sign-img ${tieneFirma ? "" : "pdf-sign-img-empty"}">
-                        ${tieneFirma ? `<img src="${f.url}">` : "Sin firma registrada"}
-                    </div>
-                    <div class="pdf-sign-date">
-                        ${tieneFirma ? "Firmado el: " + fechaFirmaTxt : ""}
+                    <div class="${tieneFirma ? "pdf-sign-status pdf-sign-status-ok" : "pdf-sign-status"}">
+                        ${tieneFirma ? "Firmado" : "Pendiente"}
                     </div>
                 </div>
-            `;
-        }).join("");
-    }
 
+                <div class="pdf-sign-img ${tieneFirma ? "" : "pdf-sign-img-empty"}">
+                    ${tieneFirma
+                        ? `<img src="${f.url}">`
+                        : "Sin firma registrada"}
+                </div>
+
+                <div class="pdf-sign-date">
+                    ${tieneFirma ? "Firmado el: " + fechaFirmaTxt : ""}
+                </div>
+
+                <div style="margin-top:4px;">
+                    <b>Compromiso:</b><br>
+                    ${compromiso}
+                </div>
+            </div>
+        `;
+    }).join("");
+}
     function renderPdfContent(ref) {
         const cont = document.getElementById("pdfContentRefuerzo");
         const fechaLarga = formatearFechaLarga(ref.fechaRefuerzo);

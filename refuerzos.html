@@ -875,7 +875,6 @@
         </div>
         <div class="header-right">
             <button id="btnIrBuscador" class="btn-sm">🔎 Ir al Dashboard</button>
-            <button id="btnIrAdmin" class="btn-primary-sm">🛠️ Admin KB</button
             <button id="themeToggle" class="btn-toggle">🌙 Modo oscuro</button>
         </div>
     </header>
@@ -1052,599 +1051,631 @@
 
     <!-- ========== FIREBASE + LÓGICA ========== -->
     <script type="module">
-        import {
-            initializeApp
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import {
-            getFirestore,
-            collection,
-            getDocs,
-            addDoc,
-            serverTimestamp,
-            doc,
-            getDoc
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import {
+        initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+        getFirestore,
+        collection,
+        getDocs,
+        addDoc,
+        serverTimestamp,
+        doc,
+        getDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        /* ----------------- FIREBASE CONFIG ----------------- */
-        const firebaseConfig = {
-            apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
-            authDomain: "feedback-app-ac30e.firebaseapp.com",
-            projectId: "feedback-app-ac30e",
-            storageBucket: "feedback-app-ac30e.firebasestorage.app",
-            messagingSenderId: "512179147778",
-            appId: "1:512179147778:web:795e4a8b177fe766d3431b",
-            measurementId: "G-X6MP0FFH9P"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const colRefuerzos = collection(db, "refuerzos_calidad");
-        const colAsesores = collection(db, "asesores");
+    /* ----------------- FIREBASE CONFIG ----------------- */
+    const firebaseConfig = {
+        apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
+        authDomain: "feedback-app-ac30e.firebaseapp.com",
+        projectId: "feedback-app-ac30e",
+        storageBucket: "feedback-app-ac30e.firebasestorage.app",
+        messagingSenderId: "512179147778",
+        appId: "1:512179147778:web:795e4a8b177fe766d3431b",
+        measurementId: "G-X6MP0FFH9P"
+    };
 
-        /* Firma fija de Alex (igual que en portal_agente) */
-        const FIRMA_ALEX_URL =
-            "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2Ffirma_alex.png?alt=media&token=5081e2c6-8e5e-46e6-a340-c13cace95864";
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        /* ----------------- ESTADO ----------------- */
-        let refuerzosCache = [];
-        let filtroTexto = "";
-        let filtroEstado = "todos";
-        let asesoresMap = {}; // { id: { nombre, gc } }
-        let pdfActualId = null;
+    const colRefuerzos = collection(db, "refuerzos_calidad");
+    const colAsesores = collection(db, "asesores");
 
-        /* ----------------- UTILIDADES UI ----------------- */
-        function setLoading(show, text = "Procesando…") {
-            const overlay = document.getElementById("loadingOverlay");
-            const label = document.getElementById("loadingText");
-            label.textContent = text;
-            overlay.style.display = show ? "flex" : "none";
+    /* Firma fija */
+    const FIRMA_ALEX_URL =
+        "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2Ffirma_alex.png?alt=media&token=5081e2c6-8e5e-46e6-a340-c13cace95864";
+
+    /* ----------------- ESTADO ----------------- */
+    let refuerzosCache = [];
+    let filtroTexto = "";
+    let filtroEstado = "todos";
+    let asesoresMap = {};
+    let pdfActualId = null;
+
+    /* ----------------- UTILIDADES ----------------- */
+    function setLoading(show, text = "Procesando…") {
+        const overlay = document.getElementById("loadingOverlay");
+        const label = document.getElementById("loadingText");
+        label.textContent = text;
+        overlay.style.display = show ? "flex" : "none";
+    }
+
+    function setToday() {
+        const inputFecha = document.getElementById("fecha");
+        const hoy = new Date();
+        const yyyy = hoy.getFullYear();
+        const mm = String(hoy.getMonth() + 1).padStart(2, "0");
+        const dd = String(hoy.getDate()).padStart(2, "0");
+        inputFecha.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    function formatearFechaLarga(fechaISO) {
+        if (!fechaISO) return "-";
+        const f = new Date(fechaISO);
+        return f.toLocaleDateString("es-PE", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        });
+    }
+
+    function formatearFechaCorta(fechaISO) {
+        if (!fechaISO) return "-";
+        return new Date(fechaISO).toLocaleDateString("es-PE");
+    }
+
+    function formatearFechaHora(fechaISO) {
+        if (!fechaISO) return "";
+        return new Date(fechaISO).toLocaleString("es-PE");
+    }
+
+    /* ----------------- ASESORES CHIP ----------------- */
+    async function cargarAsesores() {
+        const cont = document.getElementById("asesoresContainer");
+        try {
+            setLoading(true, "Cargando asesores…");
+            const snap = await getDocs(colAsesores);
+
+            const lista = snap.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+
+            lista.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+            asesoresMap = {};
+            cont.innerHTML = "";
+
+            lista.forEach(a => {
+                const id = a.id;
+                const nombre = a.nombre || "(sin nombre)";
+                const gc = a.GC || a.gc || "";
+
+                asesoresMap[id] = { nombre, gc };
+
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "asesor-chip";
+                btn.dataset.id = id;
+
+                btn.innerHTML = `
+                    <span class="asesor-chip-name">${nombre}</span>
+                    <span class="asesor-chip-gc">${gc ? gc : "Sin GC"}</span>
+                `;
+
+                btn.addEventListener("click", () => {
+                    btn.classList.toggle("selected");
+                });
+
+                cont.appendChild(btn);
+            });
+
+        } catch (e) {
+            console.error(e);
+            cont.innerHTML = "<div class='hint'>Error cargando asesores</div>";
+            alert("Error cargando asesores: " + e.message);
+        } finally {
+            setLoading(false);
         }
+    }
 
-        function setToday() {
-            const inputFecha = document.getElementById("fecha");
-            const hoy = new Date();
-            const yyyy = hoy.getFullYear();
-            const mm = String(hoy.getMonth() + 1).padStart(2, "0");
-            const dd = String(hoy.getDate()).padStart(2, "0");
-            inputFecha.value = `${yyyy}-${mm}-${dd}`;
+    /* ----------------- CARGAR REFUERZOS ----------------- */
+    async function cargarRefuerzos() {
+        setLoading(true, "Cargando refuerzos…");
+        try {
+            const snap = await getDocs(colRefuerzos);
+
+            refuerzosCache = snap.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+
+            refuerzosCache.sort((a, b) => {
+                const fa = a.fechaRefuerzo ? new Date(a.fechaRefuerzo) : 0;
+                const fb = b.fechaRefuerzo ? new Date(b.fechaRefuerzo) : 0;
+                return fb - fa;
+            });
+
+            renderTabla();
+        } catch (e) {
+            console.error(e);
+            alert("Error cargando refuerzos: " + e.message);
+        } finally {
+            setLoading(false);
         }
+    }
 
-        function formatearFechaLarga(fechaISO) {
-            if (!fechaISO) return "-";
-            const f = new Date(fechaISO);
-            return f.toLocaleDateString("es-PE", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric"
+    /* ----------------- TABLA + FILTROS ----------------- */
+    function esIncompleto(r) {
+        return !r.fechaRefuerzo || !r.tipo || !r.tema || !r.publico || !r.objetivo;
+    }
+
+    function filtrarLista() {
+        const q = (filtroTexto || "").trim().toLowerCase();
+        let lista = [...refuerzosCache];
+
+        if (q) {
+            lista = lista.filter(r => {
+                const join = [
+                    r.tema || "",
+                    r.tipo || "",
+                    r.publico || "",
+                    r.detalle || "",
+                    r.objetivo || "",
+                    r.responsable || "",
+                    r.agenteNombre || ""
+                ].join(" ").toLowerCase();
+                return join.includes(q);
             });
         }
 
-        function formatearFechaCorta(fechaISO) {
-            if (!fechaISO) return "-";
-            return new Date(fechaISO).toLocaleDateString("es-PE");
-        }
-
-        function formatearFechaHora(fechaISO) {
-            if (!fechaISO) return "";
-            return new Date(fechaISO).toLocaleString("es-PE");
-        }
-
-        /* ----------------- CARGAR ASESORES (CHIPS) ----------------- */
-        async function cargarAsesores() {
-            const cont = document.getElementById("asesoresContainer");
-            try {
-                setLoading(true, "Cargando asesores…");
-                const snap = await getDocs(colAsesores);
-                const lista = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                lista.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
-                asesoresMap = {};
-                cont.innerHTML = "";
-                if (!lista.length) {
-                    cont.innerHTML = "<div class='hint'>No hay asesores registrados</div>";
-                    return;
-                }
-                lista.forEach(a => {
-                    const id = a.id;
-                    const nombre = a.nombre || "(sin nombre)";
-                    const gc = a.GC || a.gc || "";
-                    asesoresMap[id] = {
-                        nombre,
-                        gc
-                    };
-                    const btn = document.createElement("button");
-                    btn.type = "button";
-                    btn.className = "asesor-chip";
-                    btn.dataset.id = id;
-                    btn.innerHTML = `
-                        <span class="asesor-chip-name">${nombre}</span>
-                        <span class="asesor-chip-gc">${gc ? gc : "Sin GC"}</span>
-                    `;
-                    btn.addEventListener("click", () => {
-                        btn.classList.toggle("selected");
-                    });
-                    cont.appendChild(btn);
-                });
-            } catch (e) {
-                console.error(e);
-                cont.innerHTML = "<div class='hint'>Error cargando asesores</div>";
-                alert("Error cargando asesores: " + e.message);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        /* ----------------- CARGAR REFUERZOS ----------------- */
-        async function cargarRefuerzos() {
-            setLoading(true, "Cargando refuerzos…");
-            try {
-                const snap = await getDocs(colRefuerzos);
-                refuerzosCache = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                // ordenar por fechaRefuerzo (desc)
-                refuerzosCache.sort((a, b) => {
-                    const fa = a.fechaRefuerzo ? new Date(a.fechaRefuerzo) : 0;
-                    const fb = b.fechaRefuerzo ? new Date(b.fechaRefuerzo) : 0;
-                    return fb - fa;
-                });
-                renderTabla();
-            } catch (e) {
-                console.error(e);
-                alert("Error cargando refuerzos: " + e.message);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        /* ----------------- LÓGICA DE COMPLETITUD / FILTRO ----------------- */
-        function esIncompleto(r) {
-            return !r.fechaRefuerzo || !r.tipo || !r.tema || !r.publico || !r.objetivo;
-        }
-
-        function filtrarLista() {
-            const q = (filtroTexto || "").trim().toLowerCase();
-            let lista = [...refuerzosCache];
-            if (q) {
-                lista = lista.filter(r => {
-                    const join = [
-                        r.tema || "",
-                        r.tipo || "",
-                        r.publico || "",
-                        r.detalle || "",
-                        r.objetivo || "",
-                        r.responsable || "",
-                        r.agenteNombre || ""
-                    ].join(" ").toLowerCase();
-                    return join.includes(q);
-                });
-            }
-            if (filtroEstado !== "todos") {
-                lista = lista.filter(r => {
-                    const incompleto = esIncompleto(r);
-                    const firmado = !!r.firmado;
-                    if (filtroEstado === "incompleto") return incompleto;
-                    if (filtroEstado === "firmado") return firmado && !incompleto;
-                    if (filtroEstado === "pendiente") return !firmado && !incompleto;
-                    return true;
-                });
-            }
-            return lista;
-        }
-
-        function actualizarMetricas() {
-            const total = refuerzosCache.length;
-            const firmados = refuerzosCache.filter(r => r.firmado && !esIncompleto(r)).length;
-            const pendientes = refuerzosCache.filter(r => !r.firmado && !esIncompleto(r)).length;
-            document.getElementById("metricTotal").textContent = total;
-            document.getElementById("metricFirmados").textContent = firmados;
-            document.getElementById("metricPendientes").textContent = pendientes;
-        }
-
-        function renderTabla() {
-            const tbody = document.getElementById("tablaRefuerzos");
-            const lista = filtrarLista();
-            actualizarMetricas();
-            if (!lista.length) {
-                tbody.innerHTML = "<tr><td colspan='6'>Sin refuerzos registrados con los criterios actuales.</td></tr>";
-                return;
-            }
-            tbody.innerHTML = lista.map(r => {
-                const fechaStr = r.fechaRefuerzo ?
-                    new Date(r.fechaRefuerzo).toLocaleDateString("es-PE") :
-                    "-";
+        if (filtroEstado !== "todos") {
+            lista = lista.filter(r => {
                 const incompleto = esIncompleto(r);
                 const firmado = !!r.firmado;
-                let estadoClase = "estado-pend";
-                let estadoTexto = "Pendiente de firma";
-                if (incompleto) {
-                    estadoClase = "estado-incomp";
-                    estadoTexto = "Datos incompletos";
-                } else if (firmado) {
-                    estadoClase = "estado-ok";
-                    estadoTexto = "Firmado por agente";
-                }
 
-                // Resumen simple de firmas: cuántas tarjetas tienen url
-                const asesoresArr = Array.isArray(r.asesores) ? r.asesores : [];
-                const firmasArr = Array.isArray(r.firmas) ? r.firmas : [];
-                const totalA = asesoresArr.length;
-                const firmadas = firmasArr.filter(f => f && f.url).length;
-                const resumenFirmas = totalA ?
-                    `${firmadas}/${totalA} firmas` :
-                    (r.firmaNombre || "—");
-
-                const firmaFecha = r.firmaFecha ?
-                    new Date(r.firmaFecha).toLocaleString("es-PE") :
-                    (totalA ? "Pendiente" : "");
-
-                return `
-                    <tr>
-                        <td>${fechaStr}</td>
-                        <td>
-                            <div style="font-weight:500">${r.tema || ""}</div>
-                            <div style="font-size:11px;color:var(--muted);">${r.tipo || ""}</div>
-                        </td>
-                        <td>${r.publico || ""}</td>
-                        <td style="font-size:11px;">
-                            <div><b>${resumenFirmas}</b></div>
-                            <div style="color:var(--muted);">${firmaFecha}</div>
-                        </td>
-                        <td>
-                            <span class="estado-pill ${estadoClase}">
-                                ${estadoTexto}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="actions">
-                                <button class="btn-xs primary" onclick="verPdf('${r.id}')">📄 Ver PDF</button>
-                                <button class="btn-xs success" onclick="copiarLinkFirma('${r.id}')">✍️ Link firma</button>
-                            </div>
-                        </td>
-                    </tr>`;
-            }).join("");
+                if (filtroEstado === "incompleto") return incompleto;
+                if (filtroEstado === "firmado") return firmado && !incompleto;
+                if (filtroEstado === "pendiente") return !firmado && !incompleto;
+                return true;
+            });
         }
 
-        /* ----------------- GUARDAR ----------------- */
-        async function guardarRefuerzo() {
-            const fechaInput = document.getElementById("fecha").value;
-            const tipo = document.getElementById("tipo").value;
-            const tema = document.getElementById("tema").value.trim();
-            const canal = document.getElementById("canal").value;
-            const responsable = document.getElementById("responsable").value;
-            const objetivo = document.getElementById("objetivo").value.trim();
-            const detalle = document.getElementById("detalle").value.trim();
+        return lista;
+    }
 
-            const chipsSeleccionados = Array.from(
-                document.querySelectorAll(".asesor-chip.selected")
-            );
-            const asesoresSeleccionados = chipsSeleccionados
-                .map(chip => {
-                    const id = chip.dataset.id;
-                    const info = asesoresMap[id];
-                    if (!info) return null;
-                    return {
-                        asesorId: id,
-                        nombre: info.nombre,
-                        gc: info.gc || ""
-                    };
-                })
-                .filter(x => x);
+    function actualizarMetricas() {
+        const total = refuerzosCache.length;
+        const firmados = refuerzosCache.filter(r => r.firmado && !esIncompleto(r)).length;
+        const pendientes = refuerzosCache.filter(r => !r.firmado && !esIncompleto(r)).length;
 
-            const publico = asesoresSeleccionados.map(a => a.nombre).join(", ");
+        document.getElementById("metricTotal").textContent = total;
+        document.getElementById("metricFirmados").textContent = firmados;
+        document.getElementById("metricPendientes").textContent = pendientes;
+    }
 
-            if (!fechaInput || !tipo || !tema || !objetivo) {
-                alert("Completa al menos: Fecha, Tipo, Tema y Objetivo.");
-                return;
+    function renderTabla() {
+        const tbody = document.getElementById("tablaRefuerzos");
+        const lista = filtrarLista();
+
+        actualizarMetricas();
+
+        if (!lista.length) {
+            tbody.innerHTML = "<tr><td colspan='6'>Sin refuerzos registrados con los criterios actuales.</td></tr>";
+            return;
+        }
+
+        tbody.innerHTML = lista.map(r => {
+            const fechaStr = r.fechaRefuerzo ?
+                new Date(r.fechaRefuerzo).toLocaleDateString("es-PE") : "-";
+
+            const incompleto = esIncompleto(r);
+            const firmado = !!r.firmado;
+
+            let estadoClase = "estado-pend";
+            let estadoTexto = "Pendiente de firma";
+
+            if (incompleto) {
+                estadoClase = "estado-incomp";
+                estadoTexto = "Datos incompletos";
+            } else if (firmado) {
+                estadoClase = "estado-ok";
+                estadoTexto = "Firmado por agente";
             }
 
-            const fechaRefuerzo = new Date(fechaInput + "T00:00:00");
+            const asesoresArr = Array.isArray(r.asesores) ? r.asesores : [];
+            const firmasArr = Array.isArray(r.firmas) ? r.firmas : [];
 
-            // Estructura compatible con portal_agente:
-            // portal_agente.html deberá actualizar el array "firmas"
-            // agregando { asesorId, nombre, url, fechaFirma }
-            const firmasIniciales = asesoresSeleccionados.map(a => ({
-                asesorId: a.asesorId,
-                nombre: a.nombre,
-                gc: a.gc || "",
-                url: "", // URL de la firma (cuando el agente firme)
-                fechaFirma: null, // fecha de firma
-                compromiso: "" // 🔹 aquí se guardará el compromiso del agente
-            }));
+            const totalA = asesoresArr.length;
+            const firmadas = firmasArr.filter(f => f && f.url).length;
 
-            const data = {
-                fechaRefuerzo: fechaRefuerzo.toISOString(),
-                tipo,
-                tema,
-                canal,
-                publico,
-                asesores: asesoresSeleccionados,
-                responsable,
-                objetivo,
-                detalle,
-                // Campos de estado global (puede usarlos portal_agente si quiere marcar COMPLETADO)
-                firmado: false,
-                firmaNombre: "",
-                firmaFecha: null,
-                agenteNombre: "",
-                // Array de firmas por agente (tarjetas, opción A)
-                firmas: firmasIniciales,
-                createdAt: serverTimestamp()
-            };
+            const resumenFirmas = totalA ?
+                `${firmadas}/${totalA} firmas` :
+                (r.firmaNombre || "—");
 
-            try {
-                setLoading(true, "Guardando refuerzo…");
-                await addDoc(colRefuerzos, data);
-                alert("Refuerzo registrado correctamente.");
-                limpiarFormulario();
-                await cargarRefuerzos();
-            } catch (e) {
-                console.error(e);
-                alert("Error al guardar: " + e.message);
-            } finally {
-                setLoading(false);
-            }
+            const firmaFecha = r.firmaFecha ?
+                new Date(r.firmaFecha).toLocaleString("es-PE") :
+                (totalA ? "Pendiente" : "");
+
+            return `
+                <tr>
+                    <td>${fechaStr}</td>
+                    <td>
+                        <div style="font-weight:500">${r.tema || ""}</div>
+                        <div style="font-size:11px;color:var(--muted);">${r.tipo || ""}</div>
+                    </td>
+                    <td>${r.publico || ""}</td>
+                    <td style="font-size:11px;">
+                        <div><b>${resumenFirmas}</b></div>
+                        <div style="color:var(--muted);">${firmaFecha}</div>
+                    </td>
+                    <td>
+                        <span class="estado-pill ${estadoClase}">
+                            ${estadoTexto}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-xs primary" onclick="verPdf('${r.id}')">📄 Ver PDF</button>
+                            <button class="btn-xs success" onclick="copiarLinkFirma('${r.id}')">✍️ Link firma</button>
+                        </div>
+                    </td>
+                </tr>`;
+        }).join("");
+    }
+
+    /* ----------------- GUARDAR REFUERZO ----------------- */
+    async function guardarRefuerzo() {
+        const fechaInput = document.getElementById("fecha").value;
+        const tipo = document.getElementById("tipo").value;
+        const tema = document.getElementById("tema").value.trim();
+        const canal = document.getElementById("canal").value;
+        const responsable = document.getElementById("responsable").value;
+        const objetivo = document.getElementById("objetivo").value.trim();
+        const detalle = document.getElementById("detalle").value.trim();
+
+        const chipsSeleccionados =
+            Array.from(document.querySelectorAll(".asesor-chip.selected"));
+
+        const asesoresSeleccionados = chipsSeleccionados
+            .map(chip => {
+                const id = chip.dataset.id;
+                const info = asesoresMap[id];
+                if (!info) return null;
+                return {
+                    asesorId: id,
+                    nombre: info.nombre,
+                    gc: info.gc || ""
+                };
+            })
+            .filter(x => x);
+
+        const publico = asesoresSeleccionados.map(a => a.nombre).join(", ");
+
+        if (!fechaInput || !tipo || !tema || !objetivo) {
+            alert("Completa al menos: Fecha, Tipo, Tema y Objetivo.");
+            return;
         }
 
-        function limpiarFormulario() {
-            setToday();
-            document.getElementById("tipo").value = "";
-            document.getElementById("tema").value = "";
-            document.getElementById("canal").value = "";
-            document.getElementById("objetivo").value = "";
-            document.getElementById("detalle").value = "";
-            document.querySelectorAll(".asesor-chip.selected")
-                .forEach(ch => ch.classList.remove("selected"));
+        const fechaRefuerzo = new Date(fechaInput + "T00:00:00");
+
+        const firmasIniciales = asesoresSeleccionados.map(a => ({
+            asesorId: a.asesorId,
+            nombre: a.nombre,
+            gc: a.gc || "",
+            url: "",
+            fechaFirma: null,
+            compromiso: ""
+        }));
+
+        const data = {
+            fechaRefuerzo: fechaRefuerzo.toISOString(),
+            tipo,
+            tema,
+            canal,
+            publico,
+            asesores: asesoresSeleccionados,
+            responsable,
+            objetivo,
+            detalle,
+
+            firmado: false,
+            firmaNombre: "",
+            firmaFecha: null,
+            agenteNombre: "",
+            firmas: firmasIniciales,
+
+            createdAt: serverTimestamp()
+        };
+
+        try {
+            setLoading(true, "Guardando refuerzo…");
+            await addDoc(colRefuerzos, data);
+
+            alert("Refuerzo registrado correctamente.");
+            limpiarFormulario();
+            await cargarRefuerzos();
+
+        } catch (e) {
+            console.error(e);
+            alert("Error al guardar: " + e.message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function limpiarFormulario() {
+        setToday();
+        document.getElementById("tipo").value = "";
+        document.getElementById("tema").value = "";
+        document.getElementById("canal").value = "";
+        document.getElementById("objetivo").value = "";
+        document.getElementById("detalle").value = "";
+
+        document.querySelectorAll(".asesor-chip.selected")
+            .forEach(ch => ch.classList.remove("selected"));
+    }
+
+    /* ----------------- PDF ----------------- */
+
+    function construirTarjetasFirmas(ref) {
+        const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
+        const firmas = Array.isArray(ref.firmas) ? ref.firmas : [];
+
+        if (!asesores.length) {
+            return `
+            <div class="pdf-sign-card">
+                <div class="pdf-sign-card-header">
+                    <div><div class="pdf-sign-name">Sin asesores</div></div>
+                </div>
+                <div class="pdf-sign-img pdf-sign-img-empty">
+                    No se registraron asesores en este refuerzo.
+                </div>
+            </div>`;
         }
 
-        /* ----------------- PDF: RENDER + MODAL ----------------- */
-        function construirTarjetasFirmas(ref) {
-            const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
-            const firmas = Array.isArray(ref.firmas) ? ref.firmas : [];
+        return asesores.map(a => {
+            const f = firmas.find(x =>
+                (x.asesorId === a.asesorId) ||
+                (x.nombre === a.nombre)
+            ) || {};
 
-            if (!asesores.length) {
-                return `<div class="pdf-sign-card">
+            const tieneFirma = !!f.url;
+            const fechaFirmaTxt =
+                f.fechaFirma ? formatearFechaHora(f.fechaFirma) : "Pendiente";
+
+            const estadoClass = tieneFirma ?
+                "pdf-sign-status pdf-sign-status-ok" :
+                "pdf-sign-status";
+
+            const estadoTxt = tieneFirma ? "Firmado" : "Pendiente";
+
+            return `
+                <div class="pdf-sign-card">
                     <div class="pdf-sign-card-header">
                         <div>
-                            <div class="pdf-sign-name">Sin asesores registrados</div>
+                            <div class="pdf-sign-name">${a.nombre}</div>
+                            <div class="pdf-sign-gc">${a.gc || ""}</div>
                         </div>
+                        <div class="${estadoClass}">${estadoTxt}</div>
                     </div>
-                    <div class="pdf-sign-img pdf-sign-img-empty">
-                        No se configuraron asesores en este refuerzo.
+                    <div class="pdf-sign-img ${tieneFirma ? "" : "pdf-sign-img-empty"}">
+                        ${tieneFirma ? `<img src="${f.url}">` : "Sin firma registrada"}
                     </div>
-                </div>`;
-            }
-
-            return asesores.map(a => {
-                const f = firmas.find(x =>
-                    (x.asesorId && x.asesorId === a.asesorId) ||
-                    (x.nombre && x.nombre === a.nombre)
-                ) || {};
-                const tieneFirma = !!f.url;
-                const fechaFirmaTxt = f.fechaFirma ? formatearFechaHora(f.fechaFirma) : "Pendiente";
-                const estadoTxt = tieneFirma ? "Firmado" : "Pendiente";
-                const estadoClass = tieneFirma ? "pdf-sign-status pdf-sign-status-ok" : "pdf-sign-status";
-                const gcTxt = a.gc ? `GC: ${a.gc}` : "";
-
-                return `
-                    <div class="pdf-sign-card">
-                        <div class="pdf-sign-card-header">
-                            <div>
-                                <div class="pdf-sign-name">${a.nombre}</div>
-                                <div class="pdf-sign-gc">${gcTxt}</div>
-                            </div>
-                            <div class="${estadoClass}">${estadoTxt}</div>
-                        </div>
-                        <div class="pdf-sign-img ${tieneFirma ? "" : "pdf-sign-img-empty"}">
-                            ${tieneFirma
-                                ? `<img src="${f.url}" alt="Firma de ${a.nombre}">`
-                                : "Sin firma registrada desde portal_agente.html"}
-                        </div>
-                        <div class="pdf-sign-date">
-                            ${tieneFirma ? "Firmado el: " + fechaFirmaTxt : ""}
-                        </div>
-                    </div>
-                `;
-            }).join("");
-        }
-
-        function renderPdfContent(ref) {
-            const cont = document.getElementById("pdfContentRefuerzo");
-            const fechaLarga = formatearFechaLarga(ref.fechaRefuerzo);
-            const fechaCorta = formatearFechaCorta(ref.fechaRefuerzo);
-
-            const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
-            const listadoAsesores = asesores.length ?
-                asesores.map(a => `${a.nombre}${a.gc ? " (" + a.gc + ")" : ""}`).join(", ") :
-                (ref.publico || "—");
-
-            cont.innerHTML = `
-                <div class="pdf-header">
-                    <div class="pdf-title-block">
-                        <div class="pdf-main-title">REFUERZO / CAPACITACIÓN</div>
-                        <div class="pdf-subtitle">
-                            Registro formal de acciones de Calidad & Formación – Financiera Efectiva.
-                        </div>
-                    </div>
-                    <div>
-                        <div class="pdf-badge-fe">Calidad & Formación FE</div>
-                    </div>
-                </div>
-
-                <div class="pdf-section-body">
-                    <div class="pdf-field-row">
-                        <div class="pdf-field"><b>Fecha del refuerzo:</b> ${fechaLarga}</div>
-                        <div class="pdf-field"><b>Fecha corta:</b> ${fechaCorta}</div>
-                    </div>
-                    <div class="pdf-field-row">
-                        <div class="pdf-field"><b>Tipo de acción:</b> ${ref.tipo || "—"}</div>
-                        <div class="pdf-field"><b>Canal:</b> ${ref.canal || "—"}</div>
-                    </div>
-                    <div class="pdf-field-row">
-                        <div class="pdf-field"><b>Tema / título:</b> ${ref.tema || "—"}</div>
-                    </div>
-                    <div class="pdf-field-row" style="margin-top:4px;">
-                        <div class="pdf-field"><b>Responsable:</b> ${ref.responsable || "—"}</div>
-                    </div>
-                </div>
-
-                <div class="pdf-section-title">Asesores capacitados</div>
-                <div class="pdf-section-body">
-                    <div class="pdf-objective-box">
-                        ${listadoAsesores}
-                    </div>
-                </div>
-
-                <div class="pdf-section-title">Objetivo del refuerzo</div>
-                <div class="pdf-section-body">
-                    <div class="pdf-objective-box">
-                        ${ref.objetivo || "—"}
-                    </div>
-                </div>
-
-                <div class="pdf-section-title">Detalle / acuerdos clave</div>
-                <div class="pdf-section-body">
-                    <div class="pdf-detail-box">
-                        ${ref.detalle || "—"}
-                    </div>
-                </div>
-
-                <div class="pdf-section-title">Firmas</div>
-                <div class="pdf-section-body">
-                    <div class="pdf-signatures">
-                        <div class="pdf-sign-resp">
-                            <div class="pdf-sign-resp-title">Responsable de Calidad</div>
-                            <div class="pdf-sign-img">
-                                <img src="${FIRMA_ALEX_URL}" alt="Firma Alex Paolo Nuñez Sulca">
-                            </div>
-                            <div class="pdf-sign-resp-line"></div>
-                            <div><strong>Alex Paolo Nuñez Sulca</strong></div>
-                            <div class="pdf-sign-resp-role">Líder de Calidad y Formación</div>
-                        </div>
-                        <div class="pdf-sign-grid">
-                            ${construirTarjetasFirmas(ref)}
-                        </div>
+                    <div class="pdf-sign-date">
+                        ${tieneFirma ? "Firmado el: " + fechaFirmaTxt : ""}
                     </div>
                 </div>
             `;
+        }).join("");
+    }
+
+    function renderPdfContent(ref) {
+        const cont = document.getElementById("pdfContentRefuerzo");
+        const fechaLarga = formatearFechaLarga(ref.fechaRefuerzo);
+        const fechaCorta = formatearFechaCorta(ref.fechaRefuerzo);
+
+        const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
+
+        const listadoAsesores = asesores.length
+            ? asesores.map(a => `${a.nombre} ${a.gc ? "(" + a.gc + ")" : ""}`).join(", ")
+            : ref.publico || "—";
+
+        cont.innerHTML = `
+            <div class="pdf-header">
+                <div class="pdf-title-block">
+                    <div class="pdf-main-title">REFUERZO / CAPACITACIÓN</div>
+                    <div class="pdf-subtitle">
+                        Registro formal de acciones de Calidad & Formación – Financiera Efectiva.
+                    </div>
+                </div>
+                <div>
+                    <div class="pdf-badge-fe">Calidad & Formación FE</div>
+                </div>
+            </div>
+
+            <div class="pdf-section-body">
+                <div class="pdf-field-row">
+                    <div class="pdf-field"><b>Fecha del refuerzo:</b> ${fechaLarga}</div>
+                    <div class="pdf-field"><b>Fecha corta:</b> ${fechaCorta}</div>
+                </div>
+
+                <div class="pdf-field-row">
+                    <div class="pdf-field"><b>Tipo de acción:</b> ${ref.tipo || "—"}</div>
+                    <div class="pdf-field"><b>Canal:</b> ${ref.canal || "—"}</div>
+                </div>
+
+                <div class="pdf-field-row">
+                    <div class="pdf-field"><b>Tema / título:</b> ${ref.tema || "—"}</div>
+                </div>
+
+                <div class="pdf-field-row" style="margin-top:4px;">
+                    <div class="pdf-field"><b>Responsable:</b> ${ref.responsable || "—"}</div>
+                </div>
+            </div>
+
+            <div class="pdf-section-title">Asesores capacitados</div>
+            <div class="pdf-section-body">
+                <div class="pdf-objective-box">
+                    ${listadoAsesores}
+                </div>
+            </div>
+
+            <div class="pdf-section-title">Objetivo del refuerzo</div>
+            <div class="pdf-section-body">
+                <div class="pdf-objective-box">
+                    ${ref.objetivo || "—"}
+                </div>
+            </div>
+
+            <div class="pdf-section-title">Detalle / acuerdos clave</div>
+            <div class="pdf-section-body">
+                <div class="pdf-detail-box">
+                    ${ref.detalle || "—"}
+                </div>
+            </div>
+
+            <div class="pdf-section-title">Firmas</div>
+            <div class="pdf-section-body">
+                <div class="pdf-signatures">
+
+                    <!-- Firma Responsable -->
+                    <div class="pdf-sign-resp">
+                        <div class="pdf-sign-resp-title">Responsable de Calidad</div>
+                        <div class="pdf-sign-img">
+                            <img src="${FIRMA_ALEX_URL}">
+                        </div>
+                        <div class="pdf-sign-resp-line"></div>
+                        <div><strong>Alex Paolo Nuñez Sulca</strong></div>
+                        <div class="pdf-sign-resp-role">Líder de Calidad y Formación</div>
+                    </div>
+
+                    <!-- Firmas Agentes -->
+                    <div class="pdf-sign-grid">
+                        ${construirTarjetasFirmas(ref)}
+                    </div>
+
+                </div>
+            </div>
+        `;
+    }
+
+    function abrirModalPdf(id) {
+        pdfActualId = id;
+        const modal = document.getElementById("pdfModal");
+
+        const ref = refuerzosCache.find(x => x.id === id);
+
+        document.getElementById("pdfModalTitle").textContent =
+            `Vista previa del refuerzo (${id})`;
+
+        if (ref) renderPdfContent(ref);
+        else document.getElementById("pdfContentRefuerzo").innerHTML =
+            "<p>No se encontró información del refuerzo.</p>";
+
+        modal.style.display = "flex";
+    }
+
+    window.cerrarModalPdf = function() {
+        document.getElementById("pdfModal").style.display = "none";
+    };
+
+    window.descargarPdfActual = function() {
+        if (!pdfActualId) return alert("No hay refuerzo seleccionado");
+
+        const element = document.getElementById("pdfContentRefuerzo");
+        const opt = {
+            margin: [10, 10, 10, 10],
+            filename: `refuerzo_${pdfActualId}.pdf`,
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        };
+        window.html2pdf().set(opt).from(element).save();
+    };
+
+    /* ----------------- ACCIONES ----------------- */
+    window.verPdf = function(id) {
+        abrirModalPdf(id);
+    };
+
+    window.copiarLinkFirma = async function(id) {
+        try {
+            const base = window.location.origin === "null"
+                ? ""
+                : window.location.origin;
+
+            const url = base
+                ? `${base}/portal_agente.html?id=${id}`
+                : `portal_agente.html?id=${id}`;
+
+            await navigator.clipboard.writeText(url);
+
+            alert("Link de firma copiado:\n" + url);
+
+        } catch (e) {
+            alert("No se pudo copiar. URL:\nportal_agente.html?id=" + id);
         }
+    };
 
-        function abrirModalPdf(id) {
-            pdfActualId = id;
-            const modal = document.getElementById("pdfModal");
-            const title = document.getElementById("pdfModalTitle");
+    /* ----------------- FILTROS ----------------- */
+    document.getElementById("searchTabla").addEventListener("input", e => {
+        filtroTexto = e.target.value || "";
+        renderTabla();
+    });
 
-            const ref = refuerzosCache.find(x => x.id === id);
-            title.textContent = `Vista previa del refuerzo (${id})`;
+    document.getElementById("filtroEstado").addEventListener("change", e => {
+        filtroEstado = e.target.value;
+        renderTabla();
+    });
 
-            if (ref) {
-                renderPdfContent(ref);
-            } else {
-                document.getElementById("pdfContentRefuerzo").innerHTML =
-                    "<p>No se encontró información de este refuerzo.</p>";
-            }
-            modal.style.display = "flex";
+    /* ----------------- NAVEGACIÓN ----------------- */
+    document.getElementById("btnIrBuscador").onclick = () => {
+        window.location.href = "index.html";
+    };
+
+    /* 🔧 FIX: evita error si btnIrAdmin no existe */
+    const btnAdmin = document.getElementById("btnIrAdmin");
+    if (btnAdmin) {
+        btnAdmin.onclick = () => window.location.href = "admin.html";
+    }
+
+    /* ----------------- MODO OSCURO ----------------- */
+    const themeBtn = document.getElementById("themeToggle");
+
+    function applyTheme(theme) {
+        const body = document.body;
+
+        if (theme === "dark") {
+            body.classList.add("dark");
+            themeBtn.textContent = "☀️ Modo claro";
+        } else {
+            body.classList.remove("dark");
+            themeBtn.textContent = "🌙 Modo oscuro";
         }
+    }
 
-        window.cerrarModalPdf = function() {
-            const modal = document.getElementById("pdfModal");
-            modal.style.display = "none";
-        };
+    const savedTheme = localStorage.getItem("fe_refuerzos_theme") || "light";
+    applyTheme(savedTheme);
 
-        window.descargarPdfActual = function() {
-            if (!pdfActualId) {
-                alert("No hay un refuerzo seleccionado.");
-                return;
-            }
-            const element = document.getElementById("pdfContentRefuerzo");
-            if (!element) {
-                alert("No se encontró el contenido del refuerzo.");
-                return;
-            }
-            const opt = {
-                margin: [10, 10, 10, 10],
-                filename: `refuerzo_${pdfActualId}.pdf`,
-                html2canvas: {
-                    scale: 2
-                },
-                jsPDF: {
-                    unit: "mm",
-                    format: "a4",
-                    orientation: "portrait"
-                }
-            };
-            window.html2pdf().set(opt).from(element).save();
-        };
+    themeBtn.onclick = () => {
+        const next = document.body.classList.contains("dark")
+            ? "light"
+            : "dark";
 
-        /* ----------------- ACCIONES POR REGISTRO ----------------- */
-        window.verPdf = function(id) {
-            abrirModalPdf(id);
-        };
+        localStorage.setItem("fe_refuerzos_theme", next);
+        applyTheme(next);
+    };
 
-        window.copiarLinkFirma = async function(id) {
-            try {
-                const base = window.location.origin === "null" ?
-                    "" :
-                    window.location.origin;
-                const url = base ?
-                    `${base}/portal_agente.html?id=${id}` :
-                    `portal_agente.html?id=${id}`;
-                await navigator.clipboard.writeText(url);
-                alert("Link de firma copiado al portapapeles:\n" + url);
-            } catch (e) {
-                console.error(e);
-                alert("No se pudo copiar el link. URL:\nportal_agente.html?id=" + id);
-            }
-        };
+    /* ----------------- INICIAL ----------------- */
+    setToday();
 
-        /* ----------------- FILTROS / BUSCADOR ----------------- */
-        document.getElementById("searchTabla").addEventListener("input", e => {
-            filtroTexto = e.target.value || "";
-            renderTabla();
-        });
-        document.getElementById("filtroEstado").addEventListener("change", e => {
-            filtroEstado = e.target.value;
-            renderTabla();
-        });
+    await cargarAsesores();
+    await cargarRefuerzos();
 
-        /* ----------------- NAVEGACIÓN SUPERIOR ----------------- */
-        document.getElementById("btnIrBuscador").onclick = () => {
-            window.location.href = "index.html";
-        };
-        document.getElementById("btnIrAdmin").onclick = () => {
-            window.location.href = "admin.html";
-        };
+    document.getElementById("btnGuardar").onclick = guardarRefuerzo;
+    document.getElementById("btnLimpiar").onclick = limpiarFormulario;
+</script>
 
-        /* ----------------- MODO OSCURO ----------------- */
-        const themeBtn = document.getElementById("themeToggle");
-
-        function applyTheme(theme) {
-            if (theme === "dark") {
-                document.body.classList.add("dark");
-                themeBtn.textContent = "☀️ Modo claro";
-            } else {
-                document.body.classList.remove("dark");
-                themeBtn.textContent = "🌙 Modo oscuro";
-            }
-        }
-        const savedTheme = localStorage.getItem("fe_refuerzos_theme") || "light";
-        applyTheme(savedTheme);
-        themeBtn.onclick = () => {
-            const next = document.body.classList.contains("dark") ? "light" : "dark";
-            localStorage.setItem("fe_refuerzos_theme", next);
-            applyTheme(next);
-        };
-
-        /* ----------------- INICIAL ----------------- */
-        setToday();
-        await cargarAsesores();
-        await cargarRefuerzos();
-        document.getElementById("btnGuardar").addEventListener("click", guardarRefuerzo);
-        document.getElementById("btnLimpiar").addEventListener("click", limpiarFormulario);
-    </script>
 </body>
 
 </html>

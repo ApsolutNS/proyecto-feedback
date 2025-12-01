@@ -288,27 +288,64 @@
             border-radius: 999px;
             background: var(--warning);
         }
-        /* MULTI SELECT ASESOR */
-        .checkbox-list {
-            background: var(--card);
-            border: 1px solid var(--border);
-            padding: 10px;
-            border-radius: 10px;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-        
-        .checkbox-item {
+
+        /* CHIPS DE ASESORES — TARJETAS RECTANGULARES ELEGANTES, IZQUIERDA */
+        .chips-wrapper {
+            grid-column: 1 / -1; /* ocupa todo el ancho de la grid del formulario */
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 6px;
-            padding: 4px 0;
+            margin-top: 4px;
+        }
+        .chips-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .chips-label-row .hint {
+            font-size: 11px;
+        }
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-start; /* pegado a la izquierda */
+        }
+        .asesor-chip {
+            border: 1px solid var(--border);
+            background: var(--bg-soft);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.10);
+            border-radius: 14px;
+            padding: 10px 12px;
+            min-width: 210px;
+            max-width: 100%;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+            text-align: left;
+            transition: 0.15s ease;
             font-size: 13px;
         }
-        
-        .checkbox-item input {
-            transform: scale(1.1);
+        .asesor-chip:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
         }
+        .asesor-chip.selected {
+            border-color: var(--accent-soft);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(56, 189, 248, 0.08));
+            box-shadow: 0 16px 40px rgba(37, 99, 235, 0.35);
+        }
+        .asesor-chip-name {
+            font-weight: 600;
+        }
+        .asesor-chip-gc {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
         /* DASHBOARD + FILTROS */
         .metrics-row {
             display: flex;
@@ -516,6 +553,7 @@
                     </div>
                     <span class="chip">Solo Calidad & Formación</span>
                 </div>
+
                 <div class="form-grid">
                     <div>
                         <label>Fecha del refuerzo</label>
@@ -547,18 +585,17 @@
                         </select>
                     </div>
 
-                    <!-- === ASESOR(ES) DESDE FIRESTORE === -->
-                   <div>
-                        <label>Asesores capacitados</label>
-                        <div id="asesoresContainer" class="chips-container">
-                            <!-- Se llenará desde JS -->
+                    <!-- === CHIPS / TARJETAS DE ASESORES (COLECCIÓN asesores) === -->
+                    <div class="chips-wrapper">
+                        <div class="chips-label-row">
+                            <span class="hint"><b>Asesores capacitados</b> (selección múltiple)</span>
+                            <span class="hint">Datos en tiempo real desde colección <b>asesores</b></span>
                         </div>
-                        <div class="hint" style="margin-top:4px;">
-                            Selecciona uno o varios asesores. Datos desde colección <b>asesores</b>.
+                        <div id="asesoresContainer" class="chips-container">
+                            <!-- Se llena con tarjetas desde JS -->
                         </div>
                     </div>
 
-                    </div>
                     <div>
                         <label>Responsable</label>
                         <input id="responsable" value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación" readonly>
@@ -573,6 +610,7 @@
                     <label>Detalle / acuerdos clave</label>
                     <textarea id="detalle" rows="3" placeholder="Puntos específicos tratados, compromisos, indicadores a monitorear, etc."></textarea>
                 </div>
+
                 <div class="form-footer">
                     <div class="hint">
                         <div>✔ Luego el agente podrá firmar este refuerzo desde <b>portal_agente.html</b>.</div>
@@ -580,7 +618,7 @@
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button class="btn-secondary" type="button" id="btnLimpiar">Limpiar</button>
-                        <button class="btn" type="button" id="btnGuardar" onclick="guardarRefuerzo()">💾 Guardar refuerzo</button>
+                        <button class="btn" type="button" id="btnGuardar">💾 Guardar refuerzo</button>
                     </div>
                 </div>
             </section>
@@ -597,6 +635,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="metrics-row">
                     <div class="metric-pill">
                         Total refuerzos:
@@ -611,6 +650,7 @@
                         <span class="metric-value" id="metricPendientes">0</span>
                     </div>
                 </div>
+
                 <div class="filters-row">
                     <input id="searchTabla" class="search-input" placeholder="Buscar por agente, tema, tipo, público…">
                     <select id="filtroEstado" class="compact">
@@ -620,6 +660,7 @@
                         <option value="incompleto">Datos incompletos</option>
                     </select>
                 </div>
+
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -635,6 +676,7 @@
                         <tbody id="tablaRefuerzos"></tbody>
                     </table>
                 </div>
+
                 <div style="margin-top:8px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;">
                     <span class="badge-inline">
                         <span class="badge-dot-success"></span> Firmado por agente
@@ -657,32 +699,29 @@
 
     <!-- ========== FIREBASE + LÓGICA ========== -->
     <script type="module">
-        import {
-            initializeApp
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import {
             getFirestore,
             collection,
             getDocs,
             addDoc,
-            doc,
-            updateDoc,
             serverTimestamp
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         /* ----------------- FIREBASE CONFIG ----------------- */
-       const firebaseConfig = {
-          apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
-          authDomain: "feedback-app-ac30e.firebaseapp.com",
-          projectId: "feedback-app-ac30e",
-          storageBucket: "feedback-app-ac30e.firebasestorage.app",
-          messagingSenderId: "512179147778",
-          appId: "1:512179147778:web:795e4a8b177fe766d3431b",
-          measurementId: "G-X6MP0FFH9P"
+        const firebaseConfig = {
+            apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
+            authDomain: "feedback-app-ac30e.firebaseapp.com",
+            projectId: "feedback-app-ac30e",
+            storageBucket: "feedback-app-ac30e.firebasestorage.app",
+            messagingSenderId: "512179147778",
+            appId: "1:512179147778:web:795e4a8b177fe766d3431b",
+            measurementId: "G-X6MP0FFH9P"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
         const colRefuerzos = collection(db, "refuerzos_calidad"); // colección de refuerzos
         const colAsesores = collection(db, "asesores");           // colección de asesores
 
@@ -709,52 +748,59 @@
             inputFecha.value = `${yyyy}-${mm}-${dd}`;
         }
 
-        /* ----------------- CARGAR ASESORES ----------------- */
+        /* ----------------- CARGAR ASESORES (CHIPS) ----------------- */
         async function cargarAsesores() {
-            const cont = document.getElementById("asesoresLista");
-        
+            const cont = document.getElementById("asesoresContainer");
+
             try {
                 setLoading(true, "Cargando asesores…");
-        
+
                 const snap = await getDocs(colAsesores);
                 const lista = snap.docs.map(d => ({
                     id: d.id,
                     ...d.data()
                 }));
-        
+
                 lista.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
-        
+
                 asesoresMap = {};
                 cont.innerHTML = "";
-        
+
                 if (!lista.length) {
-                    cont.innerHTML = "<div>No hay asesores registrados</div>";
+                    cont.innerHTML = "<div class='hint'>No hay asesores registrados</div>";
                     return;
                 }
-        
+
                 lista.forEach(a => {
                     const id = a.id;
                     const nombre = a.nombre || "(sin nombre)";
                     const gc = a.GC || a.gc || "";
-        
+
                     asesoresMap[id] = { nombre, gc };
-        
-                    cont.innerHTML += `
-                        <label class="checkbox-item">
-                            <input type="checkbox" value="${id}">
-                            <span>${nombre} ${gc ? "— " + gc : ""}</span>
-                        </label>
+
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "asesor-chip";
+                    btn.dataset.id = id;
+                    btn.innerHTML = `
+                        <span class="asesor-chip-name">${nombre}</span>
+                        <span class="asesor-chip-gc">${gc ? gc : "Sin GC"}</span>
                     `;
+                    btn.addEventListener("click", () => {
+                        btn.classList.toggle("selected");
+                    });
+                    cont.appendChild(btn);
                 });
-        
+
             } catch (e) {
                 console.error(e);
-                cont.innerHTML = "<div>Error cargando asesores</div>";
+                cont.innerHTML = "<div class='hint'>Error cargando asesores</div>";
                 alert("Error cargando asesores: " + e.message);
             } finally {
                 setLoading(false);
             }
         }
+
         /* ----------------- CARGAR REFUERZOS ----------------- */
         async function cargarRefuerzos() {
             setLoading(true, "Cargando refuerzos…");
@@ -858,29 +904,29 @@
                     : "Pendiente";
 
                 return `
-        <tr>
-            <td>${fechaStr}</td>
-            <td>
-                <div style="font-weight:500">${r.tema || ""}</div>
-                <div style="font-size:11px;color:var(--muted);">${r.tipo || ""}</div>
-            </td>
-            <td>${r.publico || ""}</td>
-            <td style="font-size:11px;">
-                <div><b>${firmaNombre}</b></div>
-                <div style="color:var(--muted);">${firmaFecha}</div>
-            </td>
-            <td>
-                <span class="estado-pill ${estadoClase}">
-                    ${estadoTexto}
-                </span>
-            </td>
-            <td>
-                <div class="actions">
-                    <button class="btn-xs primary" onclick="verPdf('${r.id}')">📄 Ver PDF</button>
-                    <button class="btn-xs success" onclick="copiarLinkFirma('${r.id}')">✍️ Link firma</button>
-                </div>
-            </td>
-        </tr>`;
+                    <tr>
+                        <td>${fechaStr}</td>
+                        <td>
+                            <div style="font-weight:500">${r.tema || ""}</div>
+                            <div style="font-size:11px;color:var(--muted);">${r.tipo || ""}</div>
+                        </td>
+                        <td>${r.publico || ""}</td>
+                        <td style="font-size:11px;">
+                            <div><b>${firmaNombre}</b></div>
+                            <div style="color:var(--muted);">${firmaFecha}</div>
+                        </td>
+                        <td>
+                            <span class="estado-pill ${estadoClase}">
+                                ${estadoTexto}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn-xs primary" onclick="window.verPdf && window.verPdf('${r.id}')">📄 Ver PDF</button>
+                                <button class="btn-xs success" onclick="window.copiarLinkFirma && window.copiarLinkFirma('${r.id}')">✍️ Link firma</button>
+                            </div>
+                        </td>
+                    </tr>`;
             }).join("");
         }
 
@@ -894,11 +940,13 @@
             const objetivo = document.getElementById("objetivo").value.trim();
             const detalle = document.getElementById("detalle").value.trim();
 
-            // asesores seleccionados
-            const checks = Array.from(document.querySelectorAll("#asesoresLista input[type='checkbox']:checked"))
-                    .map(ch => ch.value);
-            const asesoresSeleccionados = checks
-                .map(id => {
+            // asesores seleccionados desde chips
+            const chipsSeleccionados = Array.from(
+                document.querySelectorAll(".asesor-chip.selected")
+            );
+            const asesoresSeleccionados = chipsSeleccionados
+                .map(chip => {
+                    const id = chip.dataset.id;
                     const info = asesoresMap[id];
                     if (!info) return null;
                     return {
@@ -908,7 +956,7 @@
                     };
                 })
                 .filter(x => x);
-            
+
             const publico = asesoresSeleccionados.map(a => a.nombre).join(", ");
 
             if (!fechaInput || !tipo || !tema || !objetivo) {
@@ -917,14 +965,13 @@
             }
 
             const fechaRefuerzo = new Date(fechaInput + "T00:00:00");
-
             const data = {
                 fechaRefuerzo: fechaRefuerzo.toISOString(),
                 tipo,
                 tema,
                 canal,
-                publico,               // cadena visible
-                asesores: asesoresSeleccionados, // array de objetos
+                publico,                          // cadena visible
+                asesores: asesoresSeleccionados,  // array de objetos
                 responsable,
                 objetivo,
                 detalle,
@@ -957,10 +1004,9 @@
             document.getElementById("canal").value = "";
             document.getElementById("objetivo").value = "";
             document.getElementById("detalle").value = "";
-            const select = document.getElementById("asesoresSelect");
-            if (select) {
-                Array.from(select.options).forEach(o => (o.selected = false));
-            }
+            // deseleccionar todos los chips
+            document.querySelectorAll(".asesor-chip.selected")
+                .forEach(ch => ch.classList.remove("selected"));
         }
 
         /* ----------------- ACCIONES POR REGISTRO ----------------- */
@@ -1028,6 +1074,10 @@
         setToday();
         await cargarAsesores();
         await cargarRefuerzos();
+
+        // conectar botón Guardar y Limpiar
+        document.getElementById("btnGuardar").addEventListener("click", guardarRefuerzo);
+        document.getElementById("btnLimpiar").addEventListener("click", limpiarFormulario);
     </script>
 </body>
 </html>

@@ -1207,32 +1207,41 @@
         window.cerrarModalPdf = function() {
             document.getElementById("pdfModal").style.display = "none"
         };
-        window.descargarPdfActual = async function() {
-            if (!pdfActualId) return alert("No hay refuerzo seleccionado");
-            const element = document.getElementById("pdfContentRefuerzo");
-            const imgs = element.querySelectorAll("img");
-            await Promise.all(Array.from(imgs).map(img => new Promise(resolve => {
-                if (img.complete) resolve();
-                else img.onload = img.onerror = resolve
-            })));
-            const opt = {
-                margin: [10, 10, 10, 10],
-                filename: `refuerzo_${pdfActualId}.pdf`,
-                html2canvas: {
-                    scale: 2,
-                    useCORS: !0,
-                    allowTaint: !0,
-                    imageTimeout: 15000,
-                    backgroundColor: "#ffffff"
-                },
-                jsPDF: {
-                    unit: "mm",
-                    format: "a4",
-                    orientation: "portrait"
-                }
-            };
-            html2pdf().set(opt).from(element).save()
-        };
+window.descargarPdfActual = async function() {
+    if (!pdfActualId) return alert("No hay refuerzo seleccionado");
+
+    const original = document.getElementById("pdfContentRefuerzo");
+
+    // --- Crear copia en un contenedor fuera del modal ---
+    const temp = original.cloneNode(true);
+    temp.style.position = "absolute";
+    temp.style.top = "-9999px";
+    temp.style.left = "-9999px";
+    temp.style.background = "#ffffff";
+    document.body.appendChild(temp);
+
+    // Esperar carga de imágenes
+    const imgs = temp.querySelectorAll("img");
+    await Promise.all(
+        Array.from(imgs).map(img => new Promise(resolve => {
+            if (img.complete) resolve();
+            else img.onload = img.onerror = resolve;
+        }))
+    );
+
+    const opt = {
+        margin: 10,
+        filename: `refuerzo_${pdfActualId}.pdf`,
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    };
+
+    await html2pdf().set(opt).from(temp).save();
+
+    // Eliminar copia temporal
+    temp.remove();
+};
+
         window.verPdf = function(id) {
             abrirModalPdf(id)
         };

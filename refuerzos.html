@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Refuerzos & Capacitaciones – Calidad FE</title>
@@ -23,6 +24,7 @@
             --danger: #dc2626;
             --chip-bg: #e5f0ff;
         }
+
         body.dark {
             --bg: #020617;
             --bg-soft: #020617;
@@ -35,17 +37,20 @@
             --shadow: 0 22px 60px rgba(0, 0, 0, 0.85);
             --chip-bg: #0f172a;
         }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0
         }
+
         body {
             font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
             background: radial-gradient(circle at top, rgba(37, 99, 235, 0.12), transparent 55%), var(--bg);
             color: var(--text);
             min-height: 100vh;
         }
+
         /* HEADER */
         header {
             backdrop-filter: blur(14px);
@@ -60,11 +65,13 @@
             top: 0;
             z-index: 20;
         }
+
         .header-left {
             display: flex;
             flex-direction: column;
             gap: 4px;
         }
+
         .header-title {
             font-size: 18px;
             font-weight: 600;
@@ -72,6 +79,7 @@
             align-items: center;
             gap: 10px;
         }
+
         .header-title span.logo {
             width: 26px;
             height: 26px;
@@ -84,16 +92,19 @@
             font-weight: 700;
             color: #0b1120;
         }
+
         .header-sub {
             font-size: 12px;
             color: #9ca3af;
         }
+
         .header-meta {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
             margin-top: 4px;
         }
+
         .pill {
             font-size: 11px;
             padding: 2px 8px;
@@ -104,17 +115,20 @@
             align-items: center;
             gap: 6px;
         }
+
         .pill-dot {
             width: 6px;
             height: 6px;
             border-radius: 999px;
             background: #22c55e;
         }
+
         .header-right {
             display: flex;
             align-items: center;
             gap: 8px;
         }
+
         .btn-sm {
             border: none;
             border-radius: 999px;
@@ -128,11 +142,13 @@
             gap: 6px;
             border: 1px solid rgba(148, 163, 184, 0.6);
         }
+
         .btn-primary-sm {
             background: linear-gradient(135deg, var(--accent-soft), #0ea5e9);
             border: none;
             color: #f9fafb;
         }
+
         .btn-toggle {
             border: none;
             border-radius: 999px;
@@ -146,23 +162,27 @@
             gap: 6px;
             border: 1px solid rgba(148, 163, 184, 0.6);
         }
+
         /* LAYOUT */
         .container {
             max-width: 1180px;
             margin: 0 auto;
             padding: 18px 16px 32px;
         }
+
         .layout-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr);
-            gap: 18px;
-            margin-top: 12px;
+            grid-template-columns: minmax(1fr) minmax(1fr);
+            gap: 10px;
+            margin-top: 5px;
         }
+
         @media(max-width:960px) {
             .layout-grid {
                 grid-template-columns: 1fr;
             }
         }
+
         /* CARD GENÉRICA */
         .card {
             background: var(--card);
@@ -173,6 +193,7 @@
             position: relative;
             overflow: hidden;
         }
+
         .card-header {
             display: flex;
             justify-content: space-between;
@@ -180,15 +201,18 @@
             gap: 8px;
             margin-bottom: 12px;
         }
+
         .card-title {
             font-size: 15px;
             font-weight: 600;
         }
+
         .card-sub {
             font-size: 12px;
             color: var(--muted);
             margin-top: 2px;
         }
+
         .chip {
             font-size: 11px;
             padding: 3px 8px;
@@ -197,6 +221,7 @@
             color: var(--accent-soft);
             border: 1px solid rgba(148, 163, 184, 0.4);
         }
+
         /* FORM */
         .form-grid {
             display: grid;
@@ -204,12 +229,14 @@
             gap: 10px 12px;
             margin-top: 6px;
         }
-        label {
+
+        .label {
             font-size: 12px;
             font-weight: 500;
             margin-bottom: 4px;
             display: block;
         }
+
         input,
         select,
         textarea {
@@ -224,6 +251,7 @@
             resize: vertical;
             min-height: 38px;
         }
+
         input:focus,
         select:focus,
         textarea:focus {
@@ -231,6 +259,7 @@
             box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.40);
             background: var(--card);
         }
+
         .form-footer {
             margin-top: 12px;
             display: flex;
@@ -239,10 +268,12 @@
             gap: 10px;
             flex-wrap: wrap;
         }
+
         .hint {
             font-size: 11px;
             color: var(--muted);
         }
+
         .btn {
             border: none;
             border-radius: 999px;
@@ -257,15 +288,18 @@
             box-shadow: 0 14px 35px rgba(37, 99, 235, 0.42);
             transition: .15s;
         }
+
         .btn:hover {
             transform: translateY(-1px);
         }
+
         .btn-secondary {
             background: transparent;
             color: var(--muted);
             border: 1px dashed var(--border);
             box-shadow: none;
         }
+
         .badge-inline {
             font-size: 11px;
             padding: 3px 7px;
@@ -276,12 +310,14 @@
             align-items: center;
             gap: 4px;
         }
+
         .badge-dot-success {
             width: 7px;
             height: 7px;
             border-radius: 999px;
             background: var(--success);
         }
+
         .badge-dot-warning {
             width: 7px;
             height: 7px;
@@ -291,27 +327,31 @@
 
         /* CHIPS DE ASESORES — TARJETAS RECTANGULARES ELEGANTES, IZQUIERDA */
         .chips-wrapper {
-            grid-column: 1 / -1; /* ocupa todo el ancho de la grid del formulario */
+            grid-column: 1 / -1;
             display: flex;
             flex-direction: column;
             gap: 6px;
             margin-top: 4px;
         }
+
         .chips-label-row {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
             gap: 8px;
         }
+
         .chips-label-row .hint {
             font-size: 11px;
         }
+
         .chips-container {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            justify-content: flex-start; /* pegado a la izquierda */
+            justify-content: flex-start;
         }
+
         .asesor-chip {
             border: 1px solid var(--border);
             background: var(--bg-soft);
@@ -329,18 +369,22 @@
             transition: 0.15s ease;
             font-size: 13px;
         }
+
         .asesor-chip:hover {
             transform: translateY(-1px);
             box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
         }
+
         .asesor-chip.selected {
             border-color: var(--accent-soft);
             background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(56, 189, 248, 0.08));
             box-shadow: 0 16px 40px rgba(37, 99, 235, 0.35);
         }
+
         .asesor-chip-name {
             font-weight: 600;
         }
+
         .asesor-chip-gc {
             font-size: 11px;
             color: var(--muted);
@@ -353,6 +397,7 @@
             gap: 6px;
             margin-bottom: 10px;
         }
+
         .metric-pill {
             font-size: 11px;
             padding: 5px 9px;
@@ -363,23 +408,28 @@
             align-items: center;
             gap: 6px;
         }
+
         .metric-value {
             font-weight: 600;
         }
+
         .filters-row {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin-bottom: 8px;
         }
+
         .filters-row>* {
             flex: 1;
             min-width: 150px;
         }
+
         .filters-row .compact {
             max-width: 160px;
             flex: 0 0 auto;
         }
+
         .search-input {
             padding: 8px 11px;
             border-radius: 999px;
@@ -387,6 +437,7 @@
             background: var(--bg);
             font-size: 13px;
         }
+
         /* TABLE */
         .table-wrapper {
             margin-top: 6px;
@@ -395,11 +446,13 @@
             overflow: hidden;
             background: linear-gradient(to bottom, rgba(148, 163, 184, 0.06), transparent);
         }
-        table {
+
+        .table {
             width: 100%;
             border-collapse: collapse;
             font-size: 12px;
         }
+
         th,
         td {
             padding: 8px 9px;
@@ -407,16 +460,19 @@
             text-align: left;
             vertical-align: top;
         }
-        th {
+
+        .th {
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: .05em;
             color: var(--muted);
             background: rgba(15, 23, 42, 0.03);
         }
+
         tr:hover td {
             background: rgba(148, 163, 184, 0.06);
         }
+
         .estado-pill {
             font-size: 11px;
             padding: 3px 7px;
@@ -425,26 +481,31 @@
             align-items: center;
             gap: 5px;
         }
+
         .estado-ok {
             background: rgba(22, 163, 74, 0.08);
             color: var(--success);
             border: 1px solid rgba(22, 163, 74, 0.30);
         }
+
         .estado-pend {
             background: rgba(249, 115, 22, 0.08);
             color: var(--warning);
             border: 1px solid rgba(249, 115, 22, 0.30);
         }
+
         .estado-incomp {
             background: rgba(220, 38, 38, 0.08);
             color: var(--danger);
             border: 1px solid rgba(220, 38, 38, 0.30);
         }
+
         .actions {
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
         }
+
         .btn-xs {
             padding: 4px 8px;
             font-size: 11px;
@@ -454,13 +515,16 @@
             background: rgba(148, 163, 184, 0.16);
             color: var(--text);
         }
+
         .btn-xs.primary {
             background: rgba(37, 99, 235, 0.18);
         }
+
         .btn-xs.success {
             background: rgba(22, 163, 74, 0.16);
             color: var(--success);
         }
+
         /* OVERLAY CARGA */
         #loadingOverlay {
             position: fixed;
@@ -475,6 +539,7 @@
             flex-direction: column;
             gap: 10px;
         }
+
         .loader-bar {
             width: 190px;
             height: 4px;
@@ -482,6 +547,7 @@
             background: rgba(148, 163, 184, 0.45);
             overflow: hidden;
         }
+
         .loader-bar-inner {
             width: 40%;
             height: 100%;
@@ -489,30 +555,306 @@
             background: linear-gradient(90deg, #38bdf8, #22c55e);
             animation: loading 1.05s infinite;
         }
+
         @keyframes loading {
             0% {
                 transform: translateX(-100%);
             }
+
             50% {
                 transform: translateX(30%);
             }
+
             100% {
                 transform: translateX(200%);
             }
         }
+
         @media(max-width:720px) {
             header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 8px;
             }
+
             .header-right {
                 align-self: stretch;
                 justify-content: flex-end;
             }
         }
+
+        /* ========== MODAL PDF (vista previa) ========== */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            box-shadow: 0 22px 60px rgba(15, 23, 42, 0.85);
+            max-width: 900px;
+            width: 96%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(to right, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
+            color: #e5e7eb;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px 6px;
+            border-radius: 999px;
+        }
+
+        .modal-close:hover {
+            background: rgba(148, 163, 184, 0.16);
+            color: #e5e7eb;
+        }
+
+        .modal-body {
+            padding: 12px;
+            flex: 1;
+            background: #111827;
+            overflow: auto;
+        }
+
+        .modal-footer {
+            padding: 10px 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            background: var(--bg-soft);
+        }
+
+        /* CONTENIDO PDF (tipo hoja) */
+        .pdf-content {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 8px;
+            background: #ffffff;
+            color: #111827;
+            padding: 24px 32px;
+            border-radius: 12px;
+            box-shadow: 0 0 0 1px #e5e7eb;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .pdf-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .pdf-title-block {
+            flex: 1;
+        }
+
+        .pdf-main-title {
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .pdf-subtitle {
+            font-size: 12px;
+            color: #4b5563;
+            margin-top: 2px;
+        }
+
+        .pdf-badge-fe {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            color: #2563eb;
+        }
+
+        .pdf-section-title {
+            font-weight: 600;
+            margin-top: 14px;
+            margin-bottom: 4px;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .pdf-section-body {
+            margin-left: 4px;
+            font-size: 13px;
+        }
+
+        .pdf-field-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 2px 0;
+        }
+
+        .pdf-field {
+            font-size: 13px;
+        }
+
+        .pdf-field b {
+            font-weight: 600;
+        }
+
+        .pdf-objective-box,
+        .pdf-detail-box {
+            margin-top: 4px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+
+        /* FIRMAS EN PDF */
+        .pdf-signatures {
+            margin-top: 24px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .pdf-sign-resp {
+            flex: 0 0 220px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .pdf-sign-resp-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .pdf-sign-resp img {
+            max-width: 200px;
+            max-height: 70px;
+            object-fit: contain;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+        }
+
+        .pdf-sign-resp-line {
+            border-top: 1px solid #111827;
+            margin: 10px 0 4px;
+        }
+
+        .pdf-sign-resp-role {
+            color: #6b7280;
+        }
+
+        .pdf-sign-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 10px;
+        }
+
+        .pdf-sign-card {
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            padding: 6px 8px;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .pdf-sign-card-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            align-items: baseline;
+        }
+
+        .pdf-sign-name {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .pdf-sign-gc {
+            color: #6b7280;
+            font-size: 10px;
+        }
+
+        .pdf-sign-status {
+            padding: 2px 6px;
+            border-radius: 999px;
+            font-size: 10px;
+            border: 1px solid #e5e7eb;
+            background: #eef2ff;
+            color: #1d4ed8;
+            white-space: nowrap;
+        }
+
+        .pdf-sign-status-ok {
+            background: #dcfce7;
+            border-color: #22c55e;
+            color: #15803d;
+        }
+
+        .pdf-sign-img {
+            margin-top: 2px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .pdf-sign-img img {
+            max-height: 58px;
+            width: 100%;
+            object-fit: contain;
+        }
+
+        .pdf-sign-img-empty {
+            font-size: 10px;
+            color: #9ca3af;
+            border-style: dashed;
+            background: #f3f4f6;
+        }
+
+        .pdf-sign-date {
+            margin-top: 2px;
+            font-size: 10px;
+            color: #6b7280;
+        }
     </style>
 </head>
+
 <body>
     <header>
         <div class="header-left">
@@ -537,7 +879,6 @@
             <button id="themeToggle" class="btn-toggle">🌙 Modo oscuro</button>
         </div>
     </header>
-
     <div class="container">
         <div class="layout-grid">
             <!-- =========================
@@ -553,7 +894,6 @@
                     </div>
                     <span class="chip">Solo Calidad & Formación</span>
                 </div>
-
                 <div class="form-grid">
                     <div>
                         <label>Fecha del refuerzo</label>
@@ -584,7 +924,6 @@
                             <option>Otro</option>
                         </select>
                     </div>
-
                     <!-- === CHIPS / TARJETAS DE ASESORES (COLECCIÓN asesores) === -->
                     <div class="chips-wrapper">
                         <div class="chips-label-row">
@@ -595,13 +934,11 @@
                             <!-- Se llena con tarjetas desde JS -->
                         </div>
                     </div>
-
                     <div>
                         <label>Responsable</label>
                         <input id="responsable" value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación" readonly>
                     </div>
                 </div>
-
                 <div style="margin-top:10px;">
                     <label>Objetivo del refuerzo</label>
                     <textarea id="objetivo" rows="2" placeholder="Ej. Reforzar cumplimiento SBS en fase de ofrecimiento, reducir errores de cierre, etc."></textarea>
@@ -610,11 +947,10 @@
                     <label>Detalle / acuerdos clave</label>
                     <textarea id="detalle" rows="3" placeholder="Puntos específicos tratados, compromisos, indicadores a monitorear, etc."></textarea>
                 </div>
-
                 <div class="form-footer">
                     <div class="hint">
                         <div>✔ Luego el agente podrá firmar este refuerzo desde <b>portal_agente.html</b>.</div>
-                        <div>✔ El PDF se genera con el formato de <b>visualizacion_feedback.html</b>.</div>
+                        <div>✔ El PDF se genera desde aquí con las firmas de Alex + agentes.</div>
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button class="btn-secondary" type="button" id="btnLimpiar">Limpiar</button>
@@ -622,7 +958,6 @@
                     </div>
                 </div>
             </section>
-
             <!-- =========================
                  CARD LISTADO / ESTADO
             ========================== -->
@@ -635,7 +970,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="metrics-row">
                     <div class="metric-pill">
                         Total refuerzos:
@@ -650,7 +984,6 @@
                         <span class="metric-value" id="metricPendientes">0</span>
                     </div>
                 </div>
-
                 <div class="filters-row">
                     <input id="searchTabla" class="search-input" placeholder="Buscar por agente, tema, tipo, público…">
                     <select id="filtroEstado" class="compact">
@@ -660,7 +993,6 @@
                         <option value="incompleto">Datos incompletos</option>
                     </select>
                 </div>
-
                 <div class="table-wrapper">
                     <table>
                         <thead>
@@ -676,7 +1008,6 @@
                         <tbody id="tablaRefuerzos"></tbody>
                     </table>
                 </div>
-
                 <div style="margin-top:8px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;">
                     <span class="badge-inline">
                         <span class="badge-dot-success"></span> Firmado por agente
@@ -697,15 +1028,41 @@
         </div>
     </div>
 
+    <!-- MODAL PDF -->
+    <div id="pdfModal" class="modal-backdrop" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="pdfModalTitle">Vista previa del refuerzo</span>
+                <button class="modal-close" onclick="cerrarModalPdf()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="pdfContentRefuerzo" class="pdf-content">
+                    <!-- Se rellena desde JS -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" type="button" onclick="descargarPdfActual()">⬇ Descargar PDF</button>
+                <button class="btn-secondary" type="button" onclick="cerrarModalPdf()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIBRERÍA PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+
     <!-- ========== FIREBASE + LÓGICA ========== -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import {
+            initializeApp
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import {
             getFirestore,
             collection,
             getDocs,
             addDoc,
-            serverTimestamp
+            serverTimestamp,
+            doc,
+            getDoc
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         /* ----------------- FIREBASE CONFIG ----------------- */
@@ -718,18 +1075,21 @@
             appId: "1:512179147778:web:795e4a8b177fe766d3431b",
             measurementId: "G-X6MP0FFH9P"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const colRefuerzos = collection(db, "refuerzos_calidad");
+        const colAsesores = collection(db, "asesores");
 
-        const colRefuerzos = collection(db, "refuerzos_calidad"); // colección de refuerzos
-        const colAsesores = collection(db, "asesores");           // colección de asesores
+        /* Firma fija de Alex (igual que en portal_agente) */
+        const FIRMA_ALEX_URL =
+            "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2Ffirma_alex.png?alt=media&token=5081e2c6-8e5e-46e6-a340-c13cace95864";
 
         /* ----------------- ESTADO ----------------- */
         let refuerzosCache = [];
         let filtroTexto = "";
         let filtroEstado = "todos";
         let asesoresMap = {}; // { id: { nombre, gc } }
+        let pdfActualId = null;
 
         /* ----------------- UTILIDADES UI ----------------- */
         function setLoading(show, text = "Procesando…") {
@@ -748,36 +1108,52 @@
             inputFecha.value = `${yyyy}-${mm}-${dd}`;
         }
 
+        function formatearFechaLarga(fechaISO) {
+            if (!fechaISO) return "-";
+            const f = new Date(fechaISO);
+            return f.toLocaleDateString("es-PE", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            });
+        }
+
+        function formatearFechaCorta(fechaISO) {
+            if (!fechaISO) return "-";
+            return new Date(fechaISO).toLocaleDateString("es-PE");
+        }
+
+        function formatearFechaHora(fechaISO) {
+            if (!fechaISO) return "";
+            return new Date(fechaISO).toLocaleString("es-PE");
+        }
+
         /* ----------------- CARGAR ASESORES (CHIPS) ----------------- */
         async function cargarAsesores() {
             const cont = document.getElementById("asesoresContainer");
-
             try {
                 setLoading(true, "Cargando asesores…");
-
                 const snap = await getDocs(colAsesores);
                 const lista = snap.docs.map(d => ({
                     id: d.id,
                     ...d.data()
                 }));
-
                 lista.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
-
                 asesoresMap = {};
                 cont.innerHTML = "";
-
                 if (!lista.length) {
                     cont.innerHTML = "<div class='hint'>No hay asesores registrados</div>";
                     return;
                 }
-
                 lista.forEach(a => {
                     const id = a.id;
                     const nombre = a.nombre || "(sin nombre)";
                     const gc = a.GC || a.gc || "";
-
-                    asesoresMap[id] = { nombre, gc };
-
+                    asesoresMap[id] = {
+                        nombre,
+                        gc
+                    };
                     const btn = document.createElement("button");
                     btn.type = "button";
                     btn.className = "asesor-chip";
@@ -791,7 +1167,6 @@
                     });
                     cont.appendChild(btn);
                 });
-
             } catch (e) {
                 console.error(e);
                 cont.innerHTML = "<div class='hint'>Error cargando asesores</div>";
@@ -825,6 +1200,7 @@
             }
         }
 
+        /* ----------------- LÓGICA DE COMPLETITUD / FILTRO ----------------- */
         function esIncompleto(r) {
             return !r.fechaRefuerzo || !r.tipo || !r.tema || !r.publico || !r.objetivo;
         }
@@ -832,7 +1208,6 @@
         function filtrarLista() {
             const q = (filtroTexto || "").trim().toLowerCase();
             let lista = [...refuerzosCache];
-
             if (q) {
                 lista = lista.filter(r => {
                     const join = [
@@ -847,7 +1222,6 @@
                     return join.includes(q);
                 });
             }
-
             if (filtroEstado !== "todos") {
                 lista = lista.filter(r => {
                     const incompleto = esIncompleto(r);
@@ -874,22 +1248,18 @@
             const tbody = document.getElementById("tablaRefuerzos");
             const lista = filtrarLista();
             actualizarMetricas();
-
             if (!lista.length) {
                 tbody.innerHTML = "<tr><td colspan='6'>Sin refuerzos registrados con los criterios actuales.</td></tr>";
                 return;
             }
-
             tbody.innerHTML = lista.map(r => {
-                const fechaStr = r.fechaRefuerzo
-                    ? new Date(r.fechaRefuerzo).toLocaleDateString("es-PE")
-                    : "-";
+                const fechaStr = r.fechaRefuerzo ?
+                    new Date(r.fechaRefuerzo).toLocaleDateString("es-PE") :
+                    "-";
                 const incompleto = esIncompleto(r);
                 const firmado = !!r.firmado;
-
                 let estadoClase = "estado-pend";
                 let estadoTexto = "Pendiente de firma";
-
                 if (incompleto) {
                     estadoClase = "estado-incomp";
                     estadoTexto = "Datos incompletos";
@@ -898,10 +1268,18 @@
                     estadoTexto = "Firmado por agente";
                 }
 
-                const firmaNombre = r.firmaNombre || "—";
-                const firmaFecha = r.firmaFecha
-                    ? new Date(r.firmaFecha).toLocaleString("es-PE")
-                    : "Pendiente";
+                // Resumen simple de firmas: cuántas tarjetas tienen url
+                const asesoresArr = Array.isArray(r.asesores) ? r.asesores : [];
+                const firmasArr = Array.isArray(r.firmas) ? r.firmas : [];
+                const totalA = asesoresArr.length;
+                const firmadas = firmasArr.filter(f => f && f.url).length;
+                const resumenFirmas = totalA ?
+                    `${firmadas}/${totalA} firmas` :
+                    (r.firmaNombre || "—");
+
+                const firmaFecha = r.firmaFecha ?
+                    new Date(r.firmaFecha).toLocaleString("es-PE") :
+                    (totalA ? "Pendiente" : "");
 
                 return `
                     <tr>
@@ -912,7 +1290,7 @@
                         </td>
                         <td>${r.publico || ""}</td>
                         <td style="font-size:11px;">
-                            <div><b>${firmaNombre}</b></div>
+                            <div><b>${resumenFirmas}</b></div>
                             <div style="color:var(--muted);">${firmaFecha}</div>
                         </td>
                         <td>
@@ -922,8 +1300,8 @@
                         </td>
                         <td>
                             <div class="actions">
-                                <button class="btn-xs primary" onclick="window.verPdf && window.verPdf('${r.id}')">📄 Ver PDF</button>
-                                <button class="btn-xs success" onclick="window.copiarLinkFirma && window.copiarLinkFirma('${r.id}')">✍️ Link firma</button>
+                                <button class="btn-xs primary" onclick="verPdf('${r.id}')">📄 Ver PDF</button>
+                                <button class="btn-xs success" onclick="copiarLinkFirma('${r.id}')">✍️ Link firma</button>
                             </div>
                         </td>
                     </tr>`;
@@ -940,7 +1318,6 @@
             const objetivo = document.getElementById("objetivo").value.trim();
             const detalle = document.getElementById("detalle").value.trim();
 
-            // asesores seleccionados desde chips
             const chipsSeleccionados = Array.from(
                 document.querySelectorAll(".asesor-chip.selected")
             );
@@ -965,21 +1342,36 @@
             }
 
             const fechaRefuerzo = new Date(fechaInput + "T00:00:00");
+
+            // Estructura compatible con portal_agente:
+            // portal_agente.html deberá actualizar el array "firmas"
+            // agregando { asesorId, nombre, url, fechaFirma }
+            const firmasIniciales = asesoresSeleccionados.map(a => ({
+                asesorId: a.asesorId,
+                nombre: a.nombre,
+                gc: a.gc || "",
+                url: "", // URL de la firma (cuando el agente firme)
+                fechaFirma: null, // fecha de firma
+                compromiso: "" // 🔹 aquí se guardará el compromiso del agente
+            }));
+
             const data = {
                 fechaRefuerzo: fechaRefuerzo.toISOString(),
                 tipo,
                 tema,
                 canal,
-                publico,                          // cadena visible
-                asesores: asesoresSeleccionados,  // array de objetos
+                publico,
+                asesores: asesoresSeleccionados,
                 responsable,
                 objetivo,
                 detalle,
-                // Campos para firma (portal_agente.html deberá actualizar estos)
+                // Campos de estado global (puede usarlos portal_agente si quiere marcar COMPLETADO)
                 firmado: false,
                 firmaNombre: "",
                 firmaFecha: null,
-                agenteNombre: "", // opcional: puede llenarse luego
+                agenteNombre: "",
+                // Array de firmas por agente (tarjetas, opción A)
+                firmas: firmasIniciales,
                 createdAt: serverTimestamp()
             };
 
@@ -1004,26 +1396,202 @@
             document.getElementById("canal").value = "";
             document.getElementById("objetivo").value = "";
             document.getElementById("detalle").value = "";
-            // deseleccionar todos los chips
             document.querySelectorAll(".asesor-chip.selected")
                 .forEach(ch => ch.classList.remove("selected"));
         }
 
+        /* ----------------- PDF: RENDER + MODAL ----------------- */
+        function construirTarjetasFirmas(ref) {
+            const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
+            const firmas = Array.isArray(ref.firmas) ? ref.firmas : [];
+
+            if (!asesores.length) {
+                return `<div class="pdf-sign-card">
+                    <div class="pdf-sign-card-header">
+                        <div>
+                            <div class="pdf-sign-name">Sin asesores registrados</div>
+                        </div>
+                    </div>
+                    <div class="pdf-sign-img pdf-sign-img-empty">
+                        No se configuraron asesores en este refuerzo.
+                    </div>
+                </div>`;
+            }
+
+            return asesores.map(a => {
+                const f = firmas.find(x =>
+                    (x.asesorId && x.asesorId === a.asesorId) ||
+                    (x.nombre && x.nombre === a.nombre)
+                ) || {};
+                const tieneFirma = !!f.url;
+                const fechaFirmaTxt = f.fechaFirma ? formatearFechaHora(f.fechaFirma) : "Pendiente";
+                const estadoTxt = tieneFirma ? "Firmado" : "Pendiente";
+                const estadoClass = tieneFirma ? "pdf-sign-status pdf-sign-status-ok" : "pdf-sign-status";
+                const gcTxt = a.gc ? `GC: ${a.gc}` : "";
+
+                return `
+                    <div class="pdf-sign-card">
+                        <div class="pdf-sign-card-header">
+                            <div>
+                                <div class="pdf-sign-name">${a.nombre}</div>
+                                <div class="pdf-sign-gc">${gcTxt}</div>
+                            </div>
+                            <div class="${estadoClass}">${estadoTxt}</div>
+                        </div>
+                        <div class="pdf-sign-img ${tieneFirma ? "" : "pdf-sign-img-empty"}">
+                            ${tieneFirma
+                                ? `<img src="${f.url}" alt="Firma de ${a.nombre}">`
+                                : "Sin firma registrada desde portal_agente.html"}
+                        </div>
+                        <div class="pdf-sign-date">
+                            ${tieneFirma ? "Firmado el: " + fechaFirmaTxt : ""}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderPdfContent(ref) {
+            const cont = document.getElementById("pdfContentRefuerzo");
+            const fechaLarga = formatearFechaLarga(ref.fechaRefuerzo);
+            const fechaCorta = formatearFechaCorta(ref.fechaRefuerzo);
+
+            const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
+            const listadoAsesores = asesores.length ?
+                asesores.map(a => `${a.nombre}${a.gc ? " (" + a.gc + ")" : ""}`).join(", ") :
+                (ref.publico || "—");
+
+            cont.innerHTML = `
+                <div class="pdf-header">
+                    <div class="pdf-title-block">
+                        <div class="pdf-main-title">REFUERZO / CAPACITACIÓN</div>
+                        <div class="pdf-subtitle">
+                            Registro formal de acciones de Calidad & Formación – Financiera Efectiva.
+                        </div>
+                    </div>
+                    <div>
+                        <div class="pdf-badge-fe">Calidad & Formación FE</div>
+                    </div>
+                </div>
+
+                <div class="pdf-section-body">
+                    <div class="pdf-field-row">
+                        <div class="pdf-field"><b>Fecha del refuerzo:</b> ${fechaLarga}</div>
+                        <div class="pdf-field"><b>Fecha corta:</b> ${fechaCorta}</div>
+                    </div>
+                    <div class="pdf-field-row">
+                        <div class="pdf-field"><b>Tipo de acción:</b> ${ref.tipo || "—"}</div>
+                        <div class="pdf-field"><b>Canal:</b> ${ref.canal || "—"}</div>
+                    </div>
+                    <div class="pdf-field-row">
+                        <div class="pdf-field"><b>Tema / título:</b> ${ref.tema || "—"}</div>
+                    </div>
+                    <div class="pdf-field-row" style="margin-top:4px;">
+                        <div class="pdf-field"><b>Responsable:</b> ${ref.responsable || "—"}</div>
+                    </div>
+                </div>
+
+                <div class="pdf-section-title">Asesores capacitados</div>
+                <div class="pdf-section-body">
+                    <div class="pdf-objective-box">
+                        ${listadoAsesores}
+                    </div>
+                </div>
+
+                <div class="pdf-section-title">Objetivo del refuerzo</div>
+                <div class="pdf-section-body">
+                    <div class="pdf-objective-box">
+                        ${ref.objetivo || "—"}
+                    </div>
+                </div>
+
+                <div class="pdf-section-title">Detalle / acuerdos clave</div>
+                <div class="pdf-section-body">
+                    <div class="pdf-detail-box">
+                        ${ref.detalle || "—"}
+                    </div>
+                </div>
+
+                <div class="pdf-section-title">Firmas</div>
+                <div class="pdf-section-body">
+                    <div class="pdf-signatures">
+                        <div class="pdf-sign-resp">
+                            <div class="pdf-sign-resp-title">Responsable de Calidad</div>
+                            <div class="pdf-sign-img">
+                                <img src="${FIRMA_ALEX_URL}" alt="Firma Alex Paolo Nuñez Sulca">
+                            </div>
+                            <div class="pdf-sign-resp-line"></div>
+                            <div><strong>Alex Paolo Nuñez Sulca</strong></div>
+                            <div class="pdf-sign-resp-role">Líder de Calidad y Formación</div>
+                        </div>
+                        <div class="pdf-sign-grid">
+                            ${construirTarjetasFirmas(ref)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function abrirModalPdf(id) {
+            pdfActualId = id;
+            const modal = document.getElementById("pdfModal");
+            const title = document.getElementById("pdfModalTitle");
+
+            const ref = refuerzosCache.find(x => x.id === id);
+            title.textContent = `Vista previa del refuerzo (${id})`;
+
+            if (ref) {
+                renderPdfContent(ref);
+            } else {
+                document.getElementById("pdfContentRefuerzo").innerHTML =
+                    "<p>No se encontró información de este refuerzo.</p>";
+            }
+            modal.style.display = "flex";
+        }
+
+        window.cerrarModalPdf = function() {
+            const modal = document.getElementById("pdfModal");
+            modal.style.display = "none";
+        };
+
+        window.descargarPdfActual = function() {
+            if (!pdfActualId) {
+                alert("No hay un refuerzo seleccionado.");
+                return;
+            }
+            const element = document.getElementById("pdfContentRefuerzo");
+            if (!element) {
+                alert("No se encontró el contenido del refuerzo.");
+                return;
+            }
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: `refuerzo_${pdfActualId}.pdf`,
+                html2canvas: {
+                    scale: 2
+                },
+                jsPDF: {
+                    unit: "mm",
+                    format: "a4",
+                    orientation: "portrait"
+                }
+            };
+            window.html2pdf().set(opt).from(element).save();
+        };
+
         /* ----------------- ACCIONES POR REGISTRO ----------------- */
         window.verPdf = function(id) {
-            // Se asume que visualizacion_feedback.html usa ?id= para renderizar el PDF
-            const url = `visualizacion_feedback.html?id=${id}`;
-            window.open(url, "_blank");
+            abrirModalPdf(id);
         };
 
         window.copiarLinkFirma = async function(id) {
             try {
-                const base = window.location.origin === "null"
-                    ? ""
-                    : window.location.origin;
-                const url = base
-                    ? `${base}/portal_agente.html?id=${id}`
-                    : `portal_agente.html?id=${id}`;
+                const base = window.location.origin === "null" ?
+                    "" :
+                    window.location.origin;
+                const url = base ?
+                    `${base}/portal_agente.html?id=${id}` :
+                    `portal_agente.html?id=${id}`;
                 await navigator.clipboard.writeText(url);
                 alert("Link de firma copiado al portapapeles:\n" + url);
             } catch (e) {
@@ -1037,7 +1605,6 @@
             filtroTexto = e.target.value || "";
             renderTabla();
         });
-
         document.getElementById("filtroEstado").addEventListener("change", e => {
             filtroEstado = e.target.value;
             renderTabla();
@@ -1045,7 +1612,7 @@
 
         /* ----------------- NAVEGACIÓN SUPERIOR ----------------- */
         document.getElementById("btnIrBuscador").onclick = () => {
-            window.location.href = "index.html"; // ajusta si tu buscador tiene otro nombre
+            window.location.href = "index.html";
         };
         document.getElementById("btnIrAdmin").onclick = () => {
             window.location.href = "admin.html";
@@ -1053,6 +1620,7 @@
 
         /* ----------------- MODO OSCURO ----------------- */
         const themeBtn = document.getElementById("themeToggle");
+
         function applyTheme(theme) {
             if (theme === "dark") {
                 document.body.classList.add("dark");
@@ -1074,10 +1642,9 @@
         setToday();
         await cargarAsesores();
         await cargarRefuerzos();
-
-        // conectar botón Guardar y Limpiar
         document.getElementById("btnGuardar").addEventListener("click", guardarRefuerzo);
         document.getElementById("btnLimpiar").addEventListener("click", limpiarFormulario);
     </script>
 </body>
+
 </html>

@@ -1,17 +1,12 @@
 [
   {
-    "origin": ["*"],
-    "method": ["GET", "HEAD", "OPTIONS"],
-    "responseHeader": [
-      "Content-Type",
-      "Access-Control-Allow-Origin",
-      "Access-Control-Allow-Headers",
-      "Access-Control-Allow-Methods",
-      "Access-Control-Expose-Headers",
-      "X-Goog-Meta-Name",
-      "X-Goog-Generate-Upload-Url",
-      "X-Goog-Upload-Protocol"
+    "origin": [
+      "https://proyecto-feedback.vercel.app",
+      "https://proyecto-feedback.vercel.app/",
+      "*"
     ],
+    "responseHeader": ["Content-Type"],
+    "method": ["GET", "HEAD", "OPTIONS"],
     "maxAgeSeconds": 3600
   }
 ]

@@ -1577,23 +1577,22 @@ window.descargarPdfActual = async function () {
     // --- NUEVO: Esperar que todas las imágenes terminen de cargar ---
     const imgs = element.querySelectorAll("img");
     await Promise.all(
-        Array.from(imgs).map(img => {
-            return new Promise(resolve => {
-                if (img.complete) resolve();
-                else img.onload = img.onerror = resolve;
-            });
-        })
+        Array.from(imgs).map(img => new Promise(resolve => {
+            if (img.complete) resolve();
+            else img.onload = img.onerror = resolve;
+        }))
     );
-
     // --- CONFIG MEJORADO ---
     const opt = {
         margin: [10, 10, 10, 10],
         filename: `refuerzo_${pdfActualId}.pdf`,
         html2canvas: {
             scale: 2,
-            useCORS: true,     // ⭐ IMPORTANTE
-            allowTaint: true,  // ⭐ IMPORTANTE
-        },
+            useCORS: true,
+            allowTaint: true,
+            imageTimeout: 15000,
+            backgroundColor: "#ffffff"
+        }
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
     };
 

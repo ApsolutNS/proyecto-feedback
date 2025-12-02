@@ -7,612 +7,719 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 body{
-font-family:Arial,Helvetica,sans-serif;
-background:#0b1120;
-margin:0;
-color:#e2e8f0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#0b1120;
+  margin:0;
+  color:#e2e8f0;
 }
 header{
-background:linear-gradient(90deg,#0f172a,#0f4c81);
-color:#fff;
-padding:16px 24px;
-display:flex;
-align-items:center;
-justify-content:space-between;
-border-bottom:1px solid rgba(148,163,184,0.3);
+  background:linear-gradient(90deg,#0f172a,#0f4c81);
+  color:#fff;
+  padding:16px 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid rgba(148,163,184,0.3);
 }
 header h1{margin:0;font-size:18px}
 header small{color:#cbd5f5}
 .container{
-padding:18px;
-display:grid;
-grid-template-columns:270px 1fr;
-gap:16px;
+  padding:18px;
+  display:grid;
+  grid-template-columns:270px 1fr;
+  gap:16px;
 }
 @media(max-width:900px){
-.container{
-grid-template-columns:1fr;
-}
+  .container{
+    grid-template-columns:1fr;
+  }
 }
 .left{display:flex;flex-direction:column;gap:12px}
 .card{
-background:rgba(15,23,42,0.96);
-border-radius:14px;
-padding:14px 16px;
-box-shadow:0 18px 45px rgba(0,0,0,0.55);
-border:1px solid rgba(148,163,184,0.38);
-backdrop-filter:blur(14px);
+  background:rgba(15,23,42,0.96);
+  border-radius:14px;
+  padding:14px 16px;
+  box-shadow:0 18px 45px rgba(0,0,0,0.55);
+  border:1px solid rgba(148,163,184,0.38);
+  backdrop-filter:blur(14px);
 }
 .card h3{margin:0 0 8px;font-size:15px;color:#e5e7eb}
 .btn{
-padding:12px;
-border-radius:999px;
-border:none;
-cursor:pointer;
-font-weight:700;
-width:100%;
-font-size:13px;
+  padding:12px;
+  border-radius:999px;
+  border:none;
+  cursor:pointer;
+  font-weight:700;
+  width:100%;
+  font-size:13px;
 }
 .btn.primary{
-background:linear-gradient(135deg,#0f4c81,#22c55e);
-color:#fff;
+  background:linear-gradient(135deg,#0f4c81,#22c55e);
+  color:#fff;
 }
 .btn.secondary{
-background:transparent;
-color:#e2e8f0;
-border:1px solid rgba(148,163,184,0.5);
+  background:transparent;
+  color:#e2e8f0;
+  border:1px solid rgba(148,163,184,0.5);
 }
 .btn.secondary:hover{background:rgba(15,23,42,0.9);}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{
-padding:6px 8px;
-border-bottom:1px solid rgba(30,64,175,0.55);
-text-align:left;
+  padding:6px 8px;
+  border-bottom:1px solid rgba(30,64,175,0.55);
+  text-align:left;
 }
 th{
-background:rgba(15,23,42,0.95);
-color:#cbd5f5;
-position:sticky;top:0;
+  background:rgba(15,23,42,0.95);
+  color:#cbd5f5;
+  position:sticky;top:0;
 }
 .weekly{overflow:auto;max-height:260px}
 .small{font-size:13px;color:#94a3b8}
 /* Vista ejecutiva – tarjetas */
 .exec-grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-gap:10px;
-margin-top:6px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:10px;
+  margin-top:6px;
 }
 .exec-card{
-padding:10px 12px;
-border-radius:10px;
-background:radial-gradient(circle at top left,#1e293b,#020617);
-border:1px solid rgba(148,163,184,0.4);
-display:flex;
-flex-direction:column;
-gap:4px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:radial-gradient(circle at top left,#1e293b,#020617);
+  border:1px solid rgba(148,163,184,0.4);
+  display:flex;
+  flex-direction:column;
+  gap:4px;
 }
 .exec-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-font-size:12px;
-color:#cbd5f5;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  color:#cbd5f5;
 }
 .exec-name{font-weight:600}
 .exec-gc{font-size:11px;color:#9ca3af}
 .exec-main{
-display:flex;
-align-items:flex-end;
-justify-content:space-between;
-margin-top:4px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  margin-top:4px;
 }
 .exec-score{
-font-size:26px;
-font-weight:700;
-letter-spacing:0.03em;
+  font-size:26px;
+  font-weight:700;
+  letter-spacing:0.03em;
 }
 .pill{
-display:inline-flex;
-align-items:center;
-gap:4px;
-padding:4px 8px;
-border-radius:999px;
-font-size:11px;
-font-weight:600;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:600;
 }
 .pill.green{
-background:rgba(34,197,94,0.1);
-color:#4ade80;
-border:1px solid rgba(34,197,94,0.5);
+  background:rgba(34,197,94,0.1);
+  color:#4ade80;
+  border:1px solid rgba(34,197,94,0.5);
 }
 .pill.red{
-background:rgba(248,113,113,0.08);
-color:#fb7185;
-border:1px solid rgba(248,113,113,0.5);
+  background:rgba(248,113,113,0.08);
+  color:#fb7185;
+  border:1px solid rgba(248,113,113,0.5);
 }
 .exec-meta{
-font-size:11px;
-color:#94a3b8;
-margin-top:2px;
+  font-size:11px;
+  color:#94a3b8;
+  margin-top:2px;
 }
 .tiny-tag{
-display:inline-block;
-padding:2px 6px;
-border-radius:999px;
-border:1px solid rgba(148,163,184,0.5);
-font-size:10px;
-color:#9ca3af;
-margin-left:4px;
+  display:inline-block;
+  padding:2px 6px;
+  border-radius:999px;
+  border:1px solid rgba(148,163,184,0.5);
+  font-size:10px;
+  color:#9ca3af;
+  margin-left:4px;
 }
 canvas{max-height:220px}
-/* Filtro registradoPor */
+/* Filtros */
 .filters-row{
-display:flex;
-flex-wrap:wrap;
-gap:8px;
-align-items:center;
-margin-bottom:6px;
-font-size:12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  margin-bottom:6px;
+  font-size:12px;
 }
 .filters-row label{
-font-weight:600;
-margin-right:4px;
+  font-weight:600;
+  margin-right:4px;
 }
 .filters-row select{
-padding:5px 8px;
-border-radius:999px;
-border:1px solid rgba(148,163,184,0.7);
-background:#020617;
-color:#e5e7eb;
-font-size:12px;
+  padding:5px 8px;
+  border-radius:999px;
+  border:1px solid rgba(148,163,184,0.7);
+  background:#020617;
+  color:#e5e7eb;
+  font-size:12px;
+}
+.filters-row .month-select{
+  min-width:120px;
+}
+.filters-row .year-select{
+  min-width:90px;
 }
 </style>
 </head>
 <body>
 <header>
-<div>
-<h1>Panel Principal - Calidad & Monitoreo</h1>
-<small>Vista ejecutiva + detalle mensual (con filtro por "Registrado por")</small>
-</div>
-<div style="font-size:13px">Usuario: <strong>Supervisor</strong></div>
+  <div>
+    <h1>Panel Principal - Calidad & Monitoreo</h1>
+    <small>Vista ejecutiva + detalle mensual (con filtros por Mes / Año / Registrado por)</small>
+  </div>
+  <div style="font-size:13px">Usuario: <strong>Supervisor</strong></div>
 </header>
 <div class="container">
-<!-- ASIDE -->
-<aside class="left">
-<div class="card">
-<h3>Accesos rápidos</h3>
-<button class="btn primary" onclick="location.href='registro.html'">1 · Registro</button>
-<button class="btn secondary" onclick="location.href='portal_agente.html'">2 · Portal del Agente</button>
-<button class="btn secondary" onclick="location.href='visualizacion_feedback.html'">3 · Visualización Feedback</button>
+  <!-- ASIDE -->
+  <aside class="left">
+    <div class="card">
+      <h3>Accesos rápidos</h3>
+      <button class="btn primary" onclick="location.href='registro.html'">1 · Registro</button>
+      <button class="btn secondary" onclick="location.href='portal_agente.html'">2 · Portal del Agente</button>
+      <button class="btn secondary" onclick="location.href='visualizacion_feedback.html'">3 · Visualización Feedback</button>
       <button class="btn secondary" onclick="window.open('https://monumental-caramel-7369de.netlify.app/', '_blank')">4 · REGISTRO OBSERVACIONES</button>
       <button class="btn secondary" onclick="window.open('https://monumental-caramel-7369de.netlify.app/', '_blank')">4 · Registro de Obervaciones</button>
       <button class="btn secondary" onclick="window.open('https://efectivasa.sharepoint.com/:x:/r/sites/GrupoEFE-EfeCinco/_layouts/15/Doc.aspx?sourcedoc=%7B2A4A6217-A8E9-4912-86F3-370BB45370B0%7D&file=Reporte%20Monitoreo%20Gescob%20-%202025.xlsx&action=default&mobileredirect=true', '_blank')">5 · Reporte de monitoreos</button>
       <button class="btn secondary" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSc8s049gfvA-O5nWzlDhIlymceNUnIK-rndWV5aSvhwuDf4TA/viewform?pli=1', '_blank')">6 · Ficha de errores</button>
       <button class="btn secondary" onclick="window.open('https://efectivasa.sharepoint.com/sites/GrupoEFE-EfeCinco/Documentos%20compartidos/Forms/AllItems.aspx?id=%2Fsites%2FGrupoEFE%2DEfeCinco%2FDocumentos%20compartidos%2FCalidad%20y%20Formaci%C3%B3n%2FCalidad%2FManual%20de%20Monitoreo%2FManual%20de%20Monitoreo%20v4%2Epdf&parent=%2Fsites%2FGrupoEFE%2DEfeCinco%2FDocumentos%20compartidos%2FCalidad%20y%20Formaci%C3%B3n%2FCalidad%2FManual%20de%20Monitoreo', '_blank')">7 · Manual de calidad</button>
       <button class="btn secondary" onclick="window.open('https://forms.office.com/pages/responsepage.aspx?id=oDcMYc1HMUWfNe-1_TKkEHpWkDIqnlRLmHYcuGRm7NFUM0wxTzg4R0FSMTBSWDlZUzNBUlNQUUIwUi4u', '_blank')">8 · Registro de feedback</button>
-</div>
-<!-- KPIs globales simples -->
-<div class="card">
-<h3>Tipo monitoreo (conteo)</h3>
-<p class="small"><b>EFECTIVA:</b> <span id="cntEfectiva">0</span></p>
-<p class="small"><b>EFECTIVANK:</b> <span id="cntEfectivank">0</span></p>
-<p class="small"><b>XPERTO:</b> <span id="cntXperto">0</span></p>
-<p class="small"><b>FACEBOOK:</b> <span id="cntFb">0</span></p>
-<p class="small"><b>INSTAGRAM:</b> <span id="cntIg">0</span></p>
-<p class="small"><b>CORREO:</b> <span id="cntMail">0</span></p>
-</div>
-</aside>
+    </div>
+    <!-- KPIs globales simples -->
+    <div class="card">
+      <h3>Tipo monitoreo (conteo)</h3>
+      <p class="small"><b>EFECTIVA:</b> <span id="cntEfectiva">0</span></p>
+      <p class="small"><b>EFECTIVANK:</b> <span id="cntEfectivank">0</span></p>
+      <p class="small"><b>XPERTO:</b> <span id="cntXperto">0</span></p>
+      <p class="small"><b>FACEBOOK:</b> <span id="cntFb">0</span></p>
+      <p class="small"><b>INSTAGRAM:</b> <span id="cntIg">0</span></p>
+      <p class="small"><b>CORREO:</b> <span id="cntMail">0</span></p>
+    </div>
+  </aside>
+  <!-- MAIN -->
+  <main>
+    <!-- FILTROS SUPERIORES -->
+    <div class="card">
+      <h3>Filtros</h3>
+      <div class="filters-row">
+        <label for="filterMes">Mes:</label>
+        <select id="filterMes" class="month-select">
+          <option value="">Todos</option>
+          <option value="0">Enero</option>
+          <option value="1">Febrero</option>
+          <option value="2">Marzo</option>
+          <option value="3">Abril</option>
+          <option value="4">Mayo</option>
+          <option value="5">Junio</option>
+          <option value="6">Julio</option>
+          <option value="7">Agosto</option>
+          <option value="8">Septiembre</option>
+          <option value="9">Octubre</option>
+          <option value="10">Noviembre</option>
+          <option value="11">Diciembre</option>
+        </select>
 
-<!-- MAIN -->
-<main>
-<!-- FILTROS SUPERIORES -->
-<div class="card">
-<h3>Filtros del mes actual</h3>
-<div class="filters-row">
-<label for="filterRegistrado">Registrado por:</label>
-<select id="filterRegistrado">
-<option value="">Todos</option>
-<option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
-Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
-</option>
-<option value="César Alonso Torres Montes - Supervisor">
-César Alonso Torres Montes - Supervisor
-</option>
-<option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
-Karen Vanessa Vital Cordova - Líder de Operaciones
-</option>
-</select>
-<span class="small" id="filterSummary">Mostrando todos los registros del mes.</span>
-</div>
-</div>
+        <label for="filterAnio">Año:</label>
+        <select id="filterAnio" class="year-select">
+          <!-- Se llena dinámicamente con los años detectados -->
+        </select>
 
-<!-- VISTA EJECUTIVA POR ASESOR -->
-<div class="card">
-<h3>Vista ejecutiva por asesor
-<span class="tiny-tag">B2 · Semáforo 85%</span>
-</h3>
-<div class="small">
-Promedio mensual por asesor (cálculo completo):
-promedio, cantidad de feedbacks, aprobados (≥85), no aprobados (&lt;85),
-mejor nota y peor nota.  
-Semáforo:
-<span style="color:#4ade80;font-weight:bold">🟢 85–100</span> /
-<span style="color:#fb7185;font-weight:bold">🔴 0–84</span>.
+        <label for="filterRegistrado">Registrado por:</label>
+        <select id="filterRegistrado">
+          <option value="">Todos</option>
+          <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
+            Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
+          </option>
+          <option value="César Alonso Torres Montes - Supervisor">
+            César Alonso Torres Montes - Supervisor
+          </option>
+          <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
+            Karen Vanessa Vital Cordova - Líder de Operaciones
+          </option>
+        </select>
+        <span class="small" id="filterSummary">Mostrando todos los registros.</span>
+      </div>
+    </div>
+    <!-- VISTA EJECUTIVA POR ASESOR -->
+    <div class="card">
+      <h3>Vista ejecutiva por asesor
+        <span class="tiny-tag">B2 · Semáforo 85%</span>
+      </h3>
+      <div class="small">
+        Promedio por asesor (cálculo completo):
+        promedio, cantidad de feedbacks, aprobados (≥85), no aprobados (&lt;85),
+        mejor nota y peor nota.  
+        Semáforo:
+        <span style="color:#4ade80;font-weight:bold">🟢 85–100</span> /
+        <span style="color:#fb7185;font-weight:bold">🔴 0–84</span>.
+      </div>
+      <div id="execGrid" class="exec-grid"></div>
+    </div>
+    <!-- GRÁFICO MES -->
+    <div class="card">
+      <h3>Promedio semanal</h3>
+      <canvas id="chartMonth"></canvas>
+    </div>
+    <!-- TABLA SEMANAL -->
+    <div class="card">
+      <h3>Tabla semanal</h3>
+      <div class="weekly">
+        <table id="weeklyTable">
+          <thead id="weeklyHead"></thead>
+          <tbody id="weeklyBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- ÚLTIMOS REGISTROS -->
+    <div class="card">
+      <h3>Últimos registros</h3>
+      <table id="recentTable">
+        <thead>
+          <tr>
+            <th>Fecha Hora</th>
+            <th>Asesor</th>
+            <th>Nota</th>
+            <th>Tipo</th>
+            <th>Registrado por</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
 </div>
-<div id="execGrid" class="exec-grid"></div>
-</div>
-
-<!-- GRÁFICO MES -->
-<div class="card">
-<h3>Promedio semanal del mes</h3>
-<canvas id="chartMonth"></canvas>
-</div>
-
-<!-- TABLA SEMANAL -->
-<div class="card">
-<h3>Tabla semanal del mes</h3>
-<div class="weekly">
-<table id="weeklyTable">
-<thead id="weeklyHead"></thead>
-<tbody id="weeklyBody"></tbody>
-</table>
-</div>
-</div>
-
-<!-- ÚLTIMOS REGISTROS -->
-<div class="card">
-<h3>Últimos registros</h3>
-<table id="recentTable">
-<thead>
-<tr>
-<th>Fecha Hora</th>
-<th>Asesor</th>
-<th>Nota</th>
-<th>Tipo</th>
-<th>Registrado por</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</main>
-</div>
-
 <script type="module">
 /* ------------------------------
-  IMPORTAR FIREBASE
+   IMPORTAR FIREBASE
 ------------------------------ */
 import { db } from "./js/firebase.js";
 import { 
-collection, getDocs 
+  collection, getDocs 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 /* ------------------------------
-  HELPER: FECHAS
+   HELPER: FECHAS
 ------------------------------ */
 function parseFecha(fecha) {
-if (!fecha) return new Date();
-if (fecha.toDate) return fecha.toDate(); // Timestamp Firestore
-if (typeof fecha === "string") {
-if (fecha.includes("T")) return new Date(fecha);
-if (fecha.includes("/")) {
-const [d, m, yRest] = fecha.split("/");
-const [y, h] = yRest.split(" ");
-return new Date(`${y}-${m}-${d}T${h}`);
-}
-return new Date(fecha);
-}
-return new Date(fecha);
+  if (!fecha) return new Date();
+  if (fecha.toDate) return fecha.toDate(); // Timestamp Firestore
+  if (typeof fecha === "string") {
+    if (fecha.includes("T")) return new Date(fecha);
+    if (fecha.includes("/")) {
+      const [d, m, yRest] = fecha.split("/");
+      const [y, h] = yRest.split(" ");
+      return new Date(`${y}-${m}-${d}T${h}`);
+    }
+    return new Date(fecha);
+  }
+  return new Date(fecha);
 }
 
 /* ------------------------------
-  HELPER: NORMALIZAR TEXTO
+   HELPER: NORMALIZAR TEXTO
 ------------------------------ */
 function normalize(str) {
-return (str || "")
-.toString()
-.trim()
-.toLowerCase()
-.replace(/\s+/g, " ");
+  return (str || "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
 }
 
 /* ------------------------------
-  CARGAR REGISTROS
+   CARGAR REGISTROS
 ------------------------------ */
 async function loadRegistros() {
-const snap = await getDocs(collection(db, "registros"));
-const arr = [];
-snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
-return arr;
+  const snap = await getDocs(collection(db, "registros"));
+  const arr = [];
+  snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
+  return arr;
 }
 
 /* ------------------------------
-  CARGAR ASESORES (CON GC)
+   CARGAR ASESORES (CON GC)
 ------------------------------ */
 async function loadAsesores() {
-const snap = await getDocs(collection(db, "asesores"));
-const mapa = {};
-snap.forEach(doc => {
-const d = doc.data();
-if (d.nombre) {
-mapa[d.nombre.trim()] = d.GC || "SIN GC";
-}
-});
-return mapa;
+  const snap = await getDocs(collection(db, "asesores"));
+  const mapa = {};
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (d.nombre) {
+      mapa[d.nombre.trim()] = d.GC || "SIN GC";
+    }
+  });
+  return mapa;
 }
 
 /* ------------------------------
-  CRUZAR REGISTROS + ASESORES
+   CRUZAR REGISTROS + ASESORES
 ------------------------------ */
 async function getMergedData() {
-const registros = await loadRegistros();
-const asesores = await loadAsesores();
-return registros.map(r => ({
-...r,
-gc: asesores[r.asesor?.trim()] || "SIN GC",
-registradoPor: r.registradoPor || ""   // 👈 usamos camelCase del registro
-}));
+  const registros = await loadRegistros();
+  const asesores = await loadAsesores();
+  return registros.map(r => ({
+    ...r,
+    gc: asesores[r.asesor?.trim()] || "SIN GC",
+    registradoPor: r.registradoPor || ""
+  }));
 }
 
 /* ------------------------------
-  SEMANAS DEL MES
+   SEMANAS DE UN MES
 ------------------------------ */
 function getWeeksOfMonth(date = new Date()) {
-const y = date.getFullYear();
-const m = date.getMonth();
-const last = new Date(y, m + 1, 0).getDate();
-const weeks = [];
-let d = 1;
-while (d <= last) {
-weeks.push({ startDay: d, endDay: Math.min(d + 6, last) });
-d += 7;
-}
-return weeks;
+  const y = date.getFullYear();
+  const m = date.getMonth();
+  const last = new Date(y, m + 1, 0).getDate();
+  const weeks = [];
+  let d = 1;
+  while (d <= last) {
+    weeks.push({ startDay: d, endDay: Math.min(d + 6, last) });
+    d += 7;
+  }
+  return weeks;
 }
 
 /* ------------------------------
-  CHART
+   CHART
 ------------------------------ */
 const chart = new Chart(document.getElementById("chartMonth"), {
-type: "bar",
-data: {
-labels: [],
-datasets: [{
-label: "Promedio %",
-data: [],
-backgroundColor: "#0f4c81"
-}]
-},
-options: {
-plugins:{ legend:{ display:false }},
-scales: { y: { beginAtZero: true, max: 100 }}
-}
+  type: "bar",
+  data: {
+    labels: [],
+    datasets: [{
+      label: "Promedio %",
+      data: [],
+      backgroundColor: "#0f4c81"
+    }]
+  },
+  options: {
+    plugins:{ legend:{ display:false }},
+    scales: { y: { beginAtZero: true, max: 100 }}
+  }
 });
 
 /* ------------------------------
-  ESTADO GLOBAL
+   ESTADO GLOBAL
 ------------------------------ */
-let rawData = [];      // todos los registros del mes (ya cruzados con GC)
-let filteredData = []; // registros luego de aplicar filtro registradoPor
+let rawData = [];      // todos los registros (cruzados con GC)
+let filteredData = []; // registros tras aplicar filtros
+let allYears = [];     // años detectados en los registros
 
 /* ------------------------------
-  VISTA EJECUTIVA B2 (CÁLCULO COMPLETO POR ASESOR)
+   VISTA EJECUTIVA B2 (CÁLCULO COMPLETO POR ASESOR)
 ------------------------------ */
 function renderExecView(data) {
-const porAsesor = {};
-data.forEach(r => {
-if (!r.asesor) return;
-const key = r.asesor;
-const nota = Number(r.nota || 0);
-if (!porAsesor[key]) {
-porAsesor[key] = { 
-asesor: key,
-gc: r.gc || "SIN GC",
-total: 0,
-sumaNota: 0,
-max: null,
-min: null,
-ok: 0,   // >=85
-bad: 0   // <85
-};
-}
-const a = porAsesor[key];
-a.total += 1;
-a.sumaNota += nota;
-if (a.max === null || nota > a.max) a.max = nota;
-if (a.min === null || nota < a.min) a.min = nota;
-if (nota >= 85) a.ok += 1;
-else a.bad += 1;
-});
+  const porAsesor = {};
+  data.forEach(r => {
+    if (!r.asesor) return;
+    const key = r.asesor;
+    const nota = Number(r.nota || 0);
+    if (!porAsesor[key]) {
+      porAsesor[key] = { 
+        asesor: key,
+        gc: r.gc || "SIN GC",
+        total: 0,
+        sumaNota: 0,
+        max: null,
+        min: null,
+        ok: 0,   // >=85
+        bad: 0   // <85
+      };
+    }
+    const a = porAsesor[key];
+    a.total += 1;
+    a.sumaNota += nota;
+    if (a.max === null || nota > a.max) a.max = nota;
+    if (a.min === null || nota < a.min) a.min = nota;
+    if (nota >= 85) a.ok += 1;
+    else a.bad += 1;
+  });
 
-const lista = Object.values(porAsesor)
-.map(a => ({
-...a,
-promedio: a.total ? a.sumaNota / a.total : 0
-}))
-.sort((a,b) => b.promedio - a.promedio);
+  const lista = Object.values(porAsesor)
+    .map(a => ({
+      ...a,
+      promedio: a.total ? a.sumaNota / a.total : 0
+    }))
+    .sort((a,b) => b.promedio - a.promedio);
 
-const cont = document.getElementById("execGrid");
-if (!lista.length) {
-cont.innerHTML = `<div class="small">Sin datos para este mes con el filtro seleccionado.</div>`;
-return;
-}
+  const cont = document.getElementById("execGrid");
+  if (!lista.length) {
+    cont.innerHTML = `<div class="small">Sin datos para el filtro seleccionado.</div>`;
+    return;
+  }
 
-cont.innerHTML = lista.map(a => {
-const prom = Math.round(a.promedio * 10) / 10;
-const esVerde = prom >= 85;
-const pillClass = esVerde ? "green" : "red";
-const label = esVerde ? "🟢 85 – 100" : "🔴 0 – 84";
-const maxTxt = a.max !== null ? `${a.max}%` : "-";
-const minTxt = a.min !== null ? `${a.min}%` : "-";
-return `
-     <div class="exec-card">
-       <div class="exec-header">
-         <div>
-           <div class="exec-name">${a.asesor}</div>
-           <div class="exec-gc">GC: ${a.gc}</div>
-         </div>
-         <div class="pill ${pillClass}">
-           ${label}
-         </div>
-       </div>
-       <div class="exec-main">
-         <div>
-           <div class="exec-score">${prom}%</div>
-           <div class="exec-meta">
-             <div><b>${a.total}</b> feedback(s)</div>
-             <div>🟢 ${a.ok} · 🔴 ${a.bad}</div>
-           </div>
-         </div>
-         <div class="exec-meta">
-           <div><b>Mejor</b>: ${maxTxt}</div>
-           <div><b>Peor</b>: ${minTxt}</div>
-         </div>
-       </div>
-     </div>
-   `;
-}).join("");
+  cont.innerHTML = lista.map(a => {
+    const prom = Math.round(a.promedio * 10) / 10;
+    const esVerde = prom >= 85;
+    const pillClass = esVerde ? "green" : "red";
+    const label = esVerde ? "🟢 85 – 100" : "🔴 0 – 84";
+    const maxTxt = a.max !== null ? `${a.max}%` : "-";
+    const minTxt = a.min !== null ? `${a.min}%` : "-";
+    return `
+      <div class="exec-card">
+        <div class="exec-header">
+          <div>
+            <div class="exec-name">${a.asesor}</div>
+            <div class="exec-gc">GC: ${a.gc}</div>
+          </div>
+          <div class="pill ${pillClass}">
+            ${label}
+          </div>
+        </div>
+        <div class="exec-main">
+          <div>
+            <div class="exec-score">${prom}%</div>
+            <div class="exec-meta">
+              <div><b>${a.total}</b> feedback(s)</div>
+              <div>🟢 ${a.ok} · 🔴 ${a.bad}</div>
+            </div>
+          </div>
+          <div class="exec-meta">
+            <div><b>Mejor</b>: ${maxTxt}</div>
+            <div><b>Peor</b>: ${minTxt}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 /* ------------------------------
-  RENDER KPIs, TABLAS Y GRÁFICO DESDE filteredData
+   RENDER KPIs, TABLAS Y GRÁFICO DESDE filteredData
 ------------------------------ */
 function renderFromFilteredData() {
-const data = filteredData;
+  const data = filteredData;
 
-// Resumen del filtro
-const sel = document.getElementById("filterRegistrado");
-const summary = document.getElementById("filterSummary");
-const value = sel.value;
-if (!value) {
-summary.textContent = `Mostrando todos los registros del mes (${data.length}).`;
-} else {
-summary.textContent = `Mostrando ${data.length} registros del mes registrados por: ${value}.`;
-}
+  // Resumen del filtro
+  const selReg = document.getElementById("filterRegistrado");
+  const selMes = document.getElementById("filterMes");
+  const selAnio = document.getElementById("filterAnio");
+  const summary = document.getElementById("filterSummary");
 
-// Vista ejecutiva
-renderExecView(data);
+  const valueReg = selReg.value;
+  const valueMes = selMes.value;
+  const valueAnio = selAnio.value;
 
-// Contadores por tipo
-const counts = {
-EFECTIVA: 0, EFECTIVANK: 0, XPERTO: 0,
-FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
-};
-data.forEach(r => {
-const tipo = (r.tipo || "OTRO").toUpperCase();
-if (!counts.hasOwnProperty(tipo)) counts.OTRO++;
-else counts[tipo]++;
-});
-document.getElementById("cntEfectiva").innerText   = counts.EFECTIVA;
-document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
-document.getElementById("cntXperto").innerText     = counts.XPERTO;
-document.getElementById("cntFb").innerText         = counts.FACEBOOK;
-document.getElementById("cntIg").innerText         = counts.INSTAGRAM;
-document.getElementById("cntMail").innerText       = counts.CORREO;
+  let resumen = `Mostrando ${data.length} registros`;
+  if (valueMes !== "") {
+    const mesTexto = selMes.options[selMes.selectedIndex].text;
+    resumen += ` del mes ${mesTexto}`;
+  } else {
+    resumen += ` de todos los meses`;
+  }
+  if (valueAnio !== "") {
+    resumen += ` del año ${valueAnio}`;
+  } else {
+    resumen += ` de todos los años`;
+  }
+  if (valueReg) {
+    resumen += ` registrados por: ${valueReg}.`;
+  } else {
+    resumen += ` y todos los usuarios.`;
+  }
+  summary.textContent = resumen;
 
-// Últimos registros
-const recent = data
-.slice()
-.sort((a,b)=>parseFecha(b.fecha)-parseFecha(a.fecha))
-.slice(0,8);
+  // Vista ejecutiva
+  renderExecView(data);
 
-document.querySelector("#recentTable tbody").innerHTML =
-recent.map(r => `
-     <tr>
-       <td>${parseFecha(r.fecha).toLocaleString("es-PE")}</td>
-       <td>${r.asesor} — ${r.gc}</td>
-       <td>${r.nota || 0}%</td>
-       <td>${r.tipo || "-"}</td>
-       <td>${r.registradoPor || "-"}</td>
-     </tr>
-   `).join("") || `<tr><td colspan="5">Sin registros</td></tr>`;
+  // Contadores por tipo
+  const counts = {
+    EFECTIVA: 0, EFECTIVANK: 0, XPERTO: 0,
+    FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
+  };
+  data.forEach(r => {
+    const tipo = (r.tipo || "OTRO").toUpperCase();
+    if (!counts.hasOwnProperty(tipo)) counts.OTRO++;
+    else counts[tipo]++;
+  });
+  document.getElementById("cntEfectiva").innerText   = counts.EFECTIVA;
+  document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
+  document.getElementById("cntXperto").innerText     = counts.XPERTO;
+  document.getElementById("cntFb").innerText         = counts.FACEBOOK;
+  document.getElementById("cntIg").innerText         = counts.INSTAGRAM;
+  document.getElementById("cntMail").innerText       = counts.CORREO;
 
-// Tabla semanal
-const weeks = getWeeksOfMonth();
-const asesoresUnicos = [...new Set(data.map(r => r.asesor))].filter(Boolean);
+  // Últimos registros
+  const recent = data
+    .slice()
+    .sort((a,b)=>parseFecha(b.fecha)-parseFecha(a.fecha))
+    .slice(0,8);
 
-document.getElementById("weeklyHead").innerHTML =
-`<tr><th>ASESOR</th>` +
-weeks.map((_, i) => `<th>S${i+1} C1</th><th>S${i+1} C2</th>`).join("") +
-`</tr>`;
+  document.querySelector("#recentTable tbody").innerHTML =
+    recent.map(r => `
+      <tr>
+        <td>${parseFecha(r.fecha).toLocaleString("es-PE")}</td>
+        <td>${r.asesor} — ${r.gc}</td>
+        <td>${r.nota || 0}%</td>
+        <td>${r.tipo || "-"}</td>
+        <td>${r.registradoPor || "-"}</td>
+      </tr>
+    `).join("") || `<tr><td colspan="5">Sin registros</td></tr>`;
 
-document.getElementById("weeklyBody").innerHTML =
-asesoresUnicos.map(a => {
-const reg = data.find(r => r.asesor === a);
-const gc = reg?.gc || "SIN GC";
-let row = `<tr><td>${a} — ${gc}</td>`;
-for (let w=0; w<weeks.length; w++) {
-const recs = data.filter(r => {
-const f = parseFecha(r.fecha);
-const d = f.getDate();
-return r.asesor === a &&
-d >= weeks[w].startDay &&
-d <= weeks[w].endDay;
-});
-row += `<td>${recs[0]?.tipo || "-"}</td>`;
-row += `<td>${recs[1]?.tipo || "-"}</td>`;
-}
-return row + "</tr>";
-}).join("") || `<tr><td colspan="${1+weeks.length*2}">Sin registros</td></tr>`;
+  // Tabla semanal
+  const weeks = getWeeksOfMonth( // usamos el primer registro del filtro para fijar el mes, o mes actual si no hay datos
+    data.length ? parseFecha(data[0].fecha) : new Date()
+  );
+  const asesoresUnicos = [...new Set(data.map(r => r.asesor))].filter(Boolean);
 
-// Gráfico semanal
-const values = weeks.map(w => {
-const recs = data.filter(r => {
-const f = parseFecha(r.fecha);
-const d = f.getDate();
-return d >= w.startDay && d <= w.endDay;
-});
-if (!recs.length) return 0;
-const avg = recs.reduce((t, r) => t + (parseFloat(r.nota) || 0), 0) / recs.length;
-return Math.round(avg);
-});
+  document.getElementById("weeklyHead").innerHTML =
+    `<tr><th>ASESOR</th>` +
+    weeks.map((_, i) => `<th>S${i+1} C1</th><th>S${i+1} C2</th>`).join("") +
+    `</tr>`;
 
-chart.data.labels = weeks.map((_, i) => `S${i+1}`);
-chart.data.datasets[0].data = values;
-chart.update();
+  document.getElementById("weeklyBody").innerHTML =
+    asesoresUnicos.map(a => {
+      const reg = data.find(r => r.asesor === a);
+      const gc = reg?.gc || "SIN GC";
+      let row = `<tr><td>${a} — ${gc}</td>`;
+      for (let w=0; w<weeks.length; w++) {
+        const recs = data.filter(r => {
+          const f = parseFecha(r.fecha);
+          const d = f.getDate();
+          return r.asesor === a &&
+                 d >= weeks[w].startDay &&
+                 d <= weeks[w].endDay;
+        });
+        row += `<td>${recs[0]?.tipo || "-"}</td>`;
+        row += `<td>${recs[1]?.tipo || "-"}</td>`;
+      }
+      return row + "</tr>";
+    }).join("") || `<tr><td colspan="${1+weeks.length*2}">Sin registros</td></tr>`;
+
+  // Gráfico semanal
+  const values = weeks.map(w => {
+    const recs = data.filter(r => {
+      const f = parseFecha(r.fecha);
+      const d = f.getDate();
+      return d >= w.startDay && d <= w.endDay;
+    });
+    if (!recs.length) return 0;
+    const avg = recs.reduce((t, r) => t + (parseFloat(r.nota) || 0), 0) / recs.length;
+    return Math.round(avg);
+  });
+  chart.data.labels = weeks.map((_, i) => `S${i+1}`);
+  chart.data.datasets[0].data = values;
+  chart.update();
 }
 
 /* ------------------------------
-  APLICAR FILTROS
+   APLICAR FILTROS
 ------------------------------ */
 function applyFilters() {
-const sel = document.getElementById("filterRegistrado");
-const filterValue = normalize(sel.value);
+  const selReg  = document.getElementById("filterRegistrado");
+  const selMes  = document.getElementById("filterMes");
+  const selAnio = document.getElementById("filterAnio");
 
-if (!filterValue) {
-filteredData = rawData.slice(); // sin filtro
-} else {
-filteredData = rawData.filter(r => {
-const val = normalize(r.registradoPor);
-return val === filterValue;
-});
-}
-renderFromFilteredData();
+  const filterValueReg = normalize(selReg.value);
+  const filterMes = selMes.value === "" ? null : Number(selMes.value);
+  const filterAnio = selAnio.value === "" ? null : Number(selAnio.value);
+
+  // 1) Partimos de todos los datos
+  let data = rawData.slice();
+
+  // 2) Filtro por Año
+  if (filterAnio !== null) {
+    data = data.filter(r => {
+      const f = parseFecha(r.fecha);
+      return f.getFullYear() === filterAnio;
+    });
+  }
+
+  // 3) Filtro por Mes
+  if (filterMes !== null) {
+    data = data.filter(r => {
+      const f = parseFecha(r.fecha);
+      return f.getMonth() === filterMes;
+    });
+  }
+
+  // 4) Filtro por RegistradoPor
+  if (filterValueReg) {
+    data = data.filter(r => {
+      const val = normalize(r.registradoPor);
+      return val === filterValueReg;
+    });
+  }
+
+  filteredData = data;
+  renderFromFilteredData();
 }
 
 /* ------------------------------
-  GENERAR DASHBOARD COMPLETO
+   CARGAR AÑOS DISPONIBLES EN SELECT
+------------------------------ */
+function setupYearFilter() {
+  const selAnio = document.getElementById("filterAnio");
+  selAnio.innerHTML = ""; // limpiamos
+
+  const optionAll = document.createElement("option");
+  optionAll.value = "";
+  optionAll.textContent = "Todos";
+  selAnio.appendChild(optionAll);
+
+  allYears.sort((a,b)=>a-b);
+  allYears.forEach(y => {
+    const op = document.createElement("option");
+    op.value = y;
+    op.textContent = y;
+    selAnio.appendChild(op);
+  });
+
+  const currentYear = new Date().getFullYear();
+  if (allYears.includes(currentYear)) {
+    selAnio.value = currentYear.toString();
+  }
+}
+
+/* ------------------------------
+   GENERAR DASHBOARD COMPLETO
 ------------------------------ */
 async function refreshDashboard() {
-let data = await getMergedData();
-// ordenar por fecha
-data = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
-// filtrar mes actual
-const hoy = new Date();
-data = data.filter(r => {
-const f = parseFecha(r.fecha);
-return f.getMonth() === hoy.getMonth() &&
-f.getFullYear() === hoy.getFullYear();
-});
-rawData = data;
-applyFilters();
+  let data = await getMergedData();
+
+  // Ordenar por fecha ascendente
+  data = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
+  rawData = data;
+
+  // Obtener todos los años que aparecen en los registros
+  const yearsSet = new Set();
+  data.forEach(r => {
+    const f = parseFecha(r.fecha);
+    yearsSet.add(f.getFullYear());
+  });
+  allYears = Array.from(yearsSet);
+
+  // Configurar select de año
+  setupYearFilter();
+
+  // Preseleccionar mes actual
+  const hoy = new Date();
+  document.getElementById("filterMes").value = hoy.getMonth().toString();
+
+  // Aplicar filtros iniciales
+  applyFilters();
 }
 
 /* ------------------------------
-  EVENTOS
+   EVENTOS
 ------------------------------ */
 document.getElementById("filterRegistrado").addEventListener("change", applyFilters);
+document.getElementById("filterMes").addEventListener("change", applyFilters);
+document.getElementById("filterAnio").addEventListener("change", applyFilters);
 
 /* INICIO */
 refreshDashboard();

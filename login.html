@@ -1,33 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Acceso Seguro</title>
-
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Login</title>
   <link rel="stylesheet" href="css/login.css">
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
 </head>
-
 <body>
-  <div class="login-container">
-    <div class="card">
-      <h2>Acceso Seguro</h2>
 
-      <input id="email" type="email" placeholder="Correo" autocomplete="off">
-      <input id="password" type="password" placeholder="Contraseña">
+<div class="login-box">
+  <h2>Acceso Seguro</h2>
 
-      <button id="btnLogin" class="btn">Ingresar</button>
+  <input id="email" type="email" placeholder="Correo" autocomplete="off">
+  <input id="password" type="password" placeholder="Contraseña">
 
-      <p id="errorMsg" class="error"></p>
-    </div>
-  </div>
+  <button id="btnLogin">Ingresar</button>
 
-  <!-- JS sin inline -->
-  <script type="module" src="js/firebase.js"></script>
-  <script type="module" src="js/login.js"></script>
+  <p id="msg" class="msg"></p>
+</div>
+
+<script type="module" src="js/login.js"></script>
 </body>
 </html>

@@ -1,0 +1,141 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    margin: 0;
+    padding: 20px;
+    color: #e2e8f0;
+}
+
+/* CARD */
+.card {
+    background: #1e293b;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    padding: 18px;
+    max-width: 980px;
+    margin: 15px auto;
+    box-shadow: 0 0 25px rgba(0,0,0,0.4);
+}
+
+h2, h3 {
+    margin-top: 0;
+    color: #fff;
+}
+
+/* DASHBOARD */
+#agentStats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.statBox {
+    flex: 1;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+}
+
+.statBox div {
+    font-size: 22px;
+    margin-top: 5px;
+    font-weight: bold;
+}
+
+/* FILTERS */
+.filters {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+}
+
+label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #cbd5e1;
+}
+
+select, textarea {
+    width: 100%;
+    padding: 7px;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 6px;
+    border: 1px solid #475569;
+}
+
+/* TABLE */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th {
+    background: #334155;
+    padding: 8px;
+}
+
+td {
+    padding: 6px;
+    border-bottom: 1px solid #334155;
+}
+
+tr:nth-child(even) td { background: #111827; }
+tr:nth-child(odd) td { background: #020617; }
+
+/* BUTTONS */
+.btn {
+    background: #3b82f6;
+    color: #fff;
+    padding: 7px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.btn:hover { background: #2563eb; }
+
+.btn.ghost {
+    background: transparent;
+    border: 1px solid #64748b;
+    color: #93c5fd;
+}
+
+/* SIGNATURE */
+.signature-preview-empty {
+    border: 1px dashed #475569;
+    padding: 25px;
+    text-align: center;
+    color: #64748b;
+    margin-top: 8px;
+}
+
+.signature-preview img { max-width: 260px; }
+
+/* MODAL */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    display: none;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}

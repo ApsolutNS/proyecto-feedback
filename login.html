@@ -1,35 +1,35 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Acceso Seguro</title>
 
+  <!-- CSS -->
   <link rel="stylesheet" href="css/login.css">
 
   <!-- Firebase -->
-  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-
-  <!-- Tu archivo firebase.js -->
-  <script type="module" src="js/firebase.js"></script>
-
-  <!-- Login JS -->
-  <script type="module" src="js/login.js"></script>
+  <script type="module">
+    import "./js/login.js"; // ← NO inline JS (compatible con CSP)
+  </script>
 </head>
 <body>
-
   <div class="login-container">
     <div class="card">
       <h2>Acceso Seguro</h2>
 
-      <input type="email" id="email" placeholder="Correo" autocomplete="off">
-      <input type="password" id="password" placeholder="Contraseña">
+      <div class="field">
+        <input id="email" type="email" placeholder="Correo institucional" autocomplete="off">
+      </div>
 
-      <button id="loginBtn">Ingresar</button>
+      <div class="field">
+        <input id="password" type="password" placeholder="Contraseña">
+      </div>
+
+      <button id="btnLogin">Ingresar</button>
 
       <p id="msg" class="msg"></p>
     </div>
   </div>
-
 </body>
 </html>

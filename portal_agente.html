@@ -4,40 +4,34 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Portal del Agente — Feedback & Refuerzos</title>
-
-    <!-- CSS separado -->
     <link rel="stylesheet" href="css/portal_agente.css">
 </head>
-
 <body>
 
-    <!-- DASHBOARD -->
     <div class="card">
         <h2>Portal del Agente</h2>
 
+        <!-- DASHBOARD -->
         <div id="agentStats">
             <div class="statBox">
                 <h3>Promedio general</h3>
                 <div id="avgScore">–</div>
             </div>
-
             <div class="statBox">
                 <h3>Total feedbacks</h3>
                 <div id="totalFb">–</div>
             </div>
-
             <div class="statBox">
                 <h3>Aprobados (≥85%)</h3>
                 <div id="okCount">–</div>
             </div>
-
             <div class="statBox">
                 <h3>No aprobados (&lt;85%)</h3>
                 <div id="badCount">–</div>
             </div>
         </div>
 
-        <!-- FILTROS -->
+        <!-- FILTROS (SIN SELECT DE ASESOR) -->
         <div class="filters">
             <div>
                 <label>Tipo documento</label>
@@ -51,9 +45,15 @@
                 <label>Registrado por</label>
                 <select id="selRegistrador">
                     <option value="">Todos</option>
-                    <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formació</option>
-                    <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
-                    <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
+                    <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
+                        Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
+                    </option>
+                    <option value="César Alonso Torres Montes - Supervisor">
+                        César Alonso Torres Montes - Supervisor
+                    </option>
+                    <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
+                        Karen Vanessa Vital Cordova - Líder de Operaciones
+                    </option>
                 </select>
             </div>
         </div>
@@ -71,7 +71,6 @@
             </thead>
             <tbody></tbody>
         </table>
-
         <p id="pendingBadge"></p>
     </div>
 
@@ -91,14 +90,16 @@
                 <input id="fileSignature" type="file" accept="image/*" hidden>
             </div>
 
-            <div id="signaturePreview" class="signature-preview-empty">Sin firma seleccionada</div>
+            <div id="signaturePreview" class="signature-preview-empty">
+                Sin firma seleccionada
+            </div>
 
             <button class="btn" id="btnSave">Enviar firma y completar</button>
             <p id="agentMsg"></p>
         </div>
     </div>
 
-    <!-- MODAL FIRMA -->
+    <!-- MODAL PARA FIRMA -->
     <div id="signatureModal" class="modal-backdrop">
         <div class="modal-box">
             <h3>Dibujar firma</h3>
@@ -112,8 +113,6 @@
         </div>
     </div>
 
-    <!-- JS -->
     <script type="module" src="js/portal_agente.js"></script>
 </body>
 </html>
-

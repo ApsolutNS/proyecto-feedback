@@ -1,56 +1,70 @@
-import { auth } from "./firebase.js";
-import { db } from "./firebase.js";
+// ----------------------------------------------
+// LOGIN con ROLES usando Firebase Auth + Firestore
+// ----------------------------------------------
+
+import { getAuth, signInWithEmailAndPassword }
+  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
 import {
-  signInWithEmailAndPassword,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
-import {
+  getFirestore,
   doc,
   getDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-const email = document.getElementById("email");
-const password = document.getElementById("password");
-const msg = document.getElementById("msg");
-const btn = document.getElementById("btnLogin");
+import { app } from "./firebase.js"; // tu firebase.js ya exporta app
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-btn.addEventListener("click", login);
+const btnLogin = document.getElementById("btnLogin");
+const msgError = document.getElementById("msgError");
 
-async function login() {
-  msg.innerText = "Verificando...";
+// ------------------------------------------------
+// FUNCIÓN LOGIN
+// ------------------------------------------------
+btnLogin.addEventListener("click", async () => {
+  msgError.textContent = "";
+
+  const email = document.getElementById("email").value.trim();
+  const pass = document.getElementById("password").value.trim();
+
+  if (!email || !pass) {
+    msgError.textContent = "Completa todos los campos.";
+    return;
+  }
+
   try {
-    const userCred = await signInWithEmailAndPassword(auth, email.value, password.value);
+    const userCred = await signInWithEmailAndPassword(auth, email, pass);
     const uid = userCred.user.uid;
 
-    // Leer rol del usuario
-    const snap = await getDoc(doc(db, "usuarios", uid));
+    // Leer su rol desde Firestore
+    const userRef = doc(db, "usuarios", uid);
+    const snap = await getDoc(userRef);
 
     if (!snap.exists()) {
-      msg.innerText = "El usuario no tiene rol asignado";
+      msgError.textContent = "Tu usuario no tiene rol asignado.";
       return;
     }
 
-    const rol = snap.data().rol;
+    const role = snap.data().role;
 
-    // Redirección automática según rol
-    switch (rol) {
-      case "admin":
-      case "supervisor":
-        location.href = "index.html";
-        break;
-
-      case "agente":
-        location.href = "portal_agente.html";
-        break;
-
-      default:
-        msg.innerText = "Rol desconocido. Contacta al administrador.";
+    // Redirecciones por rol
+    if (role === "admin") {
+      window.location.href = "index.html";
+      return;
+    }
+    if (role === "supervisor") {
+      window.location.href = "index.html";
+      return;
+    }
+    if (role === "agente") {
+      window.location.href = "portal_agente.html";
+      return;
     }
 
-  } catch (e) {
-    msg.innerText = "Credenciales incorrectas";
-    console.error(e);
+    msgError.textContent = "Rol desconocido. Contacta a soporte.";
+
+  } catch (err) {
+    msgError.textContent = "Credenciales incorrectas.";
+    console.error(err);
   }
-}
+});

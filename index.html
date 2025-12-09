@@ -4,8 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Dashboard - Supervisión</title>
+
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <!-- CSS -->
   <link rel="stylesheet" href="css/index.css">
 </head>
@@ -13,12 +15,16 @@
   <header>
     <div>
       <h1>Panel Principal - Calidad & Monitoreo</h1>
-      <small>Vista ejecutiva + detalle mensual (con filtros por Mes / Año / Registrado por)</small>
+      <small>Vista ejecutiva + detalle mensual (filtros: Mes / Año / Registrado por)</small>
     </div>
+
     <div class="header-right">
-      <span class="header-user">Usuario: <strong>Supervisor</strong></span>
+      <span class="header-user">Usuario: <strong id="userRoleName">Cargando...</strong></span>
+
       <button id="btnTheme" class="btn btn-toggle">☀️ Modo claro</button>
-      <button onclick="logout()">Cerrar sesión</button>
+
+      <!-- YA NO TIENE onclick -->
+      <button id="btnLogout">Cerrar sesión</button>
     </div>
   </header>
 
@@ -27,18 +33,35 @@
     <aside class="left">
       <div class="card">
         <h3>Accesos rápidos</h3>
-        <button class="btn primary" onclick="location.href='registro.html'">1 · Registro</button>
-        <button class="btn secondary" onclick="location.href='portal_agente.html'">2 · Portal del Agente</button>
-        <button class="btn secondary" onclick="location.href='visualizacion_feedback.html'">3 · Visualización Feedback</button>
-        <button class="btn secondary" onclick="location.href='refuerzos.html'">4 · Refuerzos Calidad</button>
-        <button class="btn secondary" onclick="window.open('https://monumental-caramel-7369de.netlify.app/', '_blank')">5 · Registro de Obervaciones</button>
-        <button class="btn secondary" onclick="window.open('https://efectivasa.sharepoint.com/:x:/r/sites/GrupoEFE-EfeCinco/_layouts/15/Doc.aspx?sourcedoc=%7B2A4A6217-A8E9-4912-86F3-370BB45370B0%7D&file=Reporte%20Monitoreo%20Gescob%20-%202025.xlsx&action=default&mobileredirect=true', '_blank')">6 · Reporte de monitoreos</button>
-        <button class="btn secondary" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSc8s049gfvA-O5nWzlDhIlymceNUnIK-rndWV5aSvhwuDf4TA/viewform?pli=1', '_blank')">7 · Ficha de errores</button>
-        <button class="btn secondary" onclick="window.open('https://efectivasa.sharepoint.com/sites/GrupoEFE-EfeCinco/Documentos%20compartidos/Forms/AllItems.aspx?id=%2Fsites%2FGrupoEFE%2DEfeCinco%2FDocumentos%20compartidos%2FCalidad%20y%20Formaci%C3%B3n%2FCalidad%2FManual%20de%20Monitoreo%2FManual%20de%20Monitoreo%20v4%2Epdf&parent=%2Fsites%2FGrupoEFE%2DEfeCinco%2FDocumentos%20compartidos%2FCalidad%2FManual%20de%20Monitoreo', '_blank')">8 · Manual de calidad</button>
-        <button class="btn secondary" onclick="window.open('https://forms.office.com/pages/responsepage.aspx?id=oDcMYc1HMUWfNe-1_TKkEHpWkDIqnlRLmHYcuGRm7NFUM0wxTzg4R0FSMTBSWDlZUzNBUlNQUUIwUi4u', '_blank')">9 · Registro de feedback</button>
+
+        <!-- TODOS SIN INLINE JS -->
+        <button class="btn primary" data-nav="registro.html">1 · Registro</button>
+        <button class="btn secondary" data-nav="portal_agente.html">2 · Portal del Agente</button>
+        <button class="btn secondary" data-nav="visualizacion_feedback.html">3 · Visualización Feedback</button>
+        <button class="btn secondary" data-nav="refuerzos.html">4 · Refuerzos Calidad</button>
+
+        <button class="btn secondary" data-external="https://monumental-caramel-7369de.netlify.app/">
+          5 · Registro de Observaciones
+        </button>
+
+        <button class="btn secondary" data-external="https://efectivasa.sharepoint.com/:x:/r/sites/GrupoEFE-EfeCinco/_layouts/15/Doc.aspx?sourcedoc=%7B2A4A6217-A8E9-4912-86F3-370BB45370B0%7D&file=Reporte%20Monitoreo%20Gescob%20-%202025.xlsx&action=default&mobileredirect=true">
+          6 · Reporte de monitoreos
+        </button>
+
+        <button class="btn secondary" data-external="https://docs.google.com/forms/d/e/1FAIpQLSc8s049gfvA-O5nWzlDhIlymceNUnIK-rndWV5aSvhwuDf4TA/viewform?pli=1">
+          7 · Ficha de errores
+        </button>
+
+        <button class="btn secondary" data-external="https://efectivasa.sharepoint.com/sites/GrupoEFE-EfeCinco/Documentos%20compartidos/Forms/AllItems.aspx?id=%2Fsites%2FGrupoEFE%2DEfeCinco%2FDocumentos%20compartidos%2FCalidad%20y%20Formaci%C3%B3n%2FCalidad%2FManual%20de%20Monitoreo%2FManual%20de%20Monitoreo%20v4%2Epdf&parent=%2Fsites%2FGrupoEFE%2DEfeCinco%2FDocumentos%20compartidos%2FCalidad%2FManual%20de%20Monitoreo">
+          8 · Manual de calidad
+        </button>
+
+        <button class="btn secondary" data-external="https://forms.office.com/pages/responsepage.aspx?id=oDcMYc1HMUWfNe-1_TKkEHpWkDIqnlRLmHYcuGRm7NFUM0wxTzg4R0FSMTBSWDlZUzNBUlNQUUIwUi4u">
+          9 · Registro de feedback
+        </button>
       </div>
 
-      <!-- KPIs globales simples -->
+      <!-- KPIs -->
       <div class="card">
         <h3>Tipo monitoreo (conteo)</h3>
         <p class="small"><b>EFECTIVA:</b> <span id="cntEfectiva">0</span></p>
@@ -52,7 +75,8 @@
 
     <!-- MAIN -->
     <main>
-      <!-- FILTROS SUPERIORES -->
+
+      <!-- FILTROS -->
       <div class="card">
         <h3>Filtros</h3>
         <div class="filters-row">
@@ -74,9 +98,7 @@
           </select>
 
           <label for="filterAnio">Año:</label>
-          <select id="filterAnio" class="year-select">
-            <!-- Se llena dinámicamente -->
-          </select>
+          <select id="filterAnio"></select>
 
           <label for="filterRegistrado">Registrado por:</label>
           <select id="filterRegistrado">
@@ -96,42 +118,30 @@
         </div>
       </div>
 
-      <!-- VISTA EJECUTIVA POR ASESOR -->
+      <!-- VISTA EJECUTIVA -->
       <div class="card">
-        <h3>Vista ejecutiva por asesor
-          <span class="tiny-tag">B2 · Semáforo 85%</span>
-        </h3>
+        <h3>Vista ejecutiva por asesor <span class="tiny-tag">B2 — Semáforo 85%</span></h3>
         <div class="small">
-          Promedio por asesor (cálculo completo): promedio, cantidad de feedbacks,
-          aprobados (≥85), no aprobados (&lt;85), mejor nota y peor nota.  
-          Semáforo:
-          <span class="kpi-green">🟢 85–100</span> /
-          <span class="kpi-red">🔴 0–84</span>.
-          <br>
-          <b>Tip:</b> haz clic en una tarjeta para ver los ítems más debitados de ese asesor.
+          Promedio, aprobados, desaprobados, mejor y peor nota.  
+          Haz clic en una tarjeta para ver los ítems debitados del asesor.
         </div>
+
         <div id="execGrid" class="exec-grid"></div>
       </div>
 
-      <!-- CARD RANKING DE ÍTEMS -->
+      <!-- RANKING ITEMS -->
       <div class="card">
         <h3>Ranking de ítems debitados</h3>
-        <p class="small">
-          Basado en los registros filtrados (Mes / Año / Registrado por).  
-          Puedes ver el ranking general o por semana, y luego filtrar por asesor desde sus tarjetas.
-        </p>
-        <button id="btnOpenItemsModal" class="btn secondary">
-          📊 Ver ranking general de ítems
-        </button>
+        <button id="btnOpenItemsModal" class="btn secondary">📊 Ver ranking general</button>
       </div>
 
-      <!-- GRÁFICO MES -->
+      <!-- GRAFICO -->
       <div class="card">
         <h3>Promedio semanal</h3>
         <canvas id="chartMonth"></canvas>
       </div>
 
-      <!-- TABLA SEMANAL -->
+      <!-- TABLA -->
       <div class="card">
         <h3>Tabla semanal</h3>
         <div class="weekly">
@@ -142,7 +152,7 @@
         </div>
       </div>
 
-      <!-- ÚLTIMOS REGISTROS -->
+      <!-- ULTIMOS REGISTROS -->
       <div class="card">
         <h3>Últimos registros</h3>
         <table id="recentTable">
@@ -161,7 +171,7 @@
     </main>
   </div>
 
-  <!-- MODAL ÍTEMS DEBITADOS -->
+  <!-- MODAL ITEMS -->
   <div id="itemsModal" class="modal-backdrop">
     <div class="modal-content">
       <div class="modal-header">
@@ -171,10 +181,12 @@
         </div>
         <button id="btnCloseItemsModal" class="modal-close">✕</button>
       </div>
+
       <div class="modal-toolbar">
-        <label for="itemsPeriodSelect">Periodo:</label>
+        <label>Periodo:</label>
         <select id="itemsPeriodSelect"></select>
       </div>
+
       <div class="modal-body">
         <table class="modal-table">
           <thead>
@@ -183,18 +195,16 @@
               <th>Tipo</th>
               <th>Cantidad</th>
               <th>% promedio</th>
-              <th>Detalle (ejemplo)</th>
+              <th>Detalle</th>
             </tr>
           </thead>
-          <tbody id="itemsTableBody">
-          </tbody>
+          <tbody id="itemsTableBody"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- JS principal -->
+  <!-- JS PRINCIPAL -->
   <script type="module" src="js/index.js"></script>
 </body>
 </html>
-

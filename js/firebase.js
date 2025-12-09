@@ -25,6 +25,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Exportar Firestore y Storage ya listos
+export { app };
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
@@ -36,3 +37,4 @@ export const storage = getStorage(app);
 // - Guardar refuerzos
 // - Exportar PDFs con imágenes
 // ----------------------------------------------
+

@@ -1,9 +1,13 @@
-// ----------------------------------------------
-// LOGIN con ROLES usando Firebase Auth + Firestore
-// ----------------------------------------------
+"use strict";
 
-import { getAuth, signInWithEmailAndPassword }
-  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+// -------------------------
+// IMPORTAR FIREBASE (TU ARCHIVO)
+// -------------------------
+import { app } from "./firebase.js";   // ⬅️ AHORA SÍ EXPORTA app
+import {
+  getAuth,
+  signInWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
 import {
   getFirestore,
@@ -11,60 +15,48 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-import { app } from "./firebase.js"; // tu firebase.js ya exporta app
-const db = getFirestore(app);
+// Inicializar servicios
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-const btnLogin = document.getElementById("btnLogin");
-const msgError = document.getElementById("msgError");
-
-// ------------------------------------------------
-// FUNCIÓN LOGIN
-// ------------------------------------------------
-btnLogin.addEventListener("click", async () => {
-  msgError.textContent = "";
+// -------------------------
+// LOGIN
+// -------------------------
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
 
   const email = document.getElementById("email").value.trim();
   const pass = document.getElementById("password").value.trim();
 
-  if (!email || !pass) {
-    msgError.textContent = "Completa todos los campos.";
-    return;
-  }
-
   try {
-    const userCred = await signInWithEmailAndPassword(auth, email, pass);
-    const uid = userCred.user.uid;
+    // 1) Autenticación
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    const user = cred.user;
 
-    // Leer su rol desde Firestore
-    const userRef = doc(db, "usuarios", uid);
-    const snap = await getDoc(userRef);
+    // 2) Leer rol desde Firestore
+    const ref = doc(db, "usuarios", user.uid);
+    const snap = await getDoc(ref);
 
     if (!snap.exists()) {
-      msgError.textContent = "Tu usuario no tiene rol asignado.";
+      alert("Usuario no está autorizado.");
       return;
     }
 
-    const role = snap.data().role;
+    const rol = snap.data().rol;
 
-    // Redirecciones por rol
-    if (role === "admin") {
-      window.location.href = "index.html";
-      return;
+    // 3) Redirección por rol
+    if (rol === "admin") {
+      location.href = "admin.html";
+    } else if (rol === "supervisor") {
+      location.href = "index.html";
+    } else if (rol === "agente") {
+      location.href = "portal_agente.html";
+    } else {
+      alert("Rol inválido o no permitido.");
     }
-    if (role === "supervisor") {
-      window.location.href = "index.html";
-      return;
-    }
-    if (role === "agente") {
-      window.location.href = "portal_agente.html";
-      return;
-    }
-
-    msgError.textContent = "Rol desconocido. Contacta a soporte.";
 
   } catch (err) {
-    msgError.textContent = "Credenciales incorrectas.";
     console.error(err);
+    alert("Credenciales inválidas o permisos insuficientes.");
   }
 });

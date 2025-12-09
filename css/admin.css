@@ -1,54 +1,89 @@
 body {
-  background: #0f172a;
-  color: white;
+  margin: 0;
   font-family: Arial, sans-serif;
+  background: #f3f5f7;
 }
 
-header {
+/* NAVBAR */
+.navbar {
+  width: 100%;
+  background: #0f4c81;
+  padding: 12px 20px;
   display: flex;
   justify-content: space-between;
-  padding: 20px;
-  background: #1e293b;
-  margin-bottom: 20px;
+  align-items: center;
+  color: white;
 }
 
-.container {
-  width: 90%;
-  margin: auto;
+.logo {
+  font-size: 20px;
+  font-weight: bold;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #1e293b;
-}
-
-table th, table td {
-  padding: 12px;
-  border-bottom: 1px solid #475569;
-}
-
-select, input {
-  padding: 8px;
+.nav-btn {
+  background: #ffffff33;
+  color: white;
+  padding: 8px 15px;
   border-radius: 6px;
+  text-decoration: none;
   border: none;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.nav-btn:hover {
+  background: #ffffff55;
+}
+
+.nav-btn.red {
+  background: #d9534f;
+}
+
+.nav-btn.red:hover {
+  background: #c9302c;
+}
+
+/* BODY */
+.container {
+  max-width: 450px;
+  margin: 40px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px #0002;
+}
+
+.card {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0 15px 0;
+  border-radius: 8px;
+  border: 1px solid #bbb;
 }
 
 button {
-  padding: 8px 14px;
-  border-radius: 6px;
-  border: none;
-  background: #2563eb;
+  width: 100%;
+  padding: 12px;
+  background: #0f4c81;
   color: white;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
 }
 
 button:hover {
-  background: #1e40af;
+  background: #0c3a63;
 }
 
-.create-user {
-  margin-top: 20px;
-  display: flex;
-  gap: 10px;
+#msg {
+  margin-top: 10px;
+  font-weight: bold;
 }

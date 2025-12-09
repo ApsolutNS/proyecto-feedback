@@ -1,129 +1,66 @@
-/* ===============================
-   RESET BÁSICO
-================================*/
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Segoe UI", sans-serif;
-}
-
 body {
-  height: 100vh;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f1624;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #0e1220;
-  transition: background 0.3s ease, color 0.3s ease;
+  height: 100vh;
 }
 
-body.light {
-  background: #f2f2f7;
-  color: #111;
+.login-container {
+  width: 100%;
+  max-width: 380px;
+  padding: 20px;
 }
 
-/* ===============================
-   TARJETA DE LOGIN
-================================*/
 .card {
-  width: 360px;
-  padding: 28px;
-  border-radius: 14px;
-  background: #1c2333;
+  background: #1c2537;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
   color: white;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  transition: background 0.3s ease, color 0.3s ease;
 }
 
-body.light .card {
-  background: white;
-  color: #222;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-.card h2 {
-  margin-bottom: 18px;
-  font-weight: 600;
+.field {
+  margin-bottom: 15px;
 }
 
-/* ===============================
-   INPUTS
-================================*/
 input {
   width: 100%;
   padding: 12px;
-  margin-bottom: 14px;
-  border-radius: 8px;
-  border: 1px solid #3b4255;
-  background: #0f1628;
-  color: white;
-  outline: none;
-  font-size: 15px;
-  transition: all 0.25s ease;
-}
-
-input:focus {
-  border-color: #4bb3ff;
-  background: #141c33;
-}
-
-body.light input {
-  background: #f9f9fb;
-  border: 1px solid #ccc;
-  color: #111;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: #0f1624;
+  color: #fff;
+  font-size: 14px;
 }
 
 button {
   width: 100%;
   padding: 12px;
-  background: #16c172;
+  background: #25d366;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: 6px;
+  color: #000;
   font-weight: bold;
-  color: #0e1220;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  font-size: 16px;
 }
 
 button:hover {
-  opacity: 0.85;
+  background: #1ebe5c;
 }
 
-/* ===============================
-   MENSAJE DE ERROR
-================================*/
-#errorBox {
+.msg {
   margin-top: 10px;
-  padding: 10px;
-  border-radius: 6px;
-  background: rgba(255, 76, 76, 0.18);
-  border: 1px solid rgb(255, 90, 90);
-  color: #ffb3b3;
-  font-size: 14px;
-  display: none;
-}
-
-body.light #errorBox {
-  background: rgba(255, 0, 0, 0.15);
-  color: #700;
-  border-color: red;
-}
-
-/* ===============================
-   TOGGLE TEMA
-================================*/
-#btnTheme {
-  margin-top: 10px;
-  background: #2d5bef;
-  color: white;
-}
-
-#btnTheme:hover {
-  opacity: 0.9;
-}
-
-body.light #btnTheme {
-  background: #444;
-  color: white;
+  text-align: center;
+  color: #ff4d4d;
+  min-height: 20px;
 }

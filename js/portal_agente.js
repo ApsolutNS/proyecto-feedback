@@ -1,18 +1,16 @@
 // js/portal_agente.js
-// Portal del Agente – Material 3, modo claro/oscuro, modal y firmas sin duplicar
+// Portal del Agente – Material Design 3 + modo claro/oscuro + firmas sin duplicar
 "use strict";
 
 /* ------------------------------
    IMPORTS FIREBASE
 ------------------------------ */
 import { app, db, storage } from "./firebase.js";
-
 import {
   getAuth,
   onAuthStateChanged,
   signOut,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
 import {
   collection,
   getDocs,
@@ -22,7 +20,6 @@ import {
   getDoc,
   updateDoc,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
 import {
   ref,
   uploadString,
@@ -32,6 +29,7 @@ import {
 /* ------------------------------
    HELPERS GENERALES
 ------------------------------ */
+const auth = getAuth(app);
 
 function escapeHTML(str) {
   return (str ?? "")
@@ -47,7 +45,7 @@ function escapeHTML(str) {
 
 function toJSDate(value) {
   if (!value) return new Date();
-  if (value.toDate) return value.toDate(); // Timestamp
+  if (value.toDate) return value.toDate(); // Timestamp Firestore
   if (value instanceof Date) return value;
   return new Date(value);
 }
@@ -65,108 +63,63 @@ function formatearFechaLarga(fecha) {
 }
 
 /* ------------------------------
-   ESTADO GLOBAL DEL PORTAL
+   ESTADO GLOBAL
 ------------------------------ */
-
-const auth = getAuth(app);
-
 let currentUser = null;
-let currentRole = null;
-let currentAdvisorName = ""; // nombre del asesor vinculado al agente
-
+let currentAdvisorName = "";   // nombre exacto del asesor en los documentos "registros"
 let currentID = null;
-let currentCollection = null; // "registros" o "refuerzos_calidad"
+let currentCollection = "registros"; // "registros" o "refuerzos_calidad"
 let currentDocData = null;
-let signatureData = null; // data_url de la firma
+let signatureData = null;      // data_url de la firma actual
+let ultimosFeedbacks = [];     // para el dashboard (solo registros)
 
-// Para mini-dashboard
-let ultimosFeedbacks = [];
-
-// Firma / logo de Alex
 const FIRMA_ALEX_URL =
   "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media";
 
 /* ------------------------------
-   REFERENCIAS DOM
+   MODO CLARO / OSCURO (toggle)
 ------------------------------ */
-
-const tbody = document.querySelector("#agentTable tbody");
-const pendingBadgeEl = document.getElementById("pendingBadge");
-
-const avgEl = document.getElementById("avgScore");
-const totalEl = document.getElementById("totalFb");
-const okEl = document.getElementById("okCount");
-const badEl = document.getElementById("badCount");
-
-const selTipoDoc = document.getElementById("selTipoDoc");
-const selRegistrador = document.getElementById("selRegistrador");
-
-// Modal detalle
-const detailModal = document.getElementById("detailModal");
-const feedbackDiv = document.getElementById("feedbackInfo");
-const detailTitle = document.getElementById("detailTitle");
-const editableZone = document.getElementById("editableZone");
-const compromisoEl = document.getElementById("compromiso");
-const agentMsgEl = document.getElementById("agentMsg");
-const signaturePreview = document.getElementById("signaturePreview");
-const btnCloseModal = document.getElementById("btnCloseModal");
-
-// Modal firma
-const signatureModal = document.getElementById("signatureModal");
-const sigCanvas = document.getElementById("sigCanvas");
-const sigCtx = sigCanvas ? sigCanvas.getContext("2d") : null;
-
-// Botones firma
-const btnDraw = document.getElementById("btnDraw");
-const btnUpload = document.getElementById("btnUpload");
-const fileSignatureInput = document.getElementById("fileSignature");
-const btnSave = document.getElementById("btnSave");
-const btnClear = document.getElementById("btnClear");
-const btnUse = document.getElementById("btnUse");
-const btnCloseSig = document.getElementById("btnCloseSig");
-
-// Tema + logout
-const themeToggle = document.getElementById("themeToggle");
-const themeIcon = document.getElementById("themeIcon");
-const btnLogout = document.getElementById("btnLogout");
-const agentNameSpan = document.getElementById("agentNameSpan");
-
-/* ------------------------------
-   TEMA (CLARO / OSCURO)
------------------------------- */
-
 function applyTheme(theme) {
-  const html = document.documentElement;
-  html.setAttribute("data-theme", theme);
-  themeIcon.textContent = theme === "dark" ? "light_mode" : "dark_mode";
-  try {
-    localStorage.setItem("pa-theme", theme);
-  } catch {
-    // ignore
-  }
-}
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+  localStorage.setItem("portalAgenteTheme", theme);
 
-function toggleTheme() {
-  const html = document.documentElement;
-  const current = html.getAttribute("data-theme") || "light";
-  applyTheme(current === "light" ? "dark" : "light");
-}
-
-(function initThemeFromStorage() {
-  try {
-    const stored = localStorage.getItem("pa-theme");
-    if (stored === "dark" || stored === "light") {
-      applyTheme(stored);
+  const iconSpan = document.querySelector("#btnTheme .material-symbols-outlined");
+  const labelSpan = document.querySelector("#btnThemeLabel");
+  if (iconSpan && labelSpan) {
+    if (theme === "dark") {
+      iconSpan.textContent = "dark_mode";
+      labelSpan.textContent = "Oscuro";
+    } else {
+      iconSpan.textContent = "light_mode";
+      labelSpan.textContent = "Claro";
     }
-  } catch {
-    // ignore
   }
-})();
+}
+
+function initTheme() {
+  const stored = localStorage.getItem("portalAgenteTheme");
+  if (stored === "dark" || stored === "light") {
+    applyTheme(stored);
+    return;
+  }
+  const prefersDark = window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(prefersDark ? "dark" : "light");
+}
+
+function setupThemeToggle() {
+  const btnTheme = document.getElementById("btnTheme");
+  if (!btnTheme) return;
+  btnTheme.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    applyTheme(current === "light" ? "dark" : "light");
+  });
+}
 
 /* ------------------------------
-   AUTH + ROL AGENTE
+   AUTH + VINCULACIÓN CON USUARIO
 ------------------------------ */
-
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     location.href = "login.html";
@@ -175,17 +128,18 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
 
   try {
-    const userRef = doc(db, "usuarios", user.uid);
-    const snap = await getDoc(userRef);
-    if (!snap.exists()) {
+    // Leer doc en colección "usuarios/{uid}"
+    const uRef = doc(db, "usuarios", user.uid);
+    const uSnap = await getDoc(uRef);
+    if (!uSnap.exists()) {
       alert("No tienes permisos configurados. Contacta a tu supervisor.");
       await signOut(auth);
       location.href = "login.html";
       return;
     }
 
-    const data = snap.data();
-    currentRole = data.rol || data.role || "";
+    const data = uSnap.data();
+    const rol = data.rol || data.role || "";
     currentAdvisorName =
       data.nombreAsesor ||
       data.nombreMostrar ||
@@ -193,40 +147,60 @@ onAuthStateChanged(auth, async (user) => {
       data.displayName ||
       "";
 
-    const allowedRoles = ["agente"]; // puedes añadir "admin" para pruebas
-    if (!allowedRoles.includes(currentRole)) {
+    // Solo rol agente (puedes añadir 'admin' si quieres probar tú mismo)
+    const allowedRoles = ["agente"];
+    if (!allowedRoles.includes(rol)) {
       alert("No tienes acceso al Portal del Agente.");
       await signOut(auth);
       location.href = "login.html";
       return;
     }
 
-    if (agentNameSpan) {
-      agentNameSpan.textContent =
+    // Mostrar nombre del agente si existe span
+    const nameSpan = document.getElementById("agentNameSpan");
+    if (nameSpan) {
+      nameSpan.textContent =
         currentAdvisorName || currentUser.email || "(Agente)";
     }
 
     if (!currentAdvisorName) {
       alert(
-        "Tu usuario no tiene configurado el nombre de asesor (campo 'nombreAsesor' en la colección 'usuarios')."
+        "Tu usuario no tiene configurado el campo 'nombreAsesor' en la colección 'usuarios'."
       );
       return;
     }
 
+    // Inicializar tema + eventos
+    initTheme();
+    setupThemeToggle();
+    setupSignatureUI();
+    setupFilterListeners();
+
+    // Cargar lista inicial
     await loadAgentList();
   } catch (err) {
     console.error("Error al validar rol del usuario:", err);
-    alert("Error al validar tus permisos. Intenta más tarde.");
+    alert("Error al validar tus permisos. Intenta luego.");
     await signOut(auth);
     location.href = "login.html";
   }
 });
 
-/* ------------------------------
-   DASHBOARD STATS
------------------------------- */
+// Logout (si pones botón en el navbar)
+window.logout = async () => {
+  await signOut(auth);
+  location.href = "login.html";
+};
 
-function renderDashboard() {
+/* ------------------------------
+   DASHBOARD DEL AGENTE
+------------------------------ */
+function renderAgentDashboard() {
+  const avgEl = document.getElementById("avgScore");
+  const totalEl = document.getElementById("totalFb");
+  const okEl = document.getElementById("okCount");
+  const badEl = document.getElementById("badCount");
+
   if (!avgEl || !totalEl || !okEl || !badEl) return;
 
   if (!ultimosFeedbacks.length) {
@@ -238,63 +212,63 @@ function renderDashboard() {
   }
 
   const notas = ultimosFeedbacks
-    .map((f) => Number(f.bruto?.nota || 0))
+    .map((f) => Number(f.bruto?.nota ?? f.nota ?? 0))
     .filter((n) => !Number.isNaN(n));
 
   const total = notas.length;
-  const suma = notas.reduce((t, n) => t + n, 0);
+  const suma = notas.reduce((acc, n) => acc + n, 0);
   const promedio = total ? Math.round((suma / total) * 10) / 10 : 0;
   const aprobados = notas.filter((n) => n >= 85).length;
   const noAprobados = total - aprobados;
 
   avgEl.textContent = `${promedio}%`;
-  totalEl.textContent = String(total);
-  okEl.textContent = String(aprobados);
-  badEl.textContent = String(noAprobados);
+  totalEl.textContent = `${total}`;
+  okEl.textContent = `${aprobados}`;
+  badEl.textContent = `${noAprobados}`;
 }
 
 /* ------------------------------
-   BADGE PENDIENTES
+   BADGE DE PENDIENTES
 ------------------------------ */
-
 function updatePendingBadge(list) {
-  if (!pendingBadgeEl) return;
-  const pend = list.filter(
+  const badge = document.getElementById("pendingBadge");
+  if (!badge) return;
+  const pendingCount = list.filter(
     (x) => (x.estado || "").toUpperCase() === "PENDIENTE"
   ).length;
 
-  pendingBadgeEl.innerHTML = pend
-    ? `<span>${pend} pendientes</span>`
+  badge.innerHTML = pendingCount
+    ? `<span class="badgePending">${pendingCount} pendientes</span>`
     : "";
 }
 
 /* ------------------------------
-   CARGAR LISTA DE DOCUMENTOS
+   CARGAR LISTA DEL AGENTE
 ------------------------------ */
-
-async function loadAgentList() {
+window.loadAgentList = async function () {
+  const tbody = document.querySelector("#agentTable tbody");
   if (!tbody) return;
-
-  const tipoDoc = selTipoDoc?.value || "registros";
-  const filtroRegistrador = selRegistrador?.value || "";
-
-  currentCollection = tipoDoc;
 
   if (!currentAdvisorName) {
     tbody.innerHTML =
-      "<tr><td colspan='5'>Tu usuario no tiene configurado el nombre de asesor.</td></tr>";
+      "<tr><td colspan='5'>Tu usuario no tiene 'nombreAsesor' configurado.</td></tr>";
     updatePendingBadge([]);
-    if (detailModal) detailModal.classList.remove("pa-open");
+    hideDetail();
     return;
   }
 
+  const tipoDoc = document.getElementById("selTipoDoc")?.value || "registros";
+  const filtroRegistrador =
+    document.getElementById("selRegistrador")?.value || "";
+
+  currentCollection = tipoDoc;
   const list = [];
 
   if (tipoDoc === "registros") {
-    // Feedbacks
+    // === FEEDBACKS ===
     const qRef = query(
       collection(db, "registros"),
-      where("asesor", "==", currentAdvisorName)
+      where("asesor", "==", currentAdvisorName) // campo asesor, como me indicaste
     );
     const snap = await getDocs(qRef);
     snap.forEach((d) => {
@@ -304,7 +278,7 @@ async function loadAgentList() {
         id: d.id,
         collection: "registros",
         fecha,
-        detalle: `${r.nota ?? 0}% Feedback`,
+        detalle: `${r.nota ?? 0}%`,
         estado: r.estado || "PENDIENTE",
         registradoPor: r.registrado_por || r.registradoPor || "No especificado",
         etiqueta: "Feedback",
@@ -312,10 +286,11 @@ async function loadAgentList() {
       });
     });
 
+    // Dashboard solo sobre feedbacks
     ultimosFeedbacks = list.slice();
-    renderDashboard();
+    renderAgentDashboard();
   } else {
-    // Refuerzos / capacitaciones
+    // === REFUERZOS / CAPACITACIONES ===
     const snap = await getDocs(collection(db, "refuerzos_calidad"));
     snap.forEach((d) => {
       const r = d.data();
@@ -326,11 +301,13 @@ async function loadAgentList() {
       if (!pertenece) return;
 
       const firmas = Array.isArray(r.firmas) ? r.firmas : [];
-      const firmaAgente = firmas.find((f) => f.nombre === currentAdvisorName);
+      const firmaAgente = firmas.find(
+        (f) => f.nombre === currentAdvisorName
+      );
       const estadoAgente =
         firmaAgente && firmaAgente.url ? "COMPLETADO" : "PENDIENTE";
-      const fecha = toJSDate(r.fechaRefuerzo);
 
+      const fecha = toJSDate(r.fechaRefuerzo);
       list.push({
         id: d.id,
         collection: "refuerzos_calidad",
@@ -346,61 +323,84 @@ async function loadAgentList() {
 
   // Ordenar por fecha desc
   list.sort((a, b) => b.fecha - a.fecha);
-
   updatePendingBadge(list);
 
+  // Filtro por "Registrado por"
   const filtrada = filtroRegistrador
     ? list.filter((x) => x.registradoPor === filtroRegistrador)
     : list;
 
   if (!filtrada.length) {
-    tbody.innerHTML = "<tr><td colspan='5'>Sin registros para este filtro.</td></tr>";
+    tbody.innerHTML =
+      "<tr><td colspan='5'>Sin registros para este filtro</td></tr>";
     return;
   }
 
   tbody.innerHTML = filtrada
     .map(
       (r) => `
-        <tr>
-          <td>${escapeHTML(r.id)}</td>
-          <td>${escapeHTML(r.fecha.toLocaleString("es-PE"))}</td>
-          <td>
-            ${escapeHTML(r.detalle)}
-            <span class="tag-doc">${escapeHTML(r.etiqueta)}</span>
-          </td>
-          <td>${escapeHTML(r.estado)}</td>
-          <td style="text-align:right">
-            <button
-              class="pa-filled-button"
-              data-open-detail="1"
-              data-collection="${escapeHTML(r.collection)}"
-              data-id="${escapeHTML(r.id)}"
-            >
-              Abrir
-            </button>
-          </td>
-        </tr>
-      `
+      <tr>
+        <td>${escapeHTML(r.id)}</td>
+        <td>${escapeHTML(r.fecha.toLocaleString("es-PE"))}</td>
+        <td>
+          ${escapeHTML(r.detalle)}
+          <span class="tag-doc">${escapeHTML(r.etiqueta)}</span>
+        </td>
+        <td>${escapeHTML(r.estado)}</td>
+        <td>
+          <button class="md3-chip" data-col="${r.collection}" data-id="${r.id}">
+            <span class="material-symbols-outlined">visibility</span>
+            <span>Ver</span>
+          </button>
+        </td>
+      </tr>
+    `
     )
     .join("");
-}
+
+  // Delegación para botones "Ver"
+  tbody.onclick = (ev) => {
+    const btn = ev.target.closest("button[data-id]");
+    if (!btn) return;
+    const col = btn.getAttribute("data-col");
+    const id = btn.getAttribute("data-id");
+    openDetail(col, id);
+  };
+};
 
 /* ------------------------------
-   DETALLE DOCUMENTO
+   DETALLE (MODAL) FEEDBACK / REFUERZO
 ------------------------------ */
+function showDetail() {
+  const dialog = document.getElementById("detailDialog");
+  const block = document.getElementById("detailBlock");
+  if (dialog && typeof dialog.showModal === "function") {
+    dialog.showModal();
+  } else if (block) {
+    block.style.display = "block";
+  }
+}
 
-async function openDetail(collectionName, id) {
+function hideDetail() {
+  const dialog = document.getElementById("detailDialog");
+  const block = document.getElementById("detailBlock");
+  if (dialog && dialog.open) dialog.close();
+  if (block) block.style.display = "none";
+}
+
+window.openDetail = async function (collectionName, id) {
   currentCollection = collectionName;
   currentID = id;
 
-  if (
-    !detailModal ||
-    !feedbackDiv ||
-    !editableZone ||
-    !agentMsgEl
-  ) {
-    return;
-  }
+  const titleEl = document.getElementById("detailTitle");
+  const feedbackDiv =
+    document.getElementById("feedbackInfo") ||
+    document.getElementById("detailBody");
+  const editable = document.getElementById("editableZone");
+  const msg = document.getElementById("agentMsg");
+  const compromisoTA = document.getElementById("compromiso");
+
+  if (!feedbackDiv || !editable || !msg || !compromisoTA) return;
 
   if (!currentAdvisorName) {
     alert("No se encontró el nombre del asesor asociado a tu usuario.");
@@ -416,14 +416,12 @@ async function openDetail(collectionName, id) {
   const r = snap.data();
   currentDocData = r;
   signatureData = null;
-  agentMsgEl.textContent = "";
-  agentMsgEl.style.color = "";
+  msg.textContent = "";
+  msg.style.color = "#22c55e";
 
   if (collectionName === "registros") {
-    // ===== DETALLE FEEDBACK =====
-    if (detailTitle) {
-      detailTitle.textContent = "Detalle del Feedback";
-    }
+    // --------- DETALLE FEEDBACK ----------
+    if (titleEl) titleEl.textContent = "Detalle del Feedback";
     const fecha = toJSDate(r.fecha);
     const esReafirmacion = Number(r.nota) === 100;
     const titulo = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
@@ -433,10 +431,10 @@ async function openDetail(collectionName, id) {
       (r.items || [])
         .map(
           (it) => `
-          <div style="margin-bottom:4px">
+          <div class="detalle-item">
             <strong>${escapeHTML(it.name || "")}</strong>
             ${it.perc ? ` (${escapeHTML(it.perc.toString())}%)` : ""}
-            <div style="margin-left:8px">${escapeHTML(it.detail || "")}</div>
+            <div class="detalle-item-text">${escapeHTML(it.detail || "")}</div>
           </div>
         `
         )
@@ -448,7 +446,7 @@ async function openDetail(collectionName, id) {
           (im) => `
           <img src="${escapeHTML(
             im.url
-          )}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
+          )}" class="detalle-img">
         `
         )
         .join("") || "<em>Sin evidencias adjuntas</em>";
@@ -456,103 +454,111 @@ async function openDetail(collectionName, id) {
     const registrador = r.registrado_por || r.registradoPor || "No especificado";
 
     feedbackDiv.innerHTML = `
-      <div class="pa-letter-header">
-        <div class="pa-letter-title">${escapeHTML(titulo)}</div>
-        <img src="${FIRMA_ALEX_URL}" alt="Firma Calidad" style="max-height:40px" />
-      </div>
-
-      <p>
-        Por medio de la presente se deja constancia que el
-        <strong>${escapeHTML(formatearFechaLarga(fecha))}</strong> se realiza una
-        <strong>${escapeHTML(titulo)}</strong> al/la colaborador(a)
-        <strong>${escapeHTML(r.asesor || "")}</strong> con DNI
-        <strong>${escapeHTML(dniGC)}</strong>, quien ejerce la función de Asesor(a)
-        Financiero(a), para el cumplimiento de los parámetros de la llamada.
-      </p>
-
-      <p>
-        Registrado por:
-        <span class="pa-pill">${escapeHTML(registrador)}</span>
-      </p>
-
-      <div class="pa-section-title">Cliente</div>
-      <div class="pa-section-content">
-        <div><strong>DNI:</strong> ${escapeHTML(r.cliente?.dni || "")}</div>
-        <div><strong>Nombre:</strong> ${escapeHTML(r.cliente?.nombre || "")}</div>
-        <div><strong>Teléfono:</strong> ${escapeHTML(r.cliente?.tel || "")}</div>
-        <div><strong>Tipificación:</strong> ${escapeHTML(r.tipificacion || "")}</div>
-        <div><strong>Comentario:</strong> ${escapeHTML(
-          r.observacionCliente || ""
-        )}</div>
-      </div>
-
-      <div class="pa-section-title">Gestión monitoreada</div>
-      <div class="pa-section-content">
-        <div><strong>ID Llamada:</strong> ${escapeHTML(r.idLlamada || "")}</div>
-        <div><strong>ID Contacto:</strong> ${escapeHTML(r.idContacto || "")}</div>
-        <div><strong>Tipo:</strong> ${escapeHTML(r.tipo || "")}</div>
-        <div style="margin-top:6px">
-          <strong>Resumen:</strong>
-          <div class="pa-resumen-box">
-            ${escapeHTML(r.resumen || "")}
-          </div>
+      <header class="detail-header">
+        <div>
+          <h2 class="detail-title">${escapeHTML(titulo)}</h2>
+          <p class="detail-sub">
+            ${escapeHTML(r.asesor || "")} · DNI ${escapeHTML(dniGC)}
+          </p>
         </div>
-      </div>
+        <img src="${FIRMA_ALEX_URL}" class="detail-logo">
+      </header>
 
-      <div class="pa-section-title">Ítems observados</div>
-      <div class="pa-section-content">
+      <section class="detail-section">
+        <h3>Resumen del monitoreo</h3>
+        <p>
+          El <strong>${escapeHTML(
+            formatearFechaLarga(fecha)
+          )}</strong> se realizó una
+          <strong>${escapeHTML(titulo)}</strong> al/la colaborador(a)
+          <strong>${escapeHTML(
+            r.asesor || ""
+          )}</strong> para el cumplimiento de los parámetros de la llamada.
+        </p>
+        <p>
+          Registrado por:
+          <span class="pill">${escapeHTML(registrador)}</span>
+        </p>
+      </section>
+
+      <section class="detail-section">
+        <h3>Cliente</h3>
+        <div class="detail-grid">
+          <div><strong>DNI:</strong> ${escapeHTML(r.cliente?.dni || "")}</div>
+          <div><strong>Nombre:</strong> ${escapeHTML(r.cliente?.nombre || "")}</div>
+          <div><strong>Teléfono:</strong> ${escapeHTML(r.cliente?.tel || "")}</div>
+          <div><strong>Tipificación:</strong> ${escapeHTML(r.tipificacion || "")}</div>
+        </div>
+        <p class="detail-small">
+          <strong>Comentario:</strong> ${escapeHTML(
+            r.observacionCliente || ""
+          )}
+        </p>
+      </section>
+
+      <section class="detail-section">
+        <h3>Gestión monitoreada</h3>
+        <div class="detail-grid">
+          <div><strong>ID Llamada:</strong> ${escapeHTML(r.idLlamada || "")}</div>
+          <div><strong>ID Contacto:</strong> ${escapeHTML(r.idContacto || "")}</div>
+          <div><strong>Tipo:</strong> ${escapeHTML(r.tipo || "")}</div>
+        </div>
+        <div class="resumen-box">
+          ${escapeHTML(r.resumen || "")}
+        </div>
+      </section>
+
+      <section class="detail-section">
+        <h3>Ítems observados</h3>
         ${itemsHtml}
-      </div>
+      </section>
 
-      <div class="pa-section-title">Nota obtenida</div>
-      <div class="pa-section-content">
-        <div class="pa-nota-row">
-          <div class="pa-nota-pill${
-            (r.nota || 0) < 85 ? " pa-nota-pill-bad" : ""
-          }">
-            ${escapeHTML((r.nota || 0).toString())}%
-          </div>
-          <div class="pa-nota-estado">
+      <section class="detail-section">
+        <h3>Nota obtenida</h3>
+        <div class="nota-box">
+          <div class="nota-pill">${escapeHTML((r.nota || 0).toString())}%</div>
+          <div class="nota-estado">
             Estado: <strong>${escapeHTML(r.estado || "PENDIENTE")}</strong>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="pa-section-title">Compromiso del agente</div>
-      <div class="pa-section-content">
-        ${
-          r.compromiso
-            ? escapeHTML(r.compromiso)
-            : "<em>Pendiente de completar por el agente.</em>"
-        }
-      </div>
+      <section class="detail-section">
+        <h3>Compromiso del agente</h3>
+        <div class="detail-chip-area">
+          ${
+            r.compromiso
+              ? escapeHTML(r.compromiso)
+              : "<em>Aún no registras tu compromiso.</em>"
+          }
+        </div>
+      </section>
 
-      <div class="pa-section-title">Evidencias</div>
-      <div class="pa-section-content">
-        ${imgsHtml}
-      </div>
+      <section class="detail-section">
+        <h3>Evidencias</h3>
+        <div class="detail-imgs">
+          ${imgsHtml}
+        </div>
+      </section>
     `;
 
     if ((r.estado || "").toUpperCase() === "COMPLETADO") {
-      editableZone.style.display = "none";
-      agentMsgEl.style.color = "#16a34a";
-      agentMsgEl.textContent = "Este feedback ya fue completado.";
+      editable.style.display = "none";
+      msg.style.color = "#22c55e";
+      msg.textContent = "Este feedback ya fue completado.";
     } else {
-      editableZone.style.display = "block";
-      if (compromisoEl) compromisoEl.value = r.compromiso || "";
+      editable.style.display = "block";
+      compromisoTA.value = r.compromiso || "";
       signatureData = r.firmaUrl || null;
       updateSignaturePreview();
     }
   } else {
-    // ===== DETALLE REFUERZO =====
-    if (detailTitle) {
-      detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
-    }
+    // --------- DETALLE REFUERZO ----------
+    if (titleEl) titleEl.textContent = "Detalle del Refuerzo / Capacitación";
 
     const fechaRef = toJSDate(r.fechaRefuerzo);
     const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
     const firmas = Array.isArray(r.firmas) ? r.firmas : [];
-
     const asesoresTexto = asesoresRef.length
       ? asesoresRef
           .map((a) =>
@@ -563,7 +569,9 @@ async function openDetail(collectionName, id) {
           .join(", ")
       : escapeHTML(r.publico || "—");
 
-    const firmaAgente = firmas.find((f) => f.nombre === currentAdvisorName);
+    const firmaAgente = firmas.find(
+      (f) => f.nombre === currentAdvisorName
+    );
     const compromisoAgente = firmaAgente?.compromiso || "";
     const firmaUrlAgente = firmaAgente?.url || null;
     const fechaFirma = firmaAgente?.fechaFirma
@@ -571,112 +579,258 @@ async function openDetail(collectionName, id) {
       : "";
 
     feedbackDiv.innerHTML = `
-      <div class="pa-letter-header">
-        <div class="pa-letter-title">Refuerzo / Capacitación</div>
-        <img src="${FIRMA_ALEX_URL}" alt="Firma Calidad" style="max-height:40px" />
-      </div>
+      <header class="detail-header">
+        <div>
+          <h2 class="detail-title">Refuerzo / Capacitación</h2>
+          <p class="detail-sub">
+            ${escapeHTML(r.tema || r.tipo || "Sesión de refuerzo")}
+          </p>
+        </div>
+        <img src="${FIRMA_ALEX_URL}" class="detail-logo">
+      </header>
 
-      <p>
-        Se deja constancia que el
-        <strong>${escapeHTML(formatearFechaLarga(fechaRef))}</strong> se realizó un
-        <strong>${escapeHTML(r.tipo || "refuerzo / capacitación")}</strong>
-        sobre <strong>${escapeHTML(r.tema || "—")}</strong>, dirigido a:
-      </p>
+      <section class="detail-section">
+        <h3>Detalle de la sesión</h3>
+        <p>
+          El <strong>${escapeHTML(
+            formatearFechaLarga(fechaRef)
+          )}</strong> se realizó un
+          <strong>${escapeHTML(r.tipo || "refuerzo / capacitación")}</strong>
+          sobre <strong>${escapeHTML(r.tema || "—")}</strong>, dirigido a:
+        </p>
+        <p class="detail-chip-area">
+          ${asesoresTexto}
+        </p>
+        <p>
+          Responsable:
+          <span class="pill">${escapeHTML(
+            r.responsable || "Calidad & Formación"
+          )}</span>
+        </p>
+      </section>
 
-      <p class="pa-section-content">
-        ${asesoresTexto}
-      </p>
+      <section class="detail-section">
+        <h3>Objetivo</h3>
+        <p>${escapeHTML(r.objetivo || "—")}</p>
+      </section>
 
-      <p>
-        Responsable de la sesión:
-        <span class="pa-pill">${escapeHTML(
-          r.responsable || "Calidad & Formación"
-        )}</span>
-      </p>
+      <section class="detail-section">
+        <h3>Detalle / acuerdos</h3>
+        <p>${escapeHTML(r.detalle || "—")}</p>
+      </section>
 
-      <div class="pa-section-title">Objetivo del refuerzo</div>
-      <div class="pa-section-content">
-        ${escapeHTML(r.objetivo || "—")}
-      </div>
+      <section class="detail-section">
+        <h3>Compromiso del agente</h3>
+        <div class="detail-chip-area">
+          ${
+            compromisoAgente
+              ? escapeHTML(compromisoAgente)
+              : "<em>Aún no registras tu compromiso para este refuerzo.</em>"
+          }
+        </div>
+      </section>
 
-      <div class="pa-section-title">Detalle / acuerdos clave</div>
-      <div class="pa-section-content">
-        ${escapeHTML(r.detalle || "—")}
-      </div>
-
-      <div class="pa-section-title">Compromiso del agente</div>
-      <div class="pa-section-content">
-        ${
-          compromisoAgente
-            ? escapeHTML(compromisoAgente)
-            : "<em>Pendiente de completar por el agente.</em>"
-        }
-      </div>
-
-      <div class="pa-section-title">Firma actual del agente</div>
-      <div class="pa-section-content">
-        ${
-          firmaUrlAgente
-            ? `<img src="${escapeHTML(
-                firmaUrlAgente
-              )}" style="max-width:260px;border-radius:10px;border:1px solid #e5e7eb;margin-top:6px">
-               <div class="pa-nota-estado">Fecha de firma: ${escapeHTML(
-                 fechaFirma
-               )}</div>`
-            : "<em>Sin firma registrada.</em>"
-        }
-      </div>
+      <section class="detail-section">
+        <h3>Firma actual del agente</h3>
+        <div class="detail-chip-area">
+          ${
+            firmaUrlAgente
+              ? `
+                <img src="${escapeHTML(
+                  firmaUrlAgente
+                )}" class="detalle-img">
+                <div class="nota-estado">Firmado el ${escapeHTML(
+                  fechaFirma
+                )}</div>
+              `
+              : "<em>Sin firma registrada</em>"
+          }
+        </div>
+      </section>
     `;
 
     if (firmaUrlAgente && compromisoAgente) {
-      editableZone.style.display = "none";
-      agentMsgEl.style.color = "#16a34a";
-      agentMsgEl.textContent = "Este refuerzo ya fue firmado por este agente.";
+      editable.style.display = "none";
+      msg.style.color = "#22c55e";
+      msg.textContent = "Este refuerzo ya fue firmado por este agente.";
     } else {
-      editableZone.style.display = "block";
-      if (compromisoEl) compromisoEl.value = compromisoAgente || "";
+      editable.style.display = "block";
+      compromisoTA.value = compromisoAgente || "";
       signatureData = firmaUrlAgente || null;
       updateSignaturePreview();
     }
   }
 
-  // Abrir modal
-  detailModal.classList.add("pa-open");
-  detailModal.setAttribute("aria-hidden", "false");
-}
+  showDetail();
+};
 
 /* ------------------------------
-   PREVIEW DE FIRMA
+   FIRMA: PREVIEW + DIBUJO + UPLOAD
 ------------------------------ */
-
 function updateSignaturePreview() {
-  if (!signaturePreview) return;
+  const box = document.getElementById("signaturePreview");
+  if (!box) return;
+
   if (signatureData) {
-    signaturePreview.className = "pa-signature-preview";
-    signaturePreview.innerHTML = `<img src="${signatureData}" alt="Firma del agente">`;
+    box.className = "signature-preview";
+    box.innerHTML = `<img src="${signatureData}" alt="Firma del agente">`;
   } else {
-    signaturePreview.className = "pa-signature-preview-empty";
-    signaturePreview.textContent = "Sin firma seleccionada";
+    box.className = "signature-preview-empty";
+    box.textContent = "Sin firma seleccionada";
   }
+}
+
+let drawing = false;
+let canvas = null;
+let ctx = null;
+let modal = null;
+
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.touches ? e.touches[0].clientX : e.clientX) - rect.left,
+    y: (e.touches ? e.touches[0].clientY : e.clientY) - rect.top,
+  };
+}
+
+function openDrawModal() {
+  if (!modal || !canvas || !ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  modal.classList.add("open");
+}
+
+function closeDrawModal() {
+  if (!modal) return;
+  modal.classList.remove("open");
+}
+
+function saveDrawnSignature() {
+  if (!canvas) return;
+  signatureData = canvas.toDataURL("image/png");
+  updateSignaturePreview();
+  closeDrawModal();
+}
+
+function clearCanvas() {
+  if (!ctx || !canvas) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function triggerUpload() {
+  const input = document.getElementById("fileSignature");
+  if (input) input.click();
+}
+
+function setupSignatureUI() {
+  modal = document.getElementById("signatureModal");
+  canvas = document.getElementById("sigCanvas");
+  ctx = canvas ? canvas.getContext("2d") : null;
+
+  if (canvas && ctx) {
+    canvas.onmousedown = (e) => {
+      drawing = true;
+      ctx.beginPath();
+      const p = getCanvasPos(e);
+      ctx.moveTo(p.x, p.y);
+    };
+    canvas.onmouseup = () => (drawing = false);
+    canvas.onmouseleave = () => (drawing = false);
+    canvas.onmousemove = (e) => {
+      if (!drawing) return;
+      const p = getCanvasPos(e);
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#000";
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    };
+
+    canvas.addEventListener(
+      "touchstart",
+      (e) => {
+        drawing = true;
+        ctx.beginPath();
+        const p = getCanvasPos(e);
+        ctx.moveTo(p.x, p.y);
+      },
+      { passive: true }
+    );
+
+    canvas.addEventListener(
+      "touchend",
+      () => {
+        drawing = false;
+      },
+      { passive: true }
+    );
+
+    canvas.addEventListener(
+      "touchmove",
+      (e) => {
+        if (!drawing) return;
+        e.preventDefault();
+        const p = getCanvasPos(e);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      },
+      { passive: false }
+    );
+  }
+
+  const btnDraw = document.getElementById("btnDraw");
+  const btnUpload = document.getElementById("btnUpload");
+  const btnSave = document.getElementById("btnSave");
+  const btnClear = document.getElementById("btnClear");
+  const btnCancel = document.getElementById("btnCancel");
+  const btnUse = document.getElementById("btnUse");
+  const fileInput = document.getElementById("fileSignature");
+  const btnCloseDetail = document.getElementById("btnCloseDetail");
+
+  if (btnDraw) btnDraw.addEventListener("click", openDrawModal);
+  if (btnUpload) btnUpload.addEventListener("click", triggerUpload);
+  if (btnSave) btnSave.addEventListener("click", saveSignature);
+  if (btnClear) btnClear.addEventListener("click", clearCanvas);
+  if (btnCancel) btnCancel.addEventListener("click", closeDrawModal);
+  if (btnUse) btnUse.addEventListener("click", saveDrawnSignature);
+  if (btnCloseDetail) btnCloseDetail.addEventListener("click", hideDetail);
+
+  if (fileInput) {
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        signatureData = ev.target.result;
+        updateSignaturePreview();
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+
+  updateSignaturePreview();
 }
 
 /* ------------------------------
    GUARDAR FIRMA + COMPROMISO
-   (firma única por usuario en Storage)
+   (sin duplicar archivos: 1 archivo por agente)
 ------------------------------ */
-
 async function saveSignature() {
   if (!currentID || !currentCollection) {
     alert("No hay documento abierto.");
     return;
   }
   if (!currentUser) {
-    alert("Sesión no válida.");
+    alert("Tu sesión ha expirado. Ingresa nuevamente.");
+    location.href = "login.html";
     return;
   }
-  if (!compromisoEl || !agentMsgEl || !editableZone) return;
 
-  const compromiso = compromisoEl.value.trim();
+  const ta = document.getElementById("compromiso");
+  const msg = document.getElementById("agentMsg");
+  const editable = document.getElementById("editableZone");
+  if (!ta || !msg || !editable) return;
+
+  const compromiso = ta.value.trim();
   if (!compromiso) {
     alert("El compromiso es obligatorio.");
     return;
@@ -685,34 +839,43 @@ async function saveSignature() {
     alert("Debes subir o dibujar una firma.");
     return;
   }
+  if (!currentAdvisorName) {
+    alert("No se encontró el nombre del asesor asociado a tu usuario.");
+    return;
+  }
 
-  agentMsgEl.style.color = "";
-  agentMsgEl.textContent = "Guardando...";
+  msg.style.color = "#22c55e";
+  msg.textContent = "Guardando...";
 
   try {
-    // Un archivo por usuario para evitar duplicados
-    const uid = currentUser.uid || "sinuid";
-    const pathFolder =
-      currentCollection === "refuerzos_calidad" ? "firmas_refuerzos" : "firmas";
-    const fileName = `${uid}.png`; // siempre el mismo → sobreescribe
+    // 🔑 Evitar duplicar archivos:
+    // usamos siempre la misma ruta por agente y tipo de documento,
+    // así se sobrescribe el archivo anterior en vez de crear uno nuevo.
+    let pathFolder = "firmas";
+    if (currentCollection === "refuerzos_calidad") {
+      pathFolder = "firmas_refuerzos";
+    }
 
+    const fileName = `${currentUser.uid}.png`; // 1 archivo por agente
     const sigRef = ref(storage, `${pathFolder}/${fileName}`);
+
+    // Subir / sobrescribir firma
     await uploadString(sigRef, signatureData, "data_url");
     const url = await getDownloadURL(sigRef);
 
+    // Actualizar documento en Firestore
     const docRef = doc(db, currentCollection, currentID);
 
     if (currentCollection === "registros") {
-      // FEEDBACK
+      // FEEDBACK: actualizamos solo compromiso, firmaUrl, estado
       await updateDoc(docRef, {
         compromiso,
         firmaUrl: url,
         estado: "COMPLETADO",
       });
-      agentMsgEl.style.color = "#16a34a";
-      agentMsgEl.textContent = "Feedback completado ✓";
+      msg.textContent = "Feedback completado ✓";
     } else {
-      // REFUERZOS
+      // REFUERZOS: actualizamos la entrada correspondiente en el array "firmas"
       const snap = await getDoc(docRef);
       const data = snap.data() || {};
       const firmas = Array.isArray(data.firmas) ? data.firmas : [];
@@ -723,15 +886,15 @@ async function saveSignature() {
           return {
             ...f,
             url,
-            fechaFirma: nowIso,
             compromiso,
+            fechaFirma: nowIso,
           };
         }
         return f;
       });
 
       const allFirmados =
-        nuevasFirmas.length > 0 && nuevasFirmas.every((f) => f.url);
+        nuevasFirmas.length > 0 && nuevasFirmas.every((f) => !!f.url);
 
       await updateDoc(docRef, {
         firmas: nuevasFirmas,
@@ -741,208 +904,76 @@ async function saveSignature() {
         agenteNombre: currentAdvisorName,
       });
 
-      agentMsgEl.style.color = "#16a34a";
-      agentMsgEl.textContent = "Refuerzo firmado ✓";
+      msg.textContent = "Refuerzo firmado ✓";
     }
 
-    editableZone.style.display = "none";
+    // Bloqueamos zona editable y refrescamos lista
+    editable.style.display = "none";
     await loadAgentList();
   } catch (e) {
     console.error(e);
-    agentMsgEl.style.color = "#dc2626";
-    agentMsgEl.textContent =
-      "Error: Missing or insufficient permissions. (" + e.code + ")";
+    msg.style.color = "red";
+    msg.textContent = "Error: " + (e.message || e.code || e);
   }
 }
 
 /* ------------------------------
-   CANVAS FIRMA
+   LISTENERS DE FILTROS
 ------------------------------ */
+function setupFilterListeners() {
+  const selTipoDoc = document.getElementById("selTipoDoc");
+  const selReg = document.getElementById("selRegistrador");
 
-let drawing = false;
-
-function getCanvasPos(e) {
-  const rect = sigCanvas.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  return {
-    x: clientX - rect.left,
-    y: clientY - rect.top,
-  };
-}
-
-function openSignatureModal() {
-  if (!signatureModal || !sigCtx || !sigCanvas) return;
-  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-  signatureModal.classList.add("pa-open");
-  signatureModal.setAttribute("aria-hidden", "false");
-}
-
-function closeSignatureModal() {
-  if (!signatureModal) return;
-  signatureModal.classList.remove("pa-open");
-  signatureModal.setAttribute("aria-hidden", "true");
-}
-
-function saveDrawnSignature() {
-  if (!sigCanvas) return;
-  signatureData = sigCanvas.toDataURL("image/png");
-  updateSignaturePreview();
-  closeSignatureModal();
-}
-
-function clearCanvas() {
-  if (!sigCtx || !sigCanvas) return;
-  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-}
-
-if (sigCanvas && sigCtx) {
-  sigCanvas.addEventListener("mousedown", (e) => {
-    drawing = true;
-    sigCtx.beginPath();
-    const p = getCanvasPos(e);
-    sigCtx.moveTo(p.x, p.y);
-  });
-
-  sigCanvas.addEventListener("mouseup", () => {
-    drawing = false;
-  });
-
-  sigCanvas.addEventListener("mouseleave", () => {
-    drawing = false;
-  });
-
-  sigCanvas.addEventListener("mousemove", (e) => {
-    if (!drawing) return;
-    const p = getCanvasPos(e);
-    sigCtx.lineWidth = 2;
-    sigCtx.lineCap = "round";
-    sigCtx.strokeStyle = "#000000";
-    sigCtx.lineTo(p.x, p.y);
-    sigCtx.stroke();
-  });
-
-  sigCanvas.addEventListener(
-    "touchstart",
-    (e) => {
-      drawing = true;
-      sigCtx.beginPath();
-      const p = getCanvasPos(e);
-      sigCtx.moveTo(p.x, p.y);
-    },
-    { passive: true }
-  );
-
-  sigCanvas.addEventListener(
-    "touchend",
-    () => {
-      drawing = false;
-    },
-    { passive: true }
-  );
-
-  sigCanvas.addEventListener(
-    "touchmove",
-    (e) => {
-      if (!drawing) return;
-      e.preventDefault();
-      const p = getCanvasPos(e);
-      sigCtx.lineTo(p.x, p.y);
-      sigCtx.stroke();
-    },
-    { passive: false }
-  );
+  if (selTipoDoc) {
+    selTipoDoc.addEventListener("change", () => loadAgentList());
+  }
+  if (selReg) {
+    selReg.addEventListener("change", () => loadAgentList());
+  }
 }
 
 /* ------------------------------
-   SUBIR IMAGEN DE FIRMA
+   NOTA FINAL SOBRE REGLAS
 ------------------------------ */
+/*
+⚠️ Para que NO vuelva a salir "Missing or insufficient permissions"
+cuando el agente firma, tus reglas de Firestore para `registros` y
+`refuerzos_calidad` deberían permitir que un "agente" actualice SOLO
+los campos de firma/compromiso.
 
-function triggerUpload() {
-  if (fileSignatureInput) fileSignatureInput.click();
+Ejemplo de patrón para registros (ajústalo a tu lógica):
+
+match /registros/{docId} {
+  allow read: if request.auth != null;
+  allow write: if isSupervisor() || isAdmin();
+  allow update: if isAgent()
+    && request.resource.data.diff(resource.data).changedKeys().hasOnly(
+         ['compromiso', 'firmaUrl', 'estado']
+       )
+    && request.resource.data.asesor == resource.data.asesor;
 }
 
-if (fileSignatureInput) {
-  fileSignatureInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      signatureData = ev.target.result;
-      updateSignaturePreview();
-    };
-    reader.readAsDataURL(file);
-  });
+Y para refuerzos algo así:
+
+match /refuerzos_calidad/{docId} {
+  allow read: if request.auth != null;
+  allow write: if isSupervisor() || isAdmin();
+  allow update: if isAgent()
+    && request.resource.data.diff(resource.data).changedKeys().hasOnly(
+         ['firmas', 'firmado', 'firmaNombre', 'firmaFecha', 'agenteNombre']
+       );
 }
 
-/* ------------------------------
-   EVENT LISTENERS
------------------------------- */
+Además, las reglas de Storage ya deben tener:
 
-// Filtros
-if (selTipoDoc) selTipoDoc.addEventListener("change", () => loadAgentList());
-if (selRegistrador)
-  selRegistrador.addEventListener("change", () => loadAgentList());
-
-// Botón "Abrir" en tabla (delegación)
-if (tbody) {
-  tbody.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-open-detail]");
-    if (!btn) return;
-    const collectionName = btn.getAttribute("data-collection");
-    const id = btn.getAttribute("data-id");
-    if (collectionName && id) {
-      openDetail(collectionName, id);
-    }
-  });
+match /firmas/{file} {
+  allow read: if true;
+  allow write: if request.auth != null;
+}
+match /firmas_refuerzos/{file} {
+  allow read: if true;
+  allow write: if request.auth != null;
 }
 
-// Cerrar modal detalle
-if (btnCloseModal && detailModal) {
-  btnCloseModal.addEventListener("click", () => {
-    detailModal.classList.remove("pa-open");
-    detailModal.setAttribute("aria-hidden", "true");
-  });
+*/
 
-  detailModal.addEventListener("click", (e) => {
-    if (e.target === detailModal) {
-      detailModal.classList.remove("pa-open");
-      detailModal.setAttribute("aria-hidden", "true");
-    }
-  });
-}
-
-// Firma: botones
-if (btnDraw) btnDraw.addEventListener("click", openSignatureModal);
-if (btnUpload) btnUpload.addEventListener("click", triggerUpload);
-if (btnSave) btnSave.addEventListener("click", () => saveSignature());
-if (btnClear) btnClear.addEventListener("click", clearCanvas);
-if (btnUse) btnUse.addEventListener("click", saveDrawnSignature);
-if (btnCloseSig)
-  btnCloseSig.addEventListener("click", () => closeSignatureModal());
-
-if (signatureModal) {
-  signatureModal.addEventListener("click", (e) => {
-    if (e.target === signatureModal) {
-      closeSignatureModal();
-    }
-  });
-}
-
-// Tema
-if (themeToggle) {
-  themeToggle.addEventListener("click", toggleTheme);
-}
-
-// Logout
-if (btnLogout) {
-  btnLogout.addEventListener("click", async () => {
-    await signOut(auth);
-    location.href = "login.html";
-  });
-}
-
-// Exportar algunas funciones si necesitas depurar desde consola
-window._paDebug = {
-  loadAgentList,
-};

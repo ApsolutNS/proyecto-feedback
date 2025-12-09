@@ -1,5 +1,5 @@
-import { auth } from "./firebase.js";
-import { db } from "./firebase.js";
+import { auth } from "js/firebase.js";
+import { db } from "js/firebase.js";
 
 import {
   signInWithEmailAndPassword,

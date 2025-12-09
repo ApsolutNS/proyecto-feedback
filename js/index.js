@@ -11,7 +11,9 @@
 ------------------------------ */
 import { getAuth, onAuthStateChanged, signOut } 
   from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
 import { db } from "./firebase.js";
+
 import {
   collection,
   getDocs
@@ -29,14 +31,12 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// botón cerrar sesión: <button onclick="logout()">Cerrar sesión</button>
+// cerrar sesión
 window.logout = () => signOut(auth);
 
 /* ------------------------------
    Helpers básicos
 ------------------------------ */
-
-// Escapar HTML para reducir riesgo XSS
 function escapeHTML(str) {
   return (str ?? "")
     .toString()
@@ -45,12 +45,9 @@ function escapeHTML(str) {
       "<": "&lt;",
       ">": "&gt;",
       '"': "&quot;"
-      // Si quieres también comilla simple, descomenta:
-      // "'": "&#39;"
     }[c] || c));
 }
 
-// Normalizar texto para comparaciones
 function normalize(str) {
   return (str || "")
     .toString()
@@ -59,11 +56,9 @@ function normalize(str) {
     .replace(/\s+/g, " ");
 }
 
-// Parsear fecha desde distintos formatos
 function parseFecha(fecha) {
   if (!fecha) return new Date();
-  if (fecha.toDate) return fecha.toDate(); // Timestamp Firestore
-
+  if (fecha.toDate) return fecha.toDate();
   if (typeof fecha === "string") {
     if (fecha.includes("T")) return new Date(fecha);
     if (fecha.includes("/")) {
@@ -76,7 +71,6 @@ function parseFecha(fecha) {
   return new Date(fecha);
 }
 
-// Semanas de un mes (S1, S2,...)
 function getWeeksOfMonth(date = new Date()) {
   const y = date.getFullYear();
   const m = date.getMonth();
@@ -93,8 +87,6 @@ function getWeeksOfMonth(date = new Date()) {
 /* ------------------------------
    Firebase: cargar datos
 ------------------------------ */
-
-// registros (monitoreos)
 async function loadRegistros() {
   const snap = await getDocs(collection(db, "registros"));
   const arr = [];
@@ -102,20 +94,16 @@ async function loadRegistros() {
   return arr;
 }
 
-// asesores con GC
 async function loadAsesores() {
   const snap = await getDocs(collection(db, "asesores"));
   const mapa = {};
   snap.forEach((doc) => {
     const d = doc.data();
-    if (d.nombre) {
-      mapa[d.nombre.trim()] = d.GC || "SIN GC";
-    }
+    if (d.nombre) mapa[d.nombre.trim()] = d.GC || "SIN GC";
   });
   return mapa;
 }
 
-// Cruza registros + GC de asesores
 async function getMergedData() {
   const registros = await loadRegistros();
   const asesores = await loadAsesores();
@@ -129,13 +117,11 @@ async function getMergedData() {
 /* ------------------------------
    Estado global
 ------------------------------ */
-let rawData = [];      // todos los registros
-let filteredData = []; // registros tras filtros
-let allYears = [];     // años detectados
-let currentWeeks = []; // semanas del mes actual del filtro
-
-// Estado del modal de ítems
-let itemsModalAsesor = null; // null = general, string = nombre asesor
+let rawData = [];
+let filteredData = [];
+let allYears = [];
+let currentWeeks = [];
+let itemsModalAsesor = null;
 
 /* ------------------------------
    Chart semanal
@@ -161,10 +147,8 @@ const chart = new Chart(document.getElementById("chartMonth"), {
 ------------------------------ */
 function renderExecView(data) {
   const porAsesor = {};
-
   data.forEach((r) => {
     if (!r.asesor) return;
-
     const key = r.asesor;
     const nota = Number(r.nota || 0);
 
@@ -182,16 +166,16 @@ function renderExecView(data) {
     }
 
     const a = porAsesor[key];
-    a.total += 1;
+    a.total++;
     a.sumaNota += nota;
     if (a.max === null || nota > a.max) a.max = nota;
     if (a.min === null || nota < a.min) a.min = nota;
-    if (nota >= 85) a.ok += 1;
-    else a.bad += 1;
+    if (nota >= 85) a.ok++;
+    else a.bad++;
   });
 
   const lista = Object.values(porAsesor)
-    .map((a) => ({
+    .map(a => ({
       ...a,
       promedio: a.total ? a.sumaNota / a.total : 0
     }))
@@ -203,13 +187,10 @@ function renderExecView(data) {
     return;
   }
 
-  cont.innerHTML = lista.map((a) => {
+  cont.innerHTML = lista.map(a => {
     const prom = Math.round(a.promedio * 10) / 10;
-    const esVerde = prom >= 85;
-    const pillClass = esVerde ? "green" : "red";
-    const label = esVerde ? "🟢 85 – 100" : "🔴 0 – 84";
-    const maxTxt = a.max !== null ? `${a.max}%` : "-";
-    const minTxt = a.min !== null ? `${a.min}%` : "-";
+    const pillClass = prom >= 85 ? "green" : "red";
+    const label = prom >= 85 ? "🟢 85–100" : "🔴 0–84";
 
     return `
       <div class="exec-card" data-asesor="${escapeHTML(a.asesor)}">
@@ -218,9 +199,7 @@ function renderExecView(data) {
             <div class="exec-name">${escapeHTML(a.asesor)}</div>
             <div class="exec-gc">GC: ${escapeHTML(a.gc)}</div>
           </div>
-          <div class="pill ${pillClass}">
-            ${label}
-          </div>
+          <div class="pill ${pillClass}">${label}</div>
         </div>
         <div class="exec-main">
           <div>
@@ -231,155 +210,113 @@ function renderExecView(data) {
             </div>
           </div>
           <div class="exec-meta">
-            <div><b>Mejor</b>: ${maxTxt}</div>
-            <div><b>Peor</b>: ${minTxt}</div>
+            <div><b>Mejor</b>: ${a.max}%</div>
+            <div><b>Peor</b>: ${a.min}%</div>
           </div>
         </div>
       </div>
     `;
   }).join("");
 
-  // Click en tarjetas → modal por asesor
   cont.querySelectorAll(".exec-card").forEach((card) => {
     card.addEventListener("click", () => {
-      const asesor = card.getAttribute("data-asesor") || "";
-      openItemsModal(asesor || null);
+      openItemsModal(card.dataset.asesor);
     });
   });
 }
 
 /* ------------------------------
-   Render global desde filteredData
+   Render general
 ------------------------------ */
 function renderFromFilteredData() {
   const data = filteredData;
 
-  // Resumen filtro
+  // Resumen texto
   const selReg = document.getElementById("filterRegistrado");
   const selMes = document.getElementById("filterMes");
   const selAnio = document.getElementById("filterAnio");
   const summary = document.getElementById("filterSummary");
 
-  const valueReg = selReg.value;
-  const valueMes = selMes.value;
-  const valueAnio = selAnio.value;
-
   let resumen = `Mostrando ${data.length} registros`;
-  if (valueMes !== "") {
-    const mesTexto = selMes.options[selMes.selectedIndex].text;
-    resumen += ` del mes ${mesTexto}`;
-  } else {
-    resumen += ` de todos los meses`;
-  }
-  if (valueAnio !== "") {
-    resumen += ` del año ${valueAnio}`;
-  } else {
-    resumen += ` de todos los años`;
-  }
-  if (valueReg) {
-    resumen += ` registrados por: ${valueReg}.`;
-  } else {
-    resumen += ` y todos los usuarios.`;
-  }
+
+  if (selMes.value !== "") resumen += ` del mes ${selMes.options[selMes.selectedIndex].text}`;
+  if (selAnio.value !== "") resumen += ` del año ${selAnio.value}`;
+  if (selReg.value) resumen += ` registrados por ${selReg.value}`;
   summary.textContent = resumen;
 
   // Vista ejecutiva
   renderExecView(data);
 
-  // Contadores por tipo
-  const counts = {
-    EFECTIVA: 0,
-    EFECTIVANK: 0,
-    XPERTO: 0,
-    FACEBOOK: 0,
-    INSTAGRAM: 0,
-    CORREO: 0,
-    OTRO: 0
-  };
-
-  data.forEach((r) => {
-    const tipo = (r.tipo || "OTRO").toUpperCase();
-    if (!Object.prototype.hasOwnProperty.call(counts, tipo)) counts.OTRO++;
-    else counts[tipo]++;
+  // Contadores
+  const counts = { EFECTIVA:0, EFECTIVANK:0, XPERTO:0, FACEBOOK:0, INSTAGRAM:0, CORREO:0, OTRO:0 };
+  data.forEach(r=>{
+    const t = (r.tipo || "OTRO").toUpperCase();
+    counts[t] !== undefined ? counts[t]++ : counts.OTRO++;
   });
 
-  document.getElementById("cntEfectiva").innerText   = counts.EFECTIVA;
+  document.getElementById("cntEfectiva").innerText = counts.EFECTIVA;
   document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
-  document.getElementById("cntXperto").innerText     = counts.XPERTO;
-  document.getElementById("cntFb").innerText         = counts.FACEBOOK;
-  document.getElementById("cntIg").innerText         = counts.INSTAGRAM;
-  document.getElementById("cntMail").innerText       = counts.CORREO;
+  document.getElementById("cntXperto").innerText = counts.XPERTO;
+  document.getElementById("cntFb").innerText = counts.FACEBOOK;
+  document.getElementById("cntIg").innerText = counts.INSTAGRAM;
+  document.getElementById("cntMail").innerText = counts.CORREO;
 
   // Últimos registros
   const recent = data
     .slice()
-    .sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha))
-    .slice(0, 8);
+    .sort((a,b)=>parseFecha(b.fecha)-parseFecha(a.fecha))
+    .slice(0,8);
 
-  const tbodyRecent = document.querySelector("#recentTable tbody");
-  if (!recent.length) {
-    tbodyRecent.innerHTML = `<tr><td colspan="5">Sin registros</td></tr>`;
-  } else {
-    tbodyRecent.innerHTML = recent.map((r) => `
-      <tr>
-        <td>${escapeHTML(parseFecha(r.fecha).toLocaleString("es-PE"))}</td>
-        <td>${escapeHTML(r.asesor)} — ${escapeHTML(r.gc)}</td>
-        <td>${escapeHTML((r.nota || 0).toString())}%</td>
-        <td>${escapeHTML(r.tipo || "-")}</td>
-        <td>${escapeHTML(r.registradoPor || "-")}</td>
-      </tr>
-    `).join("");
-  }
+  document.querySelector("#recentTable tbody").innerHTML =
+    recent.length
+      ? recent.map(r=>`
+        <tr>
+          <td>${escapeHTML(parseFecha(r.fecha).toLocaleString("es-PE"))}</td>
+          <td>${escapeHTML(r.asesor)} — ${escapeHTML(r.gc)}</td>
+          <td>${r.nota || 0}%</td>
+          <td>${escapeHTML(r.tipo)}</td>
+          <td>${escapeHTML(r.registradoPor)}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="5">Sin registros</td></tr>`;
 
-  // Tabla semanal + gráfico
+  // Semanas
   const baseDate = data.length ? parseFecha(data[0].fecha) : new Date();
   currentWeeks = getWeeksOfMonth(baseDate);
 
-  const asesoresUnicos = [...new Set(data.map((r) => r.asesor))].filter(Boolean);
+  const asesoresUnicos = [...new Set(data.map(r=>r.asesor))].filter(Boolean);
 
-  const head = `<tr><th>ASESOR</th>` +
-    currentWeeks.map((_, i) => `<th>S${i + 1} C1</th><th>S${i + 1} C2</th>`).join("") +
+  document.getElementById("weeklyHead").innerHTML =
+    `<tr><th>ASESOR</th>` +
+    currentWeeks.map((_,i)=>`<th>S${i+1} C1</th><th>S${i+1} C2</th>`).join("") +
     `</tr>`;
-  document.getElementById("weeklyHead").innerHTML = head;
-
-  const cuerpo = asesoresUnicos.map((a) => {
-    const reg = data.find((r) => r.asesor === a);
-    const gc = reg?.gc || "SIN GC";
-    let row = `<tr><td>${escapeHTML(a)} — ${escapeHTML(gc)}</td>`;
-
-    for (let w = 0; w < currentWeeks.length; w++) {
-      const recs = data.filter((r) => {
-        const f = parseFecha(r.fecha);
-        const d = f.getDate();
-        return (
-          r.asesor === a &&
-          d >= currentWeeks[w].startDay &&
-          d <= currentWeeks[w].endDay
-        );
-      });
-      row += `<td>${escapeHTML(recs[0]?.tipo || "-")}</td>`;
-      row += `<td>${escapeHTML(recs[1]?.tipo || "-")}</td>`;
-    }
-
-    return row + "</tr>";
-  }).join("");
 
   document.getElementById("weeklyBody").innerHTML =
-    cuerpo || `<tr><td colspan="${1 + currentWeeks.length * 2}">Sin registros</td></tr>`;
+    asesoresUnicos.map(a=>{
+      let row = `<tr><td>${escapeHTML(a)}</td>`;
+      for (let w=0;w<currentWeeks.length;w++){
+        const {startDay,endDay} = currentWeeks[w];
+        const recs = data.filter(r=>{
+          const d = parseFecha(r.fecha).getDate();
+          return r.asesor===a && d>=startDay && d<=endDay;
+        });
+        row += `<td>${escapeHTML(recs[0]?.tipo || "-")}</td>`;
+        row += `<td>${escapeHTML(recs[1]?.tipo || "-")}</td>`;
+      }
+      return row+"</tr>";
+    }).join("") || `<tr><td colspan="20">Sin datos</td></tr>`;
 
-  // Datos para gráfico semanal
-  const values = currentWeeks.map((w) => {
-    const recs = data.filter((r) => {
-      const f = parseFecha(r.fecha);
-      const d = f.getDate();
-      return d >= w.startDay && d <= w.endDay;
+  // Gráfico
+  const values = currentWeeks.map(w=>{
+    const recs = data.filter(r=>{
+      const d = parseFecha(r.fecha).getDate();
+      return d>=w.startDay && d<=w.endDay;
     });
     if (!recs.length) return 0;
-    const avg = recs.reduce((t, r) => t + (parseFloat(r.nota) || 0), 0) / recs.length;
+    const avg = recs.reduce((t,r)=>t+(Number(r.nota)||0),0) / recs.length;
     return Math.round(avg);
   });
 
-  chart.data.labels = currentWeeks.map((_, i) => `S${i + 1}`);
+  chart.data.labels = currentWeeks.map((_,i)=>`S${i+1}`);
   chart.data.datasets[0].data = values;
   chart.update();
 }
@@ -388,32 +325,20 @@ function renderFromFilteredData() {
    Aplicar filtros
 ------------------------------ */
 function applyFilters() {
-  const selReg = document.getElementById("filterRegistrado");
-  const selMes = document.getElementById("filterMes");
-  const selAnio = document.getElementById("filterAnio");
-
-  const filterValueReg = normalize(selReg.value);
-  const filterMes = selMes.value === "" ? null : Number(selMes.value);
-  const filterAnio = selAnio.value === "" ? null : Number(selAnio.value);
+  const reg = normalize(document.getElementById("filterRegistrado").value);
+  const mes = document.getElementById("filterMes").value;
+  const anio = document.getElementById("filterAnio").value;
 
   let data = rawData.slice();
 
-  if (filterAnio !== null) {
-    data = data.filter((r) => {
-      const f = parseFecha(r.fecha);
-      return f.getFullYear() === filterAnio;
-    });
+  if (anio !== "") {
+    data = data.filter(r=>parseFecha(r.fecha).getFullYear()==anio);
   }
-
-  if (filterMes !== null) {
-    data = data.filter((r) => {
-      const f = parseFecha(r.fecha);
-      return f.getMonth() === filterMes;
-    });
+  if (mes !== "") {
+    data = data.filter(r=>parseFecha(r.fecha).getMonth()==mes);
   }
-
-  if (filterValueReg) {
-    data = data.filter((r) => normalize(r.registradoPor) === filterValueReg);
+  if (reg) {
+    data = data.filter(r=>normalize(r.registradoPor)==reg);
   }
 
   filteredData = data;
@@ -421,160 +346,90 @@ function applyFilters() {
 }
 
 /* ------------------------------
-   Filtro de años
+   Filtro años
 ------------------------------ */
 function setupYearFilter() {
-  const selAnio = document.getElementById("filterAnio");
-  selAnio.innerHTML = "";
-
-  const optionAll = document.createElement("option");
-  optionAll.value = "";
-  optionAll.textContent = "Todos";
-  selAnio.appendChild(optionAll);
-
-  allYears.sort((a, b) => a - b);
-  allYears.forEach((y) => {
-    const op = document.createElement("option");
-    op.value = y;
-    op.textContent = y;
-    selAnio.appendChild(op);
+  const sel = document.getElementById("filterAnio");
+  sel.innerHTML = `<option value="">Todos</option>`;
+  allYears.sort().forEach(y=>{
+    sel.innerHTML += `<option value="${y}">${y}</option>`;
   });
-
-  const currentYear = new Date().getFullYear();
-  if (allYears.includes(currentYear)) {
-    selAnio.value = currentYear.toString();
-  }
 }
 
 /* ------------------------------
-   Modal de ítems debitados
+   Modal de items
 ------------------------------ */
-
-// Construye agregación de ítems a partir de un arreglo de registros
 function aggregateItems(records) {
   const mapa = {};
-
-  records.forEach((reg) => {
-    const items = Array.isArray(reg.items) ? reg.items : [];
-    items.forEach((it) => {
-      const name = it.name || "Sin nombre";
-      const key = name;
-      const tipo = it.tipo || "—";
-      const perc = Number(it.perc || 0);
-      const detail = it.detail || "";
-
-      if (!mapa[key]) {
-        mapa[key] = {
-          name,
-          tipo,
-          count: 0,
-          sumPerc: 0,
-          maxPerc: 0,
-          sampleDetail: ""
-        };
-      }
-
-      const o = mapa[key];
-      o.count += 1;
-      o.sumPerc += perc;
-      if (perc > o.maxPerc) o.maxPerc = perc;
-      if (!o.sampleDetail && detail) o.sampleDetail = detail;
+  records.forEach(reg=>{
+    (reg.items || []).forEach(it=>{
+      const key = it.name || "Sin nombre";
+      if (!mapa[key]) mapa[key] = { name: key, tipo: it.tipo||"—", count:0, sumPerc:0, sampleDetail:"" };
+      mapa[key].count++;
+      mapa[key].sumPerc += Number(it.perc||0);
+      if (!mapa[key].sampleDetail && it.detail) mapa[key].sampleDetail = it.detail;
     });
   });
-
   return Object.values(mapa)
-    .map((o) => ({
-      ...o,
-      avgPerc: o.count ? Math.round((o.sumPerc / o.count) * 10) / 10 : 0
-    }))
-    .sort((a, b) => b.count - a.count);
+    .map(o=>({ ...o, avgPerc: Math.round((o.sumPerc/o.count)*10)/10 }))
+    .sort((a,b)=>b.count - a.count);
 }
 
-// Rellena select de periodo (mes + semanas)
 function fillItemsPeriodSelect() {
   const sel = document.getElementById("itemsPeriodSelect");
-  sel.innerHTML = "";
-
-  const optMes = document.createElement("option");
-  optMes.value = "mes";
-  optMes.textContent = "Mes completo";
-  sel.appendChild(optMes);
-
-  currentWeeks.forEach((w, idx) => {
-    const op = document.createElement("option");
-    op.value = `week-${idx}`;
-    op.textContent = `Semana S${idx + 1} (${w.startDay}-${w.endDay})`;
-    sel.appendChild(op);
+  sel.innerHTML = `<option value="mes">Mes completo</option>`;
+  currentWeeks.forEach((w,i)=>{
+    sel.innerHTML += `<option value="week-${i}">Semana S${i+1} (${w.startDay}-${w.endDay})</option>`;
   });
-
-  sel.value = "mes";
 }
 
-// Renderiza tabla del modal según periodo y asesor
 function renderItemsModalTable() {
-  const sel = document.getElementById("itemsPeriodSelect");
-  const value = sel.value || "mes";
-
+  const selVal = document.getElementById("itemsPeriodSelect").value;
   let data = filteredData.slice();
+
   if (itemsModalAsesor) {
-    data = data.filter((r) => r.asesor === itemsModalAsesor);
+    data = data.filter(r => r.asesor === itemsModalAsesor);
   }
 
-  if (value.startsWith("week-")) {
-    const idx = Number(value.split("-")[1] || "0");
-    const w = currentWeeks[idx];
+  if (selVal.startsWith("week-")) {
+    const index = Number(selVal.split("-")[1]);
+    const w = currentWeeks[index];
     if (w) {
-      data = data.filter((r) => {
-        const f = parseFecha(r.fecha);
-        const d = f.getDate();
-        return d >= w.startDay && d <= w.endDay;
+      data = data.filter(r=>{
+        const d = parseFecha(r.fecha).getDate();
+        return d>=w.startDay && d<=w.endDay;
       });
     }
   }
 
   const agg = aggregateItems(data);
-  const tbody = document.getElementById("itemsTableBody");
-
-  if (!agg.length) {
-    tbody.innerHTML = `<tr><td colspan="5">Sin ítems debitados para este periodo.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = agg.map((it) => `
-    <tr>
-      <td>${escapeHTML(it.name)}</td>
-      <td>${escapeHTML(it.tipo)}</td>
-      <td>${it.count}</td>
-      <td>${it.avgPerc}%</td>
-      <td>${escapeHTML(it.sampleDetail || "Sin detalle")}</td>
-    </tr>
-  `).join("");
+  document.getElementById("itemsTableBody").innerHTML =
+    agg.length ? agg.map(it=>`
+      <tr>
+        <td>${escapeHTML(it.name)}</td>
+        <td>${escapeHTML(it.tipo)}</td>
+        <td>${it.count}</td>
+        <td>${it.avgPerc}%</td>
+        <td>${escapeHTML(it.sampleDetail || "Sin detalle")}</td>
+      </tr>`).join("")
+    : `<tr><td colspan="5">Sin ítems debitados.</td></tr>`;
 }
 
-// Abre modal general o por asesor
-function openItemsModal(asesor = null) {
+function openItemsModal(asesor=null){
   itemsModalAsesor = asesor;
-
-  const titulo = document.getElementById("itemsModalTitle");
-  const subtitulo = document.getElementById("itemsModalSubtitle");
-
-  if (asesor) {
-    titulo.textContent = `Ítems debitados – ${asesor}`;
-    subtitulo.textContent =
-      "Ranking de ítems más debitados para este asesor, según los filtros seleccionados.";
-  } else {
-    titulo.textContent = "Ranking general de ítems debitados";
-    subtitulo.textContent =
-      "Basado en todos los registros filtrados (Mes / Año / Registrado por).";
-  }
-
+  document.getElementById("itemsModalTitle").textContent =
+    asesor ? `Ítems debitados – ${asesor}` : "Ranking general de ítems debitados";
+  document.getElementById("itemsModalSubtitle").textContent =
+    asesor
+      ? "Ranking de ítems para este asesor."
+      : "Basado en todos los registros filtrados.";
   fillItemsPeriodSelect();
   renderItemsModalTable();
   document.getElementById("itemsModal").style.display = "flex";
 }
 
-function closeItemsModal() {
-  document.getElementById("itemsModal").style.display = "none";
+function closeItemsModal(){
+  document.getElementById("itemsModal").style.display="none";
 }
 
 /* ------------------------------
@@ -585,78 +440,54 @@ const THEME_KEY = "dash_theme";
 function applyTheme(theme) {
   const body = document.body;
   const btn = document.getElementById("btnTheme");
-
   if (theme === "light") {
     body.classList.add("light");
-    if (btn) btn.textContent = "🌙 Modo oscuro";
+    btn.textContent = "🌙 Modo oscuro";
   } else {
     body.classList.remove("light");
-    if (btn) btn.textContent = "☀️ Modo claro";
+    btn.textContent = "☀️ Modo claro";
   }
 }
 
 /* ------------------------------
-   Inicialización dashboard
+   Inicialización
 ------------------------------ */
 async function refreshDashboard() {
-  let data = await getMergedData();
-  // Ordenar por fecha ascendente
-  data = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
-  rawData = data;
+  const data = await getMergedData();
 
-  // años detectados
-  const yearsSet = new Set();
-  data.forEach((r) => {
-    const f = parseFecha(r.fecha);
-    yearsSet.add(f.getFullYear());
-  });
-  allYears = Array.from(yearsSet);
+  rawData = data.sort((a,b)=>parseFecha(a.fecha) - parseFecha(b.fecha));
+
+  allYears = [...new Set(rawData.map(r => parseFecha(r.fecha).getFullYear()))];
 
   setupYearFilter();
 
-  // mes actual como default
-  const hoy = new Date();
-  document.getElementById("filterMes").value = hoy.getMonth().toString();
+  document.getElementById("filterMes").value = new Date().getMonth().toString();
 
-  // aplicar filtros iniciales
   applyFilters();
 }
 
-/* ------------------------------
-   Listeners
------------------------------- */
 document.getElementById("filterRegistrado").addEventListener("change", applyFilters);
 document.getElementById("filterMes").addEventListener("change", applyFilters);
 document.getElementById("filterAnio").addEventListener("change", applyFilters);
-
-document.getElementById("btnOpenItemsModal").addEventListener("click", () => {
-  openItemsModal(null);
-});
+document.getElementById("btnOpenItemsModal").addEventListener("click", ()=>openItemsModal());
 document.getElementById("btnCloseItemsModal").addEventListener("click", closeItemsModal);
-document.getElementById("itemsPeriodSelect").addEventListener("change", renderItemsModalTable);
 
-// cerrar modal al hacer click fuera
-document.getElementById("itemsModal").addEventListener("click", (e) => {
-  if (e.target.id === "itemsModal") {
-    closeItemsModal();
-  }
+document.getElementById("itemsModal").addEventListener("click", (e)=>{
+  if (e.target.id === "itemsModal") closeItemsModal();
 });
 
-// tema
 const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
 applyTheme(savedTheme);
-const btnTheme = document.getElementById("btnTheme");
-if (btnTheme) {
-  btnTheme.addEventListener("click", () => {
-    const next = document.body.classList.contains("light") ? "dark" : "light";
-    localStorage.setItem(THEME_KEY, next);
-    applyTheme(next);
-  });
-}
+
+document.getElementById("btnTheme").addEventListener("click", ()=>{
+  const next = document.body.classList.contains("light") ? "dark" : "light";
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
 
 /* ------------------------------
    Start
 ------------------------------ */
-refreshDashboard().catch((err) => {
-  console.error("Error al cargar dashboard:", err);
+refreshDashboard().catch(err=>{
+  console.error("Error cargando dashboard:", err);
 });

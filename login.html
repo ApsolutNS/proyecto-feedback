@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Acceso Seguro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+  background:#0f172a;
+  font-family:Arial;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card{
+  background:#1e293b;
+  padding:25px;
+  border-radius:12px;
+  width:320px;
+  box-shadow:0 0 20px rgba(0,0,0,0.4);
+  border:1px solid #334155;
+}
+input{
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  border-radius:6px;
+  border:1px solid #475569;
+  background:#0f172a;
+  color:white;
+}
+button{
+  width:100%;
+  margin-top:12px;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  background:#22c55e;
+  font-weight:bold;
+  cursor:pointer;
+}
+button:hover{
+  background:#16a34a;
+}
+#error{
+  color:#f87171;
+  margin-top:10px;
+  font-size:14px;
+  display:none;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h3>Acceso Seguro</h3>
+  <input id="email" type="email" placeholder="Correo autorizado">
+  <input id="password" type="password" placeholder="Contraseña">
+  <button id="loginBtn">Ingresar</button>
+  <div id="error"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { 
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+// -----------------------------
+// CONFIG FIREBASE
+// -----------------------------
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "feedback-app-ac30e.firebaseapp.com",
+  projectId: "feedback-app-ac30e"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// -----------------------------
+// LISTA DE CORREOS AUTORIZADOS
+// -----------------------------
+const allowedEmails = [
+  "alex@ejemplo.com",
+  "lidercalidad@empresa.com",
+  "supervisor@empresa.com"
+];
+
+// -----------------------------
+// LOGIN
+// -----------------------------
+document.getElementById("loginBtn").onclick = async () => {
+  const email = emailInput.value.trim();
+  const pass = password.value;
+
+  if (!allowedEmails.includes(email)) {
+    showError("❌ Este correo no está autorizado.");
+    return;
+  }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    location.href = "index.html"; // dashboard
+  } catch (err) {
+    showError("Credenciales inválidas.");
+  }
+};
+
+function showError(msg){
+  const e = document.getElementById("error");
+  e.style.display = "block";
+  e.textContent = msg;
+}
+
+// -----------------------------
+// SI YA ESTÁ LOGUEADO → ENTRA DIRECTO
+// -----------------------------
+onAuthStateChanged(auth, user => {
+  if (user) location.href = "index.html";
+});
+</script>
+</body>
+</html>

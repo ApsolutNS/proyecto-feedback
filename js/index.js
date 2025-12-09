@@ -4,6 +4,20 @@
    - Chart.js cargado en index.html
 */
 
+import { getAuth, onAuthStateChanged, signOut } 
+  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+const auth = getAuth();
+
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    location.href = "login.html"; // No logueado → expulsar
+  }
+});
+
+// botón cerrar sesión:
+window.logout = () => signOut(auth);
+
 "use strict";
 
 import { db } from "./firebase.js";

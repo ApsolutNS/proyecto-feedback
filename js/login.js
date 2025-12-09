@@ -1,47 +1,58 @@
-import { 
-  getAuth, 
-  signInWithEmailAndPassword 
+import {
+  getAuth,
+  signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-import { 
-  getFirestore, 
-  doc, 
-  getDoc 
+import {
+  getFirestore,
+  doc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-const auth = getAuth();
-const db = getFirestore();
+import { app } from "./firebase.js";
 
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+const auth = getAuth(app);
+const db = getFirestore(app);
 
+document.getElementById("loginBtn").addEventListener("click", login);
+
+async function login() {
   const email = document.getElementById("email").value.trim();
-  const pass  = document.getElementById("password").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  const msg = document.getElementById("msg");
+
+  msg.textContent = "Verificando...";
 
   try {
-    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    // 1) Autenticar usuario
+    const userCred = await signInWithEmailAndPassword(auth, email, pass);
+    const user = userCred.user;
 
-    const uid = cred.user.uid;
-    const ref = doc(db, "usuarios", uid);
-    const snap = await getDoc(ref);
+    // 2) Leer su rol desde Firestore
+    const userDoc = await getDoc(doc(db, "usuarios", user.uid));
 
-    if (!snap.exists()) {
-      alert("Tu usuario no está registrado en el sistema.");
+    if (!userDoc.exists()) {
+      msg.textContent = "Acceso denegado. Usuario no autorizado.";
       return;
     }
 
-    const rol = snap.data().rol;
+    const { rol } = userDoc.data();
 
-    if (rol === "admin" || rol === "supervisor") {
+    // 3) Redirigir según rol
+    if (rol === "admin") {
+      msg.textContent = "Bienvenido administrador...";
+      location.href = "index.html";
+    } else if (rol === "supervisor") {
+      msg.textContent = "Bienvenido supervisor...";
       location.href = "index.html";
     } else if (rol === "agente") {
+      msg.textContent = "Bienvenido agente...";
       location.href = "portal_agente.html";
     } else {
-      alert("Rol no reconocido");
+      msg.textContent = "Rol desconocido. Contacta al administrador.";
     }
 
   } catch (err) {
-    console.error(err);
-    alert("Credenciales incorrectas");
+    msg.textContent = "Error: " + err.message;
   }
-});
+}

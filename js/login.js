@@ -1,57 +1,47 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import { 
-  getAuth, signInWithEmailAndPassword, onAuthStateChanged 
+  getAuth, 
+  signInWithEmailAndPassword 
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-// -----------------------------
-// CONFIG FIREBASE
-// -----------------------------
-const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "feedback-app-ac30e.firebaseapp.com",
-  projectId: "feedback-app-ac30e"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { 
+  getFirestore, 
+  doc, 
+  getDoc 
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-// -----------------------------
-// LISTA DE CORREOS AUTORIZADOS
-// -----------------------------
-const allowedEmails = [
-  "alex@ejemplo.com",
-  "lidercalidad@empresa.com",
-  "supervisor@empresa.com"
-];
+const auth = getAuth();
+const db = getFirestore();
 
-// -----------------------------
-// LOGIN
-// -----------------------------
-document.getElementById("loginBtn").onclick = async () => {
-  const email = emailInput.value.trim();
-  const pass = password.value;
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-  if (!allowedEmails.includes(email)) {
-    showError("❌ Este correo no está autorizado.");
-    return;
-  }
+  const email = document.getElementById("email").value.trim();
+  const pass  = document.getElementById("password").value.trim();
 
   try {
-    await signInWithEmailAndPassword(auth, email, pass);
-    location.href = "index.html"; // dashboard
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+
+    const uid = cred.user.uid;
+    const ref = doc(db, "usuarios", uid);
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+      alert("Tu usuario no está registrado en el sistema.");
+      return;
+    }
+
+    const rol = snap.data().rol;
+
+    if (rol === "admin" || rol === "supervisor") {
+      location.href = "index.html";
+    } else if (rol === "agente") {
+      location.href = "portal_agente.html";
+    } else {
+      alert("Rol no reconocido");
+    }
+
   } catch (err) {
-    showError("Credenciales inválidas.");
+    console.error(err);
+    alert("Credenciales incorrectas");
   }
-};
-
-function showError(msg){
-  const e = document.getElementById("error");
-  e.style.display = "block";
-  e.textContent = msg;
-}
-
-// -----------------------------
-// SI YA ESTÁ LOGUEADO → ENTRA DIRECTO
-// -----------------------------
-onAuthStateChanged(auth, user => {
-  if (user) location.href = "index.html";
 });

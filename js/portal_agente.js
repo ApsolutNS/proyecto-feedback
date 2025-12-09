@@ -1,5 +1,5 @@
 // js/portal_agente.js
-// Portal del Agente – conectado a Auth + rol "agente" + dashboard
+// Portal del Agente – Auth + rol "agente" + dashboard propio
 "use strict";
 
 /* ------------------------------
@@ -30,12 +30,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
 /* ------------------------------
-   AUTH + ROL AGENTE
+   HELPERS
 ------------------------------ */
-
-const auth = getAuth(app);
-
-// Helper seguro para escape de HTML
 function escapeHTML(str) {
   return (str ?? "")
     .toString()
@@ -48,22 +44,55 @@ function escapeHTML(str) {
     }[c] || c));
 }
 
-// Datos del usuario logueado
+function formatearFechaLarga(fecha) {
+  const f = fecha && fecha.toDate ? fecha.toDate() : new Date(fecha || Date.now());
+  const opts = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+  let str = f.toLocaleDateString("es-PE", opts);
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function toJSDate(value) {
+  if (!value) return new Date();
+  if (value.toDate) return value.toDate();           // Timestamp Firestore
+  if (value instanceof Date) return value;
+  return new Date(value);
+}
+
+/* ------------------------------
+   AUTH + ROL AGENTE
+------------------------------ */
+const auth = getAuth(app);
+
 let currentUser = null;
 let currentRole = null;
 let currentAdvisorName = ""; // nombre del asesor asociado al agente
 
-// Proteger portal_agente.html
+// Estado de documentos
+let currentID = null;
+let currentCollection = null;     // "registros" o "refuerzos_calidad"
+let currentDocData = null;
+let signatureData = null;         // data_url de la firma
+
+// Para el mini-dashboard (solo feedbacks del agente)
+let ultimosFeedbacks = [];
+
+// Firma/Logo de Alex para cartas
+const FIRMA_ALEX_URL =
+  "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media";
+
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     location.href = "login.html";
     return;
   }
-
   currentUser = user;
 
   try {
-    // Leer doc en colección "usuarios/{uid}" para rol + nombre
     const userRef = doc(db, "usuarios", user.uid);
     const snap = await getDoc(userRef);
 
@@ -76,7 +105,6 @@ onAuthStateChanged(auth, async (user) => {
 
     const data = snap.data();
     currentRole = data.rol || data.role || "";
-    // nombre del asesor para filtrar automáticamente
     currentAdvisorName =
       data.nombreAsesor ||
       data.nombreMostrar ||
@@ -84,11 +112,7 @@ onAuthStateChanged(auth, async (user) => {
       data.displayName ||
       "";
 
-    // Solo permitir rol "agente" (y opcionalmente admin para pruebas)
-    const allowedRoles = ["agente"];
-    // Si quieres que tú también entres, agrega "admin" aquí:
-    // const allowedRoles = ["agente", "admin"];
-
+    const allowedRoles = ["agente"]; // opcionalmente podrías añadir "admin" para pruebas
     if (!allowedRoles.includes(currentRole)) {
       alert("No tienes acceso al Portal del Agente.");
       await signOut(auth);
@@ -96,24 +120,22 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
-    // Pintar saludo / nombre en la interfaz si existe el span
+    // Saludo opcional (si agregas un span con ese id en el HTML)
     const spanName = document.getElementById("agentNameSpan");
     if (spanName) {
       spanName.textContent =
         currentAdvisorName || currentUser.email || "(Agente)";
     }
 
-    // Si hay select de agente, seleccionarlo automáticamente
-    const selAgent = document.getElementById("selAgent");
-    if (selAgent && currentAdvisorName) {
-      // Lo llenamos después de cargar asesores; por ahora guardamos nombre
-      // y en loadAdvisors() lo seleccionamos.
+    if (!currentAdvisorName) {
+      alert(
+        "Tu usuario no tiene configurado el nombre de asesor (campo 'nombreAsesor' en la colección 'usuarios')."
+      );
+      return;
     }
 
-    // Cargar asesores + tabla inicial
-    await loadAdvisors();
-    await loadAgentList(); // usa currentAdvisorName
-
+    // Cargar lista inicial
+    await loadAgentList();
   } catch (err) {
     console.error("Error al validar rol del usuario:", err);
     alert("Error al validar tus permisos. Intenta luego.");
@@ -122,90 +144,29 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// Exponer logout para usar en botón si lo tienes
+// Exponer logout si en algún momento pones botón de cerrar sesión
 window.logout = async () => {
   await signOut(auth);
   location.href = "login.html";
 };
 
 /* ------------------------------
-   CONSTANTES / ESTADO
+   DASHBOARD DEL AGENTE
+   (Promedio, total, aprobados, no aprobados)
 ------------------------------ */
-
-// Firma de Alex (o logo) para cartas de refuerzo
-const FIRMA_ALEX_URL =
-  "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media";
-
-let asesores = {};
-let currentID = null;
-let currentCollection = null; // "registros" o "refuerzos_calidad"
-let currentDocData = null;
-let signatureData = null; // data_url de la firma
-
-// Para el mini-dashboard
-let ultimosFeedbacks = []; // solo docs de "registros" del agente
-
-/* ------------------------------
-   CARGA ASESORES
------------------------------- */
-
-async function loadAdvisors() {
-  asesores = {};
-  const snap = await getDocs(collection(db, "asesores"));
-  snap.forEach((d) => {
-    const a = d.data();
-    if (a.nombre) {
-      asesores[a.nombre] = a.GC || "SIN GC";
-    }
-  });
-
-  const sel = document.getElementById("selAgent");
-  if (!sel) return;
-
-  sel.innerHTML = "<option value=''>-- selecciona --</option>";
-
-  Object.keys(asesores)
-    .sort()
-    .forEach((n) => {
-      const label = `${n} — ${asesores[n]}`;
-      sel.innerHTML += `<option value="${escapeHTML(n)}">${escapeHTML(
-        label
-      )}</option>`;
-    });
-
-  // Si el usuario tiene nombre de asesor asociado, seleccionarlo
-  if (currentAdvisorName && asesores[currentAdvisorName]) {
-    sel.value = currentAdvisorName;
-  }
-}
-
-/* ------------------------------
-   UTILIDADES FECHAS
------------------------------- */
-
-function formatearFechaLarga(fecha) {
-  const f = fecha instanceof Date ? fecha : new Date(fecha);
-  const opts = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  };
-  let str = f.toLocaleDateString("es-PE", opts);
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-/* ------------------------------
-   MINI DASHBOARD (PROMEDIO, CONTADORES)
------------------------------- */
-
 function renderAgentDashboard() {
-  const dash = document.getElementById("agentDashboard");
-  if (!dash) return; // si no existe el contenedor, salimos
+  const avgEl = document.getElementById("avgScore");
+  const totalEl = document.getElementById("totalFb");
+  const okEl = document.getElementById("okCount");
+  const badEl = document.getElementById("badCount");
+
+  if (!avgEl || !totalEl || !okEl || !badEl) return;
 
   if (!ultimosFeedbacks.length) {
-    dash.innerHTML =
-      "<p style='margin:0;color:#cbd5e1;font-size:13px'>Aún no tienes feedbacks registrados.</p>";
+    avgEl.textContent = "–";
+    totalEl.textContent = "–";
+    okEl.textContent = "–";
+    badEl.textContent = "–";
     return;
   }
 
@@ -216,77 +177,48 @@ function renderAgentDashboard() {
   const total = notas.length;
   const suma = notas.reduce((t, n) => t + n, 0);
   const promedio = total ? Math.round((suma / total) * 10) / 10 : 0;
+  const aprobados = notas.filter((n) => n >= 85).length;
+  const noAprobados = total - aprobados;
 
-  const completados = ultimosFeedbacks.filter(
-    (f) => (f.bruto?.estado || f.estado || "").toUpperCase() === "COMPLETADO"
-  ).length;
-  const pendientes = total - completados;
-
-  dash.innerHTML = `
-    <div class="agent-kpi-grid">
-      <div class="agent-kpi-card">
-        <div class="agent-kpi-label">Promedio general</div>
-        <div class="agent-kpi-value">${escapeHTML(promedio.toString())}%</div>
-      </div>
-      <div class="agent-kpi-card">
-        <div class="agent-kpi-label">Feedbacks recibidos</div>
-        <div class="agent-kpi-value">${total}</div>
-      </div>
-      <div class="agent-kpi-card">
-        <div class="agent-kpi-label">Completados</div>
-        <div class="agent-kpi-value kpi-ok">${completados}</div>
-      </div>
-      <div class="agent-kpi-card">
-        <div class="agent-kpi-label">Pendientes</div>
-        <div class="agent-kpi-value kpi-bad">${pendientes}</div>
-      </div>
-    </div>
-  `;
+  avgEl.textContent = `${promedio}%`;
+  totalEl.textContent = `${total}`;
+  okEl.textContent = `${aprobados}`;
+  badEl.textContent = `${noAprobados}`;
 }
 
 /* ------------------------------
    BADGE DE PENDIENTES
 ------------------------------ */
-
 function updatePendingBadge(list) {
-  const pend = list.filter((x) => x.estado === "PENDIENTE").length;
+  const pend = list.filter((x) => (x.estado || "").toUpperCase() === "PENDIENTE")
+    .length;
   const badge = document.getElementById("pendingBadge");
   if (!badge) return;
-
   badge.innerHTML = pend
     ? `<span class="badgePending">${pend} pendientes</span>`
     : "";
 }
 
 /* ------------------------------
-   LISTA (TABLA) PRINCIPAL
+   CARGA LISTA DE DOCUMENTOS
+   (Solo del asesor vinculado al usuario actual)
 ------------------------------ */
-
 window.loadAgentList = async function () {
-  const advisorSelect = document.getElementById("selAgent");
-  const advisorValue = advisorSelect ? advisorSelect.value : "";
-  // Si tenemos nombre de asesor fijo del usuario, usarlo por defecto
-  const advisor = advisorValue || currentAdvisorName;
-
-  const filtro = document.getElementById("selRegistrador")?.value || "";
-  const tipoDoc = document.getElementById("selTipoDoc")?.value || "registros";
   const tbody = document.querySelector("#agentTable tbody");
+  if (!tbody) return;
+
+  const tipoDoc = document.getElementById("selTipoDoc")?.value || "registros";
+  const filtroRegistrador =
+    document.getElementById("selRegistrador")?.value || "";
 
   currentCollection = tipoDoc;
 
-  if (!advisor) {
-    if (tbody) {
-      tbody.innerHTML =
-        "<tr><td colspan='6'>Selecciona un asesor (o configura tu usuario con nombreAsesor).</td></tr>";
-    }
+  if (!currentAdvisorName) {
+    tbody.innerHTML =
+      "<tr><td colspan='5'>Tu usuario no tiene configurado el nombre de asesor.</td></tr>";
     updatePendingBadge([]);
-    const detailBlock = document.getElementById("detailBlock");
-    if (detailBlock) detailBlock.style.display = "none";
+    document.getElementById("detailBlock").style.display = "none";
     return;
-  }
-
-  if (advisorSelect && !advisorSelect.value) {
-    advisorSelect.value = advisor;
   }
 
   const list = [];
@@ -295,12 +227,13 @@ window.loadAgentList = async function () {
     // FEEDBACK CLÁSICO
     const qRef = query(
       collection(db, "registros"),
-      where("asesor", "==", advisor)
+      where("asesor", "==", currentAdvisorName)
     );
     const snap = await getDocs(qRef);
+
     snap.forEach((d) => {
       const r = d.data();
-      const fecha = r.fecha ? new Date(r.fecha) : new Date();
+      const fecha = toJSDate(r.fecha);
       list.push({
         id: d.id,
         collection: "registros",
@@ -313,29 +246,26 @@ window.loadAgentList = async function () {
       });
     });
 
-    // Guardar estos feedbacks para el dashboard
+    // Guardar estos feedbacks para dashboard
     ultimosFeedbacks = list.slice();
     renderAgentDashboard();
   } else {
     // REFUERZOS / CAPACITACIONES
     const snap = await getDocs(collection(db, "refuerzos_calidad"));
+
     snap.forEach((d) => {
       const r = d.data();
       const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
-      const pertenece = asesoresRef.some((a) => a.nombre === advisor);
+      const pertenece = asesoresRef.some(
+        (a) => a.nombre === currentAdvisorName
+      );
       if (!pertenece) return;
 
       const firmas = Array.isArray(r.firmas) ? r.firmas : [];
-      const firmaAgente = firmas.find((f) => f.nombre === advisor);
+      const firmaAgente = firmas.find((f) => f.nombre === currentAdvisorName);
       const estadoAgente =
         firmaAgente && firmaAgente.url ? "COMPLETADO" : "PENDIENTE";
-
-      const fecha =
-        r.fechaRefuerzo instanceof Date
-          ? r.fechaRefuerzo
-          : r.fechaRefuerzo
-          ? new Date(r.fechaRefuerzo)
-          : new Date();
+      const fecha = toJSDate(r.fechaRefuerzo);
 
       list.push({
         id: d.id,
@@ -352,38 +282,39 @@ window.loadAgentList = async function () {
 
   // Ordenar por fecha desc
   list.sort((a, b) => b.fecha - a.fecha);
+
+  // Badge de pendientes
   updatePendingBadge(list);
 
-  const filtrada = filtro
-    ? list.filter((x) => x.registradoPor === filtro)
+  // Filtro por "Registrado por"
+  const filtrada = filtroRegistrador
+    ? list.filter((x) => x.registradoPor === filtroRegistrador)
     : list;
 
-  if (!tbody) return;
-
-  if (filtrada.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='6'>Sin registros para este filtro</td></tr>";
+  if (!filtrada.length) {
+    tbody.innerHTML =
+      "<tr><td colspan='5'>Sin registros para este filtro</td></tr>";
     return;
   }
 
   tbody.innerHTML = filtrada
     .map(
       (r) => `
-      <tr>
-        <td>${escapeHTML(r.id)}</td>
-        <td>${escapeHTML(r.fecha.toLocaleString("es-PE"))}</td>
-        <td>
-          ${escapeHTML(r.detalle)}
-          <span class="tag-doc">${escapeHTML(r.etiqueta)}</span>
-        </td>
-        <td>${escapeHTML(r.estado)}</td>
-        <td>${escapeHTML(r.registradoPor)}</td>
-        <td>
-          <button class="btn sm" onclick="openDetail('${r.collection}','${r.id}')">
-            Abrir
-          </button>
-        </td>
-      </tr>
-    `
+        <tr>
+          <td>${escapeHTML(r.id)}</td>
+          <td>${escapeHTML(r.fecha.toLocaleString("es-PE"))}</td>
+          <td>
+            ${escapeHTML(r.detalle)}
+            <span class="tag-doc">${escapeHTML(r.etiqueta)}</span>
+          </td>
+          <td>${escapeHTML(r.estado)}</td>
+          <td>
+            <button class="btn sm" onclick="openDetail('${r.collection}','${r.id}')">
+              Abrir
+            </button>
+          </td>
+        </tr>
+      `
     )
     .join("");
 };
@@ -391,7 +322,6 @@ window.loadAgentList = async function () {
 /* ------------------------------
    DETALLE (FEEDBACK / REFUERZO)
 ------------------------------ */
-
 window.openDetail = async function (collectionName, id) {
   currentCollection = collectionName;
   currentID = id;
@@ -404,47 +334,42 @@ window.openDetail = async function (collectionName, id) {
 
   if (!feedbackDiv || !detailBlock || !editable || !msg) return;
 
-  const advisor =
-    document.getElementById("selAgent")?.value || currentAdvisorName || "";
-
-  if (!advisor) {
-    alert("No se encontró el nombre del asesor.");
+  if (!currentAdvisorName) {
+    alert("No se encontró el nombre del asesor asociado a tu usuario.");
     return;
   }
 
   const snap = await getDoc(doc(db, collectionName, id));
   if (!snap.exists()) {
-    alert("No existe este registro");
+    alert("No existe este registro.");
     return;
   }
 
   const r = snap.data();
   currentDocData = r;
   signatureData = null;
-
   msg.textContent = "";
   msg.style.color = "#4ade80";
 
   if (collectionName === "registros") {
-    // --------- DETALLE FEEDBACK ----------
+    // ---------- DETALLE FEEDBACK ----------
     if (detailTitle) detailTitle.textContent = "Detalle del Feedback";
 
-    const fecha = r.fecha ? new Date(r.fecha) : new Date();
+    const fecha = toJSDate(r.fecha);
     const esReafirmacion = Number(r.nota) === 100;
     const titulo = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
-
-    let dniGC = r.gc ? r.gc.replace(/[^0-9]/g, "") : "-";
+    const dniGC = r.gc ? r.gc.replace(/[^0-9]/g, "") : "-";
 
     const itemsHtml =
       (r.items || [])
         .map(
           (it) => `
-        <div style="margin-bottom:4px">
-          <strong>${escapeHTML(it.name || "")}</strong>
-          ${it.perc ? ` (${escapeHTML(it.perc.toString())}%)` : ""}
-          <div style="margin-left:8px">${escapeHTML(it.detail || "")}</div>
-        </div>
-      `
+          <div style="margin-bottom:4px">
+            <strong>${escapeHTML(it.name || "")}</strong>
+            ${it.perc ? ` (${escapeHTML(it.perc.toString())}%)` : ""}
+            <div style="margin-left:8px">${escapeHTML(it.detail || "")}</div>
+          </div>
+        `
         )
         .join("") || "<em>Sin ítems observados</em>";
 
@@ -452,10 +377,10 @@ window.openDetail = async function (collectionName, id) {
       (r.imagenes || [])
         .map(
           (im) => `
-        <img src="${escapeHTML(
-          im.url
-        )}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
-      `
+          <img src="${escapeHTML(
+            im.url
+          )}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
+        `
         )
         .join("") || "<em>Sin evidencias adjuntas</em>";
 
@@ -536,10 +461,12 @@ window.openDetail = async function (collectionName, id) {
       updateSignaturePreview();
     }
   } else {
-    // --------- DETALLE REFUERZO ----------
-    if (detailTitle) detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
+    // ---------- DETALLE REFUERZO ----------
+    if (detailTitle) {
+      detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
+    }
 
-    const fechaRef = r.fechaRefuerzo ? new Date(r.fechaRefuerzo) : new Date();
+    const fechaRef = toJSDate(r.fechaRefuerzo);
     const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
     const firmas = Array.isArray(r.firmas) ? r.firmas : [];
 
@@ -553,7 +480,7 @@ window.openDetail = async function (collectionName, id) {
           .join(", ")
       : escapeHTML(r.publico || "—");
 
-    const firmaAgente = firmas.find((f) => f.nombre === advisor);
+    const firmaAgente = firmas.find((f) => f.nombre === currentAdvisorName);
     const compromisoAgente = firmaAgente?.compromiso || "";
     const firmaUrlAgente = firmaAgente?.url || null;
     const fechaFirma = firmaAgente?.fechaFirma
@@ -569,7 +496,9 @@ window.openDetail = async function (collectionName, id) {
         Se deja constancia que el <strong>${escapeHTML(
           formatearFechaLarga(fechaRef)
         )}</strong>
-        se realizó un <strong>${escapeHTML(r.tipo || "refuerzo / capacitación")}</strong> sobre
+        se realizó un <strong>${escapeHTML(
+          r.tipo || "refuerzo / capacitación"
+        )}</strong> sobre
         <strong>${escapeHTML(r.tema || "—")}</strong>, dirigido a:
       </p>
       <p class="section-content">
@@ -631,7 +560,6 @@ window.openDetail = async function (collectionName, id) {
 /* ------------------------------
    PREVIEW DE FIRMA
 ------------------------------ */
-
 function updateSignaturePreview() {
   const box = document.getElementById("signaturePreview");
   if (!box) return;
@@ -648,7 +576,6 @@ function updateSignaturePreview() {
 /* ------------------------------
    GUARDAR FIRMA + COMPROMISO
 ------------------------------ */
-
 window.saveSignature = async function () {
   if (!currentID || !currentCollection) {
     alert("No hay documento abierto.");
@@ -658,7 +585,6 @@ window.saveSignature = async function () {
   const ta = document.getElementById("compromiso");
   const msg = document.getElementById("agentMsg");
   const editable = document.getElementById("editableZone");
-
   if (!ta || !msg || !editable) return;
 
   const compromiso = ta.value.trim();
@@ -666,18 +592,12 @@ window.saveSignature = async function () {
     alert("El compromiso es obligatorio.");
     return;
   }
-
   if (!signatureData) {
     alert("Debes subir o dibujar una firma.");
     return;
   }
-
-  const advisor =
-    currentAdvisorName ||
-    document.getElementById("selAgent")?.value ||
-    "";
-  if (!advisor) {
-    alert("No se encontró el nombre del asesor.");
+  if (!currentAdvisorName) {
+    alert("No se encontró el nombre del asesor asociado a tu usuario.");
     return;
   }
 
@@ -690,7 +610,7 @@ window.saveSignature = async function () {
 
     if (currentCollection === "refuerzos_calidad") {
       pathFolder = "firmas_refuerzos";
-      const safeName = advisor.replace(/[^a-zA-Z0-9]/g, "_");
+      const safeName = currentAdvisorName.replace(/[^a-zA-Z0-9]/g, "_");
       fileName = `${currentID}_${safeName}.png`;
     }
 
@@ -707,7 +627,6 @@ window.saveSignature = async function () {
         firmaUrl: url,
         estado: "COMPLETADO",
       });
-
       msg.textContent = "Feedback completado ✓";
     } else {
       // REFUERZOS
@@ -717,7 +636,7 @@ window.saveSignature = async function () {
       const nowIso = new Date().toISOString();
 
       const nuevasFirmas = firmas.map((f) => {
-        if (f.nombre === advisor) {
+        if (f.nombre === currentAdvisorName) {
           return {
             ...f,
             url,
@@ -734,17 +653,16 @@ window.saveSignature = async function () {
       await updateDoc(docRef, {
         firmas: nuevasFirmas,
         firmado: allFirmados,
-        firmaNombre: advisor,
+        firmaNombre: currentAdvisorName,
         firmaFecha: nowIso,
-        agenteNombre: advisor,
+        agenteNombre: currentAdvisorName,
       });
 
       msg.textContent = "Refuerzo firmado ✓";
     }
 
     editable.style.display = "none";
-    // Refrescar lista y dashboard
-    await loadAgentList();
+    await loadAgentList(); // refrescar tabla + dashboard
   } catch (e) {
     console.error(e);
     msg.style.color = "red";
@@ -755,7 +673,6 @@ window.saveSignature = async function () {
 /* ------------------------------
    DIBUJAR FIRMA EN CANVAS
 ------------------------------ */
-
 const modal = document.getElementById("signatureModal");
 const canvas = document.getElementById("sigCanvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
@@ -778,7 +695,6 @@ if (canvas && ctx) {
   };
   canvas.onmouseup = () => (drawing = false);
   canvas.onmouseleave = () => (drawing = false);
-
   canvas.onmousemove = (e) => {
     if (!drawing) return;
     const p = getPos(e);
@@ -799,7 +715,6 @@ if (canvas && ctx) {
     },
     { passive: true }
   );
-
   canvas.addEventListener(
     "touchend",
     () => {
@@ -807,7 +722,6 @@ if (canvas && ctx) {
     },
     { passive: true }
   );
-
   canvas.addEventListener(
     "touchmove",
     (e) => {
@@ -821,44 +735,42 @@ if (canvas && ctx) {
   );
 }
 
-window.openDrawModal = () => {
+function openDrawModal() {
   if (!modal || !ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   modal.style.display = "flex";
-};
+}
 
-window.closeDrawModal = () => {
+function closeDrawModal() {
   if (!modal) return;
   modal.style.display = "none";
-};
+}
 
-window.saveDrawnSignature = () => {
+function saveDrawnSignature() {
   if (!canvas) return;
   signatureData = canvas.toDataURL("image/png");
   updateSignaturePreview();
   if (modal) modal.style.display = "none";
-};
+}
 
-window.clearCanvas = () => {
+function clearCanvas() {
   if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-};
+}
 
 /* ------------------------------
    SUBIR ARCHIVO DE FIRMA
 ------------------------------ */
-
-window.triggerUpload = () => {
+function triggerUpload() {
   const input = document.getElementById("fileSignature");
   if (input) input.click();
-};
+}
 
 const fileInput = document.getElementById("fileSignature");
 if (fileInput) {
   fileInput.onchange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (ev) => {
       signatureData = ev.target.result;
@@ -869,17 +781,31 @@ if (fileInput) {
 }
 
 /* ------------------------------
-   LISTENERS DE FILTROS
+   LISTENERS DE BOTONES Y FILTROS
 ------------------------------ */
+const btnDraw = document.getElementById("btnDraw");
+if (btnDraw) btnDraw.addEventListener("click", openDrawModal);
+
+const btnUpload = document.getElementById("btnUpload");
+if (btnUpload) btnUpload.addEventListener("click", triggerUpload);
+
+const btnSave = document.getElementById("btnSave");
+if (btnSave) btnSave.addEventListener("click", () => saveSignature());
+
+const btnClear = document.getElementById("btnClear");
+if (btnClear) btnClear.addEventListener("click", clearCanvas);
+
+const btnCancel = document.getElementById("btnCancel");
+if (btnCancel) btnCancel.addEventListener("click", closeDrawModal);
+
+const btnUse = document.getElementById("btnUse");
+if (btnUse) btnUse.addEventListener("click", saveDrawnSignature);
 
 const selTipoDoc = document.getElementById("selTipoDoc");
 if (selTipoDoc) {
   selTipoDoc.addEventListener("change", () => loadAgentList());
 }
-const selAgent = document.getElementById("selAgent");
-if (selAgent) {
-  selAgent.addEventListener("change", () => loadAgentList());
-}
+
 const selReg = document.getElementById("selRegistrador");
 if (selReg) {
   selReg.addEventListener("change", () => loadAgentList());

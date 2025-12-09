@@ -1,45 +1,34 @@
-/* ------------------------------
-   IMPORTAR FIREBASE (CONFIG TUYA)
------------------------------- */
-import { db } from "./js/firebase.js"; // ajusta ruta si tu firebase.js está en otro sitio
+/* index.js - Dashboard Supervisión
+   Requiere:
+   - js/firebase.js exportando { db }
+   - Chart.js cargado en index.html
+*/
+
+"use strict";
+
+import { db } from "./firebase.js";
 import {
   collection,
-  getDocs,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 /* ------------------------------
-   SEGURIDAD: SANITIZAR TEXTO (anti-XSS)
+   Helpers básicos
 ------------------------------ */
-function sanitizeText(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+
+// Escapar HTML para reducir riesgo XSS
+function escapeHTML(str) {
+  return (str ?? "")
+    .toString()
+    .replace(/[&<>"']/g, c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;"
+    }[c] || c));
 }
 
-/* ------------------------------
-   HELPER: FECHAS
------------------------------- */
-function parseFecha(fecha) {
-  if (!fecha) return new Date();
-  if (fecha.toDate) return fecha.toDate(); // Timestamp Firestore
-  if (typeof fecha === "string") {
-    if (fecha.includes("T")) return new Date(fecha);
-    if (fecha.includes("/")) {
-      const [d, m, yRest] = fecha.split("/");
-      const [y, h] = (yRest || "").split(" ");
-      return new Date(`${y}-${m}-${d}T${h || "00:00"}`);
-    }
-    return new Date(fecha);
-  }
-  return new Date(fecha);
-}
-
-/* ------------------------------
-   HELPER: NORMALIZAR TEXTO
------------------------------- */
+// Normalizar texto para comparaciones
 function normalize(str) {
   return (str || "")
     .toString()
@@ -48,53 +37,23 @@ function normalize(str) {
     .replace(/\s+/g, " ");
 }
 
-/* ------------------------------
-   CARGAR REGISTROS
------------------------------- */
-async function loadRegistros() {
-  const snap = await getDocs(collection(db, "registros"));
-  const arr = [];
-  snap.forEach((doc) => arr.push({ id: doc.id, ...doc.data() }));
-  return arr;
-}
-
-/* ------------------------------
-   CARGAR ASESORES (CON GC)
------------------------------- */
-async function loadAsesores() {
-  const snap = await getDocs(collection(db, "asesores"));
-  const mapa = {};
-  snap.forEach((doc) => {
-    const d = doc.data();
-    if (d.nombre) {
-      mapa[d.nombre.trim()] = d.GC || "SIN GC";
+// Parsear fecha desde distintos formatos
+function parseFecha(fecha) {
+  if (!fecha) return new Date();
+  if (fecha.toDate) return fecha.toDate(); // Timestamp Firestore
+  if (typeof fecha === "string") {
+    if (fecha.includes("T")) return new Date(fecha);
+    if (fecha.includes("/")) {
+      const [d, m, yRest] = fecha.split("/");
+      const [y, h] = yRest.split(" ");
+      return new Date(`${y}-${m}-${d}T${h}`);
     }
-  });
-  return mapa;
+    return new Date(fecha);
+  }
+  return new Date(fecha);
 }
 
-/* ------------------------------
-   CRUZAR REGISTROS + ASESORES
-   (se asume que cada registro puede tener:
-   - itemDebitado: string (ítem debitado)
-   - detalleDebito: string (detalle / descripción)
-   Si tus campos se llaman diferente, cámbialos aquí.
------------------------------- */
-async function getMergedData() {
-  const registros = await loadRegistros();
-  const asesores = await loadAsesores();
-  return registros.map((r) => ({
-    ...r,
-    gc: asesores[r.asesor?.trim()] || "SIN GC",
-    registradoPor: r.registradoPor || "",
-    itemDebitado: r.itemDebitado || "", // 🔁 ajústalo si usas otro nombre
-    detalleDebito: r.detalleDebito || "", // 🔁 ajústalo si usas otro nombre
-  }));
-}
-
-/* ------------------------------
-   SEMANAS DE UN MES
------------------------------- */
+// Semanas de un mes (S1, S2,...)
 function getWeeksOfMonth(date = new Date()) {
   const y = date.getFullYear();
   const m = date.getMonth();
@@ -109,213 +68,81 @@ function getWeeksOfMonth(date = new Date()) {
 }
 
 /* ------------------------------
-   CHART
+   Firebase: cargar datos
 ------------------------------ */
+
+async function loadRegistros() {
+  const snap = await getDocs(collection(db, "registros"));
+  const arr = [];
+  snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
+  return arr;
+}
+
+async function loadAsesores() {
+  const snap = await getDocs(collection(db, "asesores"));
+  const mapa = {};
+  snap.forEach(doc => {
+    const d = doc.data();
+    if (d.nombre) {
+      mapa[d.nombre.trim()] = d.GC || "SIN GC";
+    }
+  });
+  return mapa;
+}
+
+// Cruza registros + GC de asesores
+async function getMergedData() {
+  const registros = await loadRegistros();
+  const asesores = await loadAsesores();
+  return registros.map(r => ({
+    ...r,
+    gc: asesores[r.asesor?.trim()] || "SIN GC",
+    registradoPor: r.registradoPor || ""
+  }));
+}
+
+/* ------------------------------
+   Estado global
+------------------------------ */
+
+let rawData = [];      // todos los registros
+let filteredData = []; // registros tras filtros
+let allYears = [];     // años detectados
+let currentWeeks = []; // semanas del mes actual del filtro
+
+// Estado del modal de ítems
+let itemsModalAsesor = null; // null = general, string = nombre asesor
+
+/* ------------------------------
+   Chart semanal
+------------------------------ */
+
 const chart = new Chart(document.getElementById("chartMonth"), {
   type: "bar",
   data: {
     labels: [],
-    datasets: [
-      {
-        label: "Promedio %",
-        data: [],
-        backgroundColor: "#0f4c81",
-      },
-    ],
+    datasets: [{
+      label: "Promedio %",
+      data: [],
+      backgroundColor: "#0f4c81"
+    }]
   },
   options: {
     plugins: { legend: { display: false } },
-    scales: { y: { beginAtZero: true, max: 100 } },
-  },
+    scales: { y: { beginAtZero: true, max: 100 } }
+  }
 });
 
 /* ------------------------------
-   ESTADO GLOBAL
+   Vista ejecutiva por asesor
 ------------------------------ */
-let rawData = []; // todos los registros (cruzados con GC)
-let filteredData = []; // registros tras aplicar filtros
-let allYears = []; // años detectados en los registros
 
-/* ------------------------------
-   MODAL ÍTEMS DEBITADOS
------------------------------- */
-const itemsModal = document.getElementById("itemsModal");
-const itemsModalTitle = document.getElementById("itemsModalTitle");
-const itemsModalContent = document.getElementById("itemsModalContent");
-const btnItemsModal = document.getElementById("btnItemsModal");
-const btnCloseItemsModal = document.getElementById("btnCloseItemsModal");
-
-function openItemsModal(agentName = null) {
-  const data = filteredData.slice();
-
-  // Si no hay datos con el filtro actual
-  if (!data.length) {
-    itemsModalTitle.textContent = "Ítems debitados";
-    itemsModalContent.innerHTML =
-      "<p class='small'>No hay registros para el filtro seleccionado.</p>";
-    itemsModal.classList.add("show");
-    itemsModal.setAttribute("aria-hidden", "false");
-    return;
-  }
-
-  // Usamos el primer registro para obtener el mes actual de referencia
-  const baseDate = parseFecha(data[0].fecha || data[0].fechaMonitoreo);
-  const weeks = getWeeksOfMonth(baseDate);
-
-  // Obtener estadísticas por ítem
-  const generalStats = computeItemStats(data, null);
-  const scopedStats = agentName ? computeItemStats(data, agentName) : generalStats;
-
-  // Construir HTML
-  let html = "";
-
-  if (agentName) {
-    itemsModalTitle.textContent = `Ítems debitados – ${agentName}`;
-    const topItem = scopedStats[0];
-
-    html += `<p class="small">Detalle solo para el asesor <b>${sanitizeText(
-      agentName
-    )}</b>, respetando los filtros de mes/año/registrado por.</p>`;
-
-    if (!scopedStats.length) {
-      html += `<p class="small">Este asesor no tiene ítems debitados en el período filtrado.</p>`;
-    } else {
-      html += `<div class="items-section-title">Ítem más debitado</div>`;
-      html += `<p><span class="badge-soft">${
-        topItem ? sanitizeText(topItem.item) : "-"
-      }</span> &nbsp; (${topItem.total} vez/veces)</p>`;
-
-      html += `<div class="items-section-title">Top ítems debitados (asesor)</div>`;
-      html += `<ul class="items-list">`;
-      scopedStats.slice(0, 10).forEach((it) => {
-        html += `<li><b>${sanitizeText(it.item)}</b> — ${it.total} vez/veces</li>`;
-      });
-      html += `</ul>`;
-    }
-
-    // Detalle de registros recientes del asesor
-    const registrosAsesor = data
-      .filter((r) => r.asesor === agentName)
-      .sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha))
-      .slice(0, 30);
-
-    html += `<div class="items-section-title">Registros recientes del asesor (máx. 30)</div>`;
-    if (!registrosAsesor.length) {
-      html += `<p class="small">Sin registros para mostrar.</p>`;
-    } else {
-      html += `<div class="weekly"><table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Nota</th>
-            <th>Ítem debitado</th>
-            <th>Detalle</th>
-          </tr>
-        </thead>
-        <tbody>`;
-      registrosAsesor.forEach((r) => {
-        const f = parseFecha(r.fecha).toLocaleString("es-PE");
-        html += `<tr>
-          <td>${sanitizeText(f)}</td>
-          <td>${sanitizeText(r.nota ?? 0)}%</td>
-          <td>${sanitizeText(r.itemDebitado || "-")}</td>
-          <td>${sanitizeText(r.detalleDebito || "-")}</td>
-        </tr>`;
-      });
-      html += `</tbody></table></div>`;
-    }
-  } else {
-    itemsModalTitle.textContent = "Ítems debitados – Vista general";
-    html += `<p class="small">Resumen con los filtros actuales (mes, año, registrado por).</p>`;
-
-    // Top general del mes
-    html += `<div class="items-section-title">Top ítems debitados (mes actual filtrado)</div>`;
-    if (!generalStats.length) {
-      html += `<p class="small">No hay ítems debitados para el período seleccionado.</p>`;
-    } else {
-      html += `<ul class="items-list">`;
-      generalStats.slice(0, 10).forEach((it) => {
-        html += `<li><b>${sanitizeText(it.item)}</b> — ${it.total} vez/veces</li>`;
-      });
-      html += `</ul>`;
-    }
-
-    // Resumen semanal
-    html += `<div class="items-section-title">Detalle semanal (Top ítems por semana)</div>`;
-    html += `<div class="weekly"><table>
-      <thead>
-        <tr>
-          <th>Semana</th>
-          <th>Top ítems (nombre · cantidad)</th>
-        </tr>
-      </thead>
-      <tbody>`;
-
-    weeks.forEach((w, index) => {
-      const semanaData = data.filter((r) => {
-        const f = parseFecha(r.fecha);
-        const d = f.getDate();
-        return d >= w.startDay && d <= w.endDay;
-      });
-
-      const statsSemana = computeItemStats(semanaData, null);
-      html += `<tr>
-        <td>S${index + 1} (${w.startDay}–${w.endDay})</td>
-        <td>`;
-
-      if (!statsSemana.length) {
-        html += `<span class="small">Sin registros</span>`;
-      } else {
-        statsSemana.slice(0, 5).forEach((it, idx) => {
-          html += `<div>${idx + 1}. ${sanitizeText(it.item)} · ${
-            it.total
-          }</div>`;
-        });
-      }
-      html += `</td></tr>`;
-    });
-
-    html += `</tbody></table></div>`;
-  }
-
-  itemsModalContent.innerHTML = html;
-  itemsModal.classList.add("show");
-  itemsModal.setAttribute("aria-hidden", "false");
-}
-
-function closeItemsModal() {
-  itemsModal.classList.remove("show");
-  itemsModal.setAttribute("aria-hidden", "true");
-}
-
-/* Stats de ítems (general o por asesor) */
-function computeItemStats(data, agentName = null) {
-  const map = new Map();
-
-  data.forEach((r) => {
-    if (agentName && r.asesor !== agentName) return;
-    const rawItem = (r.itemDebitado || "").trim();
-    if (!rawItem) return;
-    const key = rawItem;
-    map.set(key, (map.get(key) || 0) + 1);
-  });
-
-  const arr = Array.from(map.entries()).map(([item, total]) => ({ item, total }));
-  arr.sort((a, b) => b.total - a.total || a.item.localeCompare(b.item));
-  return arr;
-}
-
-/* ------------------------------
-   VISTA EJECUTIVA B2 (CÁLCULO COMPLETO POR ASESOR)
------------------------------- */
 function renderExecView(data) {
   const porAsesor = {};
-
-  data.forEach((r) => {
+  data.forEach(r => {
     if (!r.asesor) return;
     const key = r.asesor;
     const nota = Number(r.nota || 0);
-
     if (!porAsesor[key]) {
       porAsesor[key] = {
         asesor: key,
@@ -324,8 +151,8 @@ function renderExecView(data) {
         sumaNota: 0,
         max: null,
         min: null,
-        ok: 0, // >=85
-        bad: 0, // <85
+        ok: 0,
+        bad: 0
       };
     }
     const a = porAsesor[key];
@@ -338,9 +165,9 @@ function renderExecView(data) {
   });
 
   const lista = Object.values(porAsesor)
-    .map((a) => ({
+    .map(a => ({
       ...a,
-      promedio: a.total ? a.sumaNota / a.total : 0,
+      promedio: a.total ? a.sumaNota / a.total : 0
     }))
     .sort((a, b) => b.promedio - a.promedio);
 
@@ -350,21 +177,19 @@ function renderExecView(data) {
     return;
   }
 
-  let html = "";
-  lista.forEach((a) => {
+  cont.innerHTML = lista.map(a => {
     const prom = Math.round(a.promedio * 10) / 10;
     const esVerde = prom >= 85;
     const pillClass = esVerde ? "green" : "red";
     const label = esVerde ? "🟢 85 – 100" : "🔴 0 – 84";
     const maxTxt = a.max !== null ? `${a.max}%` : "-";
     const minTxt = a.min !== null ? `${a.min}%` : "-";
-
-    html += `
-      <div class="exec-card">
+    return `
+      <div class="exec-card" data-asesor="${escapeHTML(a.asesor)}">
         <div class="exec-header">
           <div>
-            <div class="exec-name">${sanitizeText(a.asesor)}</div>
-            <div class="exec-gc">GC: ${sanitizeText(a.gc)}</div>
+            <div class="exec-name">${escapeHTML(a.asesor)}</div>
+            <div class="exec-gc">GC: ${escapeHTML(a.gc)}</div>
           </div>
           <div class="pill ${pillClass}">
             ${label}
@@ -372,43 +197,38 @@ function renderExecView(data) {
         </div>
         <div class="exec-main">
           <div>
-            <div class="exec-score">${sanitizeText(prom)}</div>
+            <div class="exec-score">${prom}%</div>
             <div class="exec-meta">
-              <div><b>${sanitizeText(a.total)}</b> feedback(s)</div>
-              <div>🟢 ${sanitizeText(a.ok)} · 🔴 ${sanitizeText(a.bad)}</div>
+              <div><b>${a.total}</b> feedback(s)</div>
+              <div>🟢 ${a.ok} · 🔴 ${a.bad}</div>
             </div>
           </div>
           <div class="exec-meta">
-            <div><b>Mejor</b>: ${sanitizeText(maxTxt)}</div>
-            <div><b>Peor</b>: ${sanitizeText(minTxt)}</div>
+            <div><b>Mejor</b>: ${maxTxt}</div>
+            <div><b>Peor</b>: ${minTxt}</div>
           </div>
         </div>
       </div>
     `;
-  });
+  }).join("");
 
-  cont.innerHTML = html;
-
-  // Añadimos evento click para abrir modal por asesor
-  const cards = cont.querySelectorAll(".exec-card");
-  cards.forEach((card) => {
-    const nameEl = card.querySelector(".exec-name");
-    const nombreAsesor = nameEl ? nameEl.textContent.trim() : "";
+  // Delegar click en tarjetas para abrir modal por asesor
+  cont.querySelectorAll(".exec-card").forEach(card => {
     card.addEventListener("click", () => {
-      if (nombreAsesor) {
-        openItemsModal(nombreAsesor);
-      }
+      const asesor = card.getAttribute("data-asesor") || "";
+      openItemsModal(asesor || null);
     });
   });
 }
 
 /* ------------------------------
-   RENDER KPIs, TABLAS Y GRÁFICO DESDE filteredData
+   Render global desde filteredData
 ------------------------------ */
+
 function renderFromFilteredData() {
   const data = filteredData;
 
-  // Resumen del filtro
+  // Resumen filtro
   const selReg = document.getElementById("filterRegistrado");
   const selMes = document.getElementById("filterMes");
   const selAnio = document.getElementById("filterAnio");
@@ -417,7 +237,6 @@ function renderFromFilteredData() {
   const valueReg = selReg.value;
   const valueMes = selMes.value;
   const valueAnio = selAnio.value;
-
   let resumen = `Mostrando ${data.length} registros`;
   if (valueMes !== "") {
     const mesTexto = selMes.options[selMes.selectedIndex].text;
@@ -437,20 +256,15 @@ function renderFromFilteredData() {
   }
   summary.textContent = resumen;
 
-  // Vista ejecutiva por asesor
+  // Vista ejecutiva
   renderExecView(data);
 
   // Contadores por tipo
   const counts = {
-    EFECTIVA: 0,
-    EFECTIVANK: 0,
-    XPERTO: 0,
-    FACEBOOK: 0,
-    INSTAGRAM: 0,
-    CORREO: 0,
-    OTRO: 0,
+    EFECTIVA: 0, EFECTIVANK: 0, XPERTO: 0,
+    FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
   };
-  data.forEach((r) => {
+  data.forEach(r => {
     const tipo = (r.tipo || "OTRO").toUpperCase();
     if (!Object.prototype.hasOwnProperty.call(counts, tipo)) counts.OTRO++;
     else counts[tipo]++;
@@ -467,92 +281,72 @@ function renderFromFilteredData() {
     .slice()
     .sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha))
     .slice(0, 8);
-  const recentBody = document.querySelector("#recentTable tbody");
-
+  const tbodyRecent = document.querySelector("#recentTable tbody");
   if (!recent.length) {
-    recentBody.innerHTML = `<tr><td colspan="5">Sin registros</td></tr>`;
+    tbodyRecent.innerHTML = `<tr><td colspan="5">Sin registros</td></tr>`;
   } else {
-    recentBody.innerHTML = recent
-      .map((r) => {
-        const fechaTxt = parseFecha(r.fecha).toLocaleString("es-PE");
-        return `
-        <tr>
-          <td>${sanitizeText(fechaTxt)}</td>
-          <td>${sanitizeText(r.asesor)} — ${sanitizeText(r.gc)}</td>
-          <td>${sanitizeText(r.nota || 0)}%</td>
-          <td>${sanitizeText(r.tipo || "-")}</td>
-          <td>${sanitizeText(r.registradoPor || "-")}</td>
-        </tr>`;
-      })
-      .join("");
+    tbodyRecent.innerHTML = recent.map(r => `
+      <tr>
+        <td>${escapeHTML(parseFecha(r.fecha).toLocaleString("es-PE"))}</td>
+        <td>${escapeHTML(r.asesor)} — ${escapeHTML(r.gc)}</td>
+        <td>${escapeHTML((r.nota || 0).toString())}%</td>
+        <td>${escapeHTML(r.tipo || "-")}</td>
+        <td>${escapeHTML(r.registradoPor || "-")}</td>
+      </tr>
+    `).join("");
   }
 
-  // Tabla semanal
-  const weeks = getWeeksOfMonth(
-    data.length ? parseFecha(data[0].fecha) : new Date()
-  );
-  const asesoresUnicos = [...new Set(data.map((r) => r.asesor))].filter(Boolean);
+  // Tabla semanal + gráfico
+  const baseDate = data.length ? parseFecha(data[0].fecha) : new Date();
+  currentWeeks = getWeeksOfMonth(baseDate);
 
-  const head = document.getElementById("weeklyHead");
-  const body = document.getElementById("weeklyBody");
-
-  head.innerHTML =
-    `<tr><th>ASESOR</th>` +
-    weeks.map((_, i) => `<th>S${i + 1} C1</th><th>S${i + 1} C2</th>`).join("") +
+  const asesoresUnicos = [...new Set(data.map(r => r.asesor))].filter(Boolean);
+  const head = `<tr><th>ASESOR</th>` +
+    currentWeeks.map((_, i) => `<th>S${i + 1} C1</th><th>S${i + 1} C2</th>`).join("") +
     `</tr>`;
+  document.getElementById("weeklyHead").innerHTML = head;
 
-  if (!asesoresUnicos.length) {
-    body.innerHTML = `<tr><td colspan="${
-      1 + weeks.length * 2
-    }">Sin registros</td></tr>`;
-  } else {
-    body.innerHTML = asesoresUnicos
-      .map((a) => {
-        const reg = data.find((r) => r.asesor === a);
-        const gc = reg?.gc || "SIN GC";
-        let row = `<tr><td>${sanitizeText(a)} — ${sanitizeText(gc)}</td>`;
+  const cuerpo = asesoresUnicos.map(a => {
+    const reg = data.find(r => r.asesor === a);
+    const gc = reg?.gc || "SIN GC";
+    let row = `<tr><td>${escapeHTML(a)} — ${escapeHTML(gc)}</td>`;
+    for (let w = 0; w < currentWeeks.length; w++) {
+      const recs = data.filter(r => {
+        const f = parseFecha(r.fecha);
+        const d = f.getDate();
+        return r.asesor === a &&
+          d >= currentWeeks[w].startDay &&
+          d <= currentWeeks[w].endDay;
+      });
+      row += `<td>${escapeHTML(recs[0]?.tipo || "-")}</td>`;
+      row += `<td>${escapeHTML(recs[1]?.tipo || "-")}</td>`;
+    }
+    return row + "</tr>";
+  }).join("");
 
-        for (let w = 0; w < weeks.length; w++) {
-          const recs = data.filter((r) => {
-            const f = parseFecha(r.fecha);
-            const d = f.getDate();
-            return (
-              r.asesor === a &&
-              d >= weeks[w].startDay &&
-              d <= weeks[w].endDay
-            );
-          });
-          row += `<td>${sanitizeText(recs[0]?.tipo || "-")}</td>`;
-          row += `<td>${sanitizeText(recs[1]?.tipo || "-")}</td>`;
-        }
+  document.getElementById("weeklyBody").innerHTML =
+    cuerpo || `<tr><td colspan="${1 + currentWeeks.length * 2}">Sin registros</td></tr>`;
 
-        row += "</tr>";
-        return row;
-      })
-      .join("");
-  }
-
-  // Gráfico semanal
-  const values = weeks.map((w) => {
-    const recs = data.filter((r) => {
+  // Datos para gráfico semanal
+  const values = currentWeeks.map(w => {
+    const recs = data.filter(r => {
       const f = parseFecha(r.fecha);
       const d = f.getDate();
       return d >= w.startDay && d <= w.endDay;
     });
     if (!recs.length) return 0;
-    const avg =
-      recs.reduce((t, r) => t + (parseFloat(r.nota) || 0), 0) / recs.length;
+    const avg = recs.reduce((t, r) => t + (parseFloat(r.nota) || 0), 0) / recs.length;
     return Math.round(avg);
   });
-
-  chart.data.labels = weeks.map((_, i) => `S${i + 1}`);
+  chart.data.labels = currentWeeks.map((_, i) => `S${i + 1}`);
   chart.data.datasets[0].data = values;
   chart.update();
 }
 
 /* ------------------------------
-   APLICAR FILTROS
+   Aplicar filtros
 ------------------------------ */
+
 function applyFilters() {
   const selReg = document.getElementById("filterRegistrado");
   const selMes = document.getElementById("filterMes");
@@ -564,25 +358,22 @@ function applyFilters() {
 
   let data = rawData.slice();
 
-  // Año
   if (filterAnio !== null) {
-    data = data.filter((r) => {
+    data = data.filter(r => {
       const f = parseFecha(r.fecha);
       return f.getFullYear() === filterAnio;
     });
   }
 
-  // Mes
   if (filterMes !== null) {
-    data = data.filter((r) => {
+    data = data.filter(r => {
       const f = parseFecha(r.fecha);
       return f.getMonth() === filterMes;
     });
   }
 
-  // Registrado por
   if (filterValueReg) {
-    data = data.filter((r) => normalize(r.registradoPor) === filterValueReg);
+    data = data.filter(r => normalize(r.registradoPor) === filterValueReg);
   }
 
   filteredData = data;
@@ -590,8 +381,9 @@ function applyFilters() {
 }
 
 /* ------------------------------
-   CARGAR AÑOS DISPONIBLES EN SELECT
+   Filtro de años
 ------------------------------ */
+
 function setupYearFilter() {
   const selAnio = document.getElementById("filterAnio");
   selAnio.innerHTML = "";
@@ -602,7 +394,7 @@ function setupYearFilter() {
   selAnio.appendChild(optionAll);
 
   allYears.sort((a, b) => a - b);
-  allYears.forEach((y) => {
+  allYears.forEach(y => {
     const op = document.createElement("option");
     op.value = y;
     op.textContent = y;
@@ -611,64 +403,221 @@ function setupYearFilter() {
 
   const currentYear = new Date().getFullYear();
   if (allYears.includes(currentYear)) {
-    selAnio.value = String(currentYear);
+    selAnio.value = currentYear.toString();
   }
 }
 
 /* ------------------------------
-   GENERAR DASHBOARD COMPLETO
+   Modal de ítems debitados
 ------------------------------ */
+
+// Construye agregación de ítems a partir de un arreglo de registros
+function aggregateItems(records) {
+  const mapa = {};
+  records.forEach(reg => {
+    const items = Array.isArray(reg.items) ? reg.items : [];
+    items.forEach(it => {
+      const name = it.name || "Sin nombre";
+      const key = name;
+      const tipo = it.tipo || "—";
+      const perc = Number(it.perc || 0);
+      const detail = it.detail || "";
+
+      if (!mapa[key]) {
+        mapa[key] = {
+          name,
+          tipo,
+          count: 0,
+          sumPerc: 0,
+          maxPerc: 0,
+          sampleDetail: ""
+        };
+      }
+      const o = mapa[key];
+      o.count += 1;
+      o.sumPerc += perc;
+      if (perc > o.maxPerc) o.maxPerc = perc;
+      if (!o.sampleDetail && detail) o.sampleDetail = detail;
+    });
+  });
+
+  return Object.values(mapa)
+    .map(o => ({
+      ...o,
+      avgPerc: o.count ? Math.round((o.sumPerc / o.count) * 10) / 10 : 0
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+// Rellena select de periodo (mes + semanas)
+function fillItemsPeriodSelect() {
+  const sel = document.getElementById("itemsPeriodSelect");
+  sel.innerHTML = "";
+
+  const optMes = document.createElement("option");
+  optMes.value = "mes";
+  optMes.textContent = "Mes completo";
+  sel.appendChild(optMes);
+
+  currentWeeks.forEach((w, idx) => {
+    const op = document.createElement("option");
+    op.value = `week-${idx}`;
+    op.textContent = `Semana S${idx + 1} (${w.startDay}-${w.endDay})`;
+    sel.appendChild(op);
+  });
+
+  sel.value = "mes";
+}
+
+// Renderiza tabla del modal según periodo y asesor
+function renderItemsModalTable() {
+  const sel = document.getElementById("itemsPeriodSelect");
+  const value = sel.value || "mes";
+
+  let data = filteredData.slice();
+
+  if (itemsModalAsesor) {
+    data = data.filter(r => r.asesor === itemsModalAsesor);
+  }
+
+  if (value.startsWith("week-")) {
+    const idx = Number(value.split("-")[1] || "0");
+    const w = currentWeeks[idx];
+    if (w) {
+      data = data.filter(r => {
+        const f = parseFecha(r.fecha);
+        const d = f.getDate();
+        return d >= w.startDay && d <= w.endDay;
+      });
+    }
+  }
+
+  const agg = aggregateItems(data);
+  const tbody = document.getElementById("itemsTableBody");
+
+  if (!agg.length) {
+    tbody.innerHTML = `<tr><td colspan="5">Sin ítems debitados para este periodo.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = agg.map(it => `
+    <tr>
+      <td>${escapeHTML(it.name)}</td>
+      <td>${escapeHTML(it.tipo)}</td>
+      <td>${it.count}</td>
+      <td>${it.avgPerc}%</td>
+      <td>${escapeHTML(it.sampleDetail || "Sin detalle")}</td>
+    </tr>
+  `).join("");
+}
+
+// Abre modal general o por asesor
+function openItemsModal(asesor = null) {
+  itemsModalAsesor = asesor;
+
+  const titulo = document.getElementById("itemsModalTitle");
+  const subtitulo = document.getElementById("itemsModalSubtitle");
+
+  if (asesor) {
+    titulo.textContent = `Ítems debitados – ${asesor}`;
+    subtitulo.textContent = "Ranking de ítems más debitados para este asesor, según los filtros seleccionados.";
+  } else {
+    titulo.textContent = "Ranking general de ítems debitados";
+    subtitulo.textContent = "Basado en todos los registros filtrados (Mes / Año / Registrado por).";
+  }
+
+  fillItemsPeriodSelect();
+  renderItemsModalTable();
+
+  document.getElementById("itemsModal").style.display = "flex";
+}
+
+function closeItemsModal() {
+  document.getElementById("itemsModal").style.display = "none";
+}
+
+/* ------------------------------
+   Tema claro / oscuro
+------------------------------ */
+
+const THEME_KEY = "dash_theme";
+
+function applyTheme(theme) {
+  const body = document.body;
+  const btn = document.getElementById("btnTheme");
+  if (theme === "light") {
+    body.classList.add("light");
+    if (btn) btn.textContent = "🌙 Modo oscuro";
+  } else {
+    body.classList.remove("light");
+    if (btn) btn.textContent = "☀️ Modo claro";
+  }
+}
+
+/* ------------------------------
+   Inicialización dashboard
+------------------------------ */
+
 async function refreshDashboard() {
   let data = await getMergedData();
 
-  // Ordenar por fecha ascendente
   data = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
   rawData = data;
 
-  // Años
+  // años detectados
   const yearsSet = new Set();
-  data.forEach((r) => {
+  data.forEach(r => {
     const f = parseFecha(r.fecha);
     yearsSet.add(f.getFullYear());
   });
   allYears = Array.from(yearsSet);
 
-  // Configurar años
   setupYearFilter();
 
-  // Preseleccionar mes actual
+  // mes actual como default
   const hoy = new Date();
   document.getElementById("filterMes").value = hoy.getMonth().toString();
 
-  // Aplicar filtros iniciales
   applyFilters();
 }
 
 /* ------------------------------
-   EVENTOS
+   Listeners
 ------------------------------ */
-document
-  .getElementById("filterRegistrado")
-  .addEventListener("change", applyFilters);
-document
-  .getElementById("filterMes")
-  .addEventListener("change", applyFilters);
-document
-  .getElementById("filterAnio")
-  .addEventListener("change", applyFilters);
 
-btnItemsModal.addEventListener("click", () => openItemsModal());
-btnCloseItemsModal.addEventListener("click", closeItemsModal);
+document.getElementById("filterRegistrado").addEventListener("change", applyFilters);
+document.getElementById("filterMes").addEventListener("change", applyFilters);
+document.getElementById("filterAnio").addEventListener("change", applyFilters);
 
-// Cerrar modal haciendo clic fuera
-itemsModal.addEventListener("click", (e) => {
-  if (e.target === itemsModal) {
+document.getElementById("btnOpenItemsModal").addEventListener("click", () => {
+  openItemsModal(null);
+});
+
+document.getElementById("btnCloseItemsModal").addEventListener("click", closeItemsModal);
+
+document.getElementById("itemsPeriodSelect").addEventListener("change", renderItemsModalTable);
+
+// cerrar modal al hacer click fuera
+document.getElementById("itemsModal").addEventListener("click", (e) => {
+  if (e.target.id === "itemsModal") {
     closeItemsModal();
   }
 });
 
-/* INICIO */
-refreshDashboard().catch((err) => {
+// tema
+const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
+applyTheme(savedTheme);
+
+const btnTheme = document.getElementById("btnTheme");
+btnTheme.addEventListener("click", () => {
+  const next = document.body.classList.contains("light") ? "dark" : "light";
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
+
+/* ------------------------------
+   Start
+------------------------------ */
+refreshDashboard().catch(err => {
   console.error("Error al cargar dashboard:", err);
-  alert("Error al cargar dashboard: " + (err?.message || err));
 });

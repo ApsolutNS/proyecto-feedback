@@ -639,18 +639,20 @@ function updateSignaturePreview() {
     box.textContent = "Sin firma seleccionada";
   }
 }
-
 /* ------------------------------
    GUARDAR FIRMA + COMPROMISO
+   (con prevención de duplicado)
 ------------------------------ */
-async function saveSignature() {
+window.saveSignature = async function () {
   if (!currentID || !currentCollection) {
     alert("No hay documento abierto.");
     return;
   }
+
   const ta = document.getElementById("compromiso");
   const msg = document.getElementById("agentMsg");
   const editable = document.getElementById("editableZone");
+
   if (!ta || !msg || !editable) return;
 
   const compromiso = ta.value.trim();
@@ -663,46 +665,82 @@ async function saveSignature() {
     return;
   }
   if (!currentAdvisorName) {
-    alert("No se encontró el nombre del asesor asociado a tu usuario.");
+    alert("No se encontró el nombre del asesor asociado.");
     return;
   }
 
-  msg.style.color = "#22c55e";
+  msg.style.color = "#4ade80";
   msg.textContent = "Guardando...";
 
   try {
-    let pathFolder = "firmas";
-    let fileName = `${currentID}.png`;
+    const docRef = doc(db, currentCollection, currentID);
+    const snap = await getDoc(docRef);
+    const data = snap.data() || {};
 
-    if (currentCollection === "refuerzos_calidad") {
-      pathFolder = "firmas_refuerzos";
-      const safeName = currentAdvisorName.replace(/[^a-zA-Z0-9]/g, "_");
-      fileName = `${currentID}_${safeName}.png`;
+    /* ==========================================================
+       🔍 1) VERIFICAR SI YA EXISTE UNA FIRMA (NO SUBIR DE NUEVO)
+       ========================================================== */
+    let existingSignatureURL = null;
+
+    if (currentCollection === "registros") {
+      // feedback clásico
+      existingSignatureURL = data.firmaUrl || null;
+
+    } else if (currentCollection === "refuerzos_calidad") {
+      // refuerzo/capacitación
+      const firmas = Array.isArray(data.firmas) ? data.firmas : [];
+      const fAgente = firmas.find(f => f.nombre === currentAdvisorName);
+      existingSignatureURL = fAgente?.url || null;
     }
 
-    const sigRef = ref(storage, `${pathFolder}/${fileName}`);
-    await uploadString(sigRef, signatureData, "data_url");
-    const url = await getDownloadURL(sigRef);
-    const docRef = doc(db, currentCollection, currentID);
+    let finalURL = existingSignatureURL;
+
+    /* ==========================================================
+       🔄 2) SUBIR SOLO SI NO EXISTE FIRMA PREVIA
+       ========================================================== */
+    if (!existingSignatureURL) {
+      // Carpeta correcta según tipo
+      let pathFolder = currentCollection === "registros"
+        ? "firmas"
+        : "firmas_refuerzos";
+
+      let fileName =
+        currentCollection === "registros"
+          ? `${currentID}.png`
+          : `${currentID}_${currentAdvisorName.replace(/[^a-zA-Z0-9]/g, "_")}.png`;
+
+      const sigRef = ref(storage, `${pathFolder}/${fileName}`);
+
+      // subir
+      await uploadString(sigRef, signatureData, "data_url");
+
+      // obtener url final
+      finalURL = await getDownloadURL(sigRef);
+    }
+
+    /* ==========================================================
+       📝 3) ACTUALIZAR DOCUMENTO
+       ========================================================== */
 
     if (currentCollection === "registros") {
       await updateDoc(docRef, {
         compromiso,
-        firmaUrl: url,
+        firmaUrl: finalURL,
         estado: "COMPLETADO",
       });
+
       msg.textContent = "Feedback completado ✓";
+
     } else {
-      const snap = await getDoc(docRef);
-      const data = snap.data() || {};
+      // REFUERZOS
       const firmas = Array.isArray(data.firmas) ? data.firmas : [];
       const nowIso = new Date().toISOString();
 
-      const nuevasFirmas = firmas.map((f) => {
+      const nuevasFirmas = firmas.map(f => {
         if (f.nombre === currentAdvisorName) {
           return {
             ...f,
-            url,
+            url: finalURL,
             fechaFirma: nowIso,
             compromiso,
           };
@@ -710,8 +748,7 @@ async function saveSignature() {
         return f;
       });
 
-      const allFirmados =
-        nuevasFirmas.length > 0 && nuevasFirmas.every((f) => f.url);
+      const allFirmados = nuevasFirmas.length > 0 && nuevasFirmas.every(f => f.url);
 
       await updateDoc(docRef, {
         firmas: nuevasFirmas,
@@ -724,14 +761,18 @@ async function saveSignature() {
       msg.textContent = "Refuerzo firmado ✓";
     }
 
+    /* ==========================================================
+       ✔ FINAL
+       ========================================================== */
     editable.style.display = "none";
-    await loadAgentList();
+    await loadAgentList(); // refrescar lista + dashboard
+
   } catch (e) {
     console.error(e);
     msg.style.color = "red";
     msg.textContent = "Error: " + e.message;
   }
-}
+};
 
 /* Bind botón guardar */
 const btnSave = document.getElementById("btnSave");

@@ -1,18 +1,16 @@
 // js/portal_agente.js
-// Portal del Agente – Auth + rol "agente" + dashboard propio
+// Portal del Agente – MD3, modo claro/oscuro, modal, Auth + rol "agente"
 "use strict";
 
 /* ------------------------------
    IMPORTS FIREBASE
 ------------------------------ */
 import { app, db, storage } from "./firebase.js";
-
 import {
   getAuth,
   onAuthStateChanged,
   signOut,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
 import {
   collection,
   getDocs,
@@ -22,7 +20,6 @@ import {
   getDoc,
   updateDoc,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
 import {
   ref,
   uploadString,
@@ -44,6 +41,13 @@ function escapeHTML(str) {
     }[c] || c));
 }
 
+function toJSDate(value) {
+  if (!value) return new Date();
+  if (value.toDate) return value.toDate(); // Firestore Timestamp
+  if (value instanceof Date) return value;
+  return new Date(value);
+}
+
 function formatearFechaLarga(fecha) {
   const f = fecha && fecha.toDate ? fecha.toDate() : new Date(fecha || Date.now());
   const opts = {
@@ -56,11 +60,34 @@ function formatearFechaLarga(fecha) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function toJSDate(value) {
-  if (!value) return new Date();
-  if (value.toDate) return value.toDate();           // Timestamp Firestore
-  if (value instanceof Date) return value;
-  return new Date(value);
+/* ------------------------------
+   THEME (LIGHT / DARK)
+------------------------------ */
+const THEME_KEY = "portal_agent_theme";
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  const btn = document.getElementById("btnTheme");
+  root.setAttribute("data-theme", theme);
+  if (btn) {
+    btn.textContent = theme === "light" ? "🌙" : "☀️";
+  }
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const initial = saved === "light" || saved === "dark" ? saved : "dark";
+  applyTheme(initial);
+})();
+
+const themeBtn = document.getElementById("btnTheme");
+if (themeBtn) {
+  themeBtn.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = current === "dark" ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  });
 }
 
 /* ------------------------------
@@ -70,18 +97,17 @@ const auth = getAuth(app);
 
 let currentUser = null;
 let currentRole = null;
-let currentAdvisorName = ""; // nombre del asesor asociado al agente
+let currentAdvisorName = "";
 
-// Estado de documentos
 let currentID = null;
-let currentCollection = null;     // "registros" o "refuerzos_calidad"
+let currentCollection = null; // "registros" o "refuerzos_calidad"
 let currentDocData = null;
-let signatureData = null;         // data_url de la firma
+let signatureData = null;
 
-// Para el mini-dashboard (solo feedbacks del agente)
+// Dashboard: solo feedbacks de "registros" del agente
 let ultimosFeedbacks = [];
 
-// Firma/Logo de Alex para cartas
+// Logo / firma Alex
 const FIRMA_ALEX_URL =
   "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media";
 
@@ -95,7 +121,6 @@ onAuthStateChanged(auth, async (user) => {
   try {
     const userRef = doc(db, "usuarios", user.uid);
     const snap = await getDoc(userRef);
-
     if (!snap.exists()) {
       alert("No tienes permisos configurados. Contacta a tu supervisor.");
       await signOut(auth);
@@ -112,7 +137,7 @@ onAuthStateChanged(auth, async (user) => {
       data.displayName ||
       "";
 
-    const allowedRoles = ["agente"]; // opcionalmente podrías añadir "admin" para pruebas
+    const allowedRoles = ["agente"]; // si quieres pruebas, puedes añadir "admin"
     if (!allowedRoles.includes(currentRole)) {
       alert("No tienes acceso al Portal del Agente.");
       await signOut(auth);
@@ -120,21 +145,29 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
-    // Saludo opcional (si agregas un span con ese id en el HTML)
     const spanName = document.getElementById("agentNameSpan");
+    const avatar = document.querySelector(".pa-user-avatar");
     if (spanName) {
       spanName.textContent =
         currentAdvisorName || currentUser.email || "(Agente)";
     }
+    if (avatar) {
+      const base = (currentAdvisorName || currentUser.email || "AG").trim();
+      const initials = base
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((p) => p[0]?.toUpperCase() || "")
+        .join("");
+      avatar.textContent = initials || "AG";
+    }
 
     if (!currentAdvisorName) {
       alert(
-        "Tu usuario no tiene configurado el nombre de asesor (campo 'nombreAsesor' en la colección 'usuarios')."
+        "Tu usuario no tiene configurado el nombre de asesor (campo 'nombreAsesor' en 'usuarios')."
       );
       return;
     }
 
-    // Cargar lista inicial
     await loadAgentList();
   } catch (err) {
     console.error("Error al validar rol del usuario:", err);
@@ -144,22 +177,23 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// Exponer logout si en algún momento pones botón de cerrar sesión
-window.logout = async () => {
-  await signOut(auth);
-  location.href = "login.html";
-};
+/* Logout */
+const btnLogout = document.getElementById("btnLogout");
+if (btnLogout) {
+  btnLogout.addEventListener("click", async () => {
+    await signOut(auth);
+    location.href = "login.html";
+  });
+}
 
 /* ------------------------------
    DASHBOARD DEL AGENTE
-   (Promedio, total, aprobados, no aprobados)
 ------------------------------ */
 function renderAgentDashboard() {
   const avgEl = document.getElementById("avgScore");
   const totalEl = document.getElementById("totalFb");
   const okEl = document.getElementById("okCount");
   const badEl = document.getElementById("badCount");
-
   if (!avgEl || !totalEl || !okEl || !badEl) return;
 
   if (!ultimosFeedbacks.length) {
@@ -173,7 +207,6 @@ function renderAgentDashboard() {
   const notas = ultimosFeedbacks
     .map((f) => Number(f.bruto?.nota || 0))
     .filter((n) => !Number.isNaN(n));
-
   const total = notas.length;
   const suma = notas.reduce((t, n) => t + n, 0);
   const promedio = total ? Math.round((suma / total) * 10) / 10 : 0;
@@ -187,11 +220,12 @@ function renderAgentDashboard() {
 }
 
 /* ------------------------------
-   BADGE DE PENDIENTES
+   BADGE PENDIENTES
 ------------------------------ */
 function updatePendingBadge(list) {
-  const pend = list.filter((x) => (x.estado || "").toUpperCase() === "PENDIENTE")
-    .length;
+  const pend = list.filter(
+    (x) => (x.estado || "").toUpperCase() === "PENDIENTE"
+  ).length;
   const badge = document.getElementById("pendingBadge");
   if (!badge) return;
   badge.innerHTML = pend
@@ -200,10 +234,9 @@ function updatePendingBadge(list) {
 }
 
 /* ------------------------------
-   CARGA LISTA DE DOCUMENTOS
-   (Solo del asesor vinculado al usuario actual)
+   CARGA LISTA DOCUMENTOS
 ------------------------------ */
-window.loadAgentList = async function () {
+async function loadAgentList() {
   const tbody = document.querySelector("#agentTable tbody");
   if (!tbody) return;
 
@@ -217,20 +250,17 @@ window.loadAgentList = async function () {
     tbody.innerHTML =
       "<tr><td colspan='5'>Tu usuario no tiene configurado el nombre de asesor.</td></tr>";
     updatePendingBadge([]);
-    document.getElementById("detailBlock").style.display = "none";
     return;
   }
 
   const list = [];
 
   if (tipoDoc === "registros") {
-    // FEEDBACK CLÁSICO
     const qRef = query(
       collection(db, "registros"),
       where("asesor", "==", currentAdvisorName)
     );
     const snap = await getDocs(qRef);
-
     snap.forEach((d) => {
       const r = d.data();
       const fecha = toJSDate(r.fecha);
@@ -245,14 +275,10 @@ window.loadAgentList = async function () {
         bruto: r,
       });
     });
-
-    // Guardar estos feedbacks para dashboard
     ultimosFeedbacks = list.slice();
     renderAgentDashboard();
   } else {
-    // REFUERZOS / CAPACITACIONES
     const snap = await getDocs(collection(db, "refuerzos_calidad"));
-
     snap.forEach((d) => {
       const r = d.data();
       const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
@@ -260,13 +286,11 @@ window.loadAgentList = async function () {
         (a) => a.nombre === currentAdvisorName
       );
       if (!pertenece) return;
-
       const firmas = Array.isArray(r.firmas) ? r.firmas : [];
       const firmaAgente = firmas.find((f) => f.nombre === currentAdvisorName);
       const estadoAgente =
         firmaAgente && firmaAgente.url ? "COMPLETADO" : "PENDIENTE";
       const fecha = toJSDate(r.fechaRefuerzo);
-
       list.push({
         id: d.id,
         collection: "refuerzos_calidad",
@@ -280,13 +304,9 @@ window.loadAgentList = async function () {
     });
   }
 
-  // Ordenar por fecha desc
   list.sort((a, b) => b.fecha - a.fecha);
-
-  // Badge de pendientes
   updatePendingBadge(list);
 
-  // Filtro por "Registrado por"
   const filtrada = filtroRegistrador
     ? list.filter((x) => x.registradoPor === filtroRegistrador)
     : list;
@@ -300,39 +320,77 @@ window.loadAgentList = async function () {
   tbody.innerHTML = filtrada
     .map(
       (r) => `
-        <tr>
-          <td>${escapeHTML(r.id)}</td>
-          <td>${escapeHTML(r.fecha.toLocaleString("es-PE"))}</td>
-          <td>
-            ${escapeHTML(r.detalle)}
-            <span class="tag-doc">${escapeHTML(r.etiqueta)}</span>
-          </td>
-          <td>${escapeHTML(r.estado)}</td>
-          <td>
-            <button class="btn sm" onclick="openDetail('${r.collection}','${r.id}')">
-              Abrir
-            </button>
-          </td>
-        </tr>
-      `
+      <tr data-id="${escapeHTML(r.id)}" data-col="${escapeHTML(r.collection)}">
+        <td>${escapeHTML(r.id)}</td>
+        <td>${escapeHTML(r.fecha.toLocaleString("es-PE"))}</td>
+        <td>
+          ${escapeHTML(r.detalle)}
+          <span class="tag-doc">${escapeHTML(r.etiqueta)}</span>
+        </td>
+        <td>${escapeHTML(r.estado)}</td>
+        <td>
+          <button class="pa-tonal-button pa-tonal-button-sm pa-open-detail">
+            Abrir
+          </button>
+        </td>
+      </tr>
+    `
     )
     .join("");
-};
+
+  // Adjuntar listeners a los botones "Abrir" (sin inline JS)
+  tbody.querySelectorAll(".pa-open-detail").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const tr = e.currentTarget.closest("tr");
+      if (!tr) return;
+      const id = tr.getAttribute("data-id");
+      const col = tr.getAttribute("data-col");
+      if (id && col) openDetail(col, id);
+    });
+  });
+}
+
+/* Exponer para eventos de filtros */
+window.loadAgentList = loadAgentList;
 
 /* ------------------------------
-   DETALLE (FEEDBACK / REFUERZO)
+   MODAL DETALLE (FEEDBACK / REFUERZO)
 ------------------------------ */
-window.openDetail = async function (collectionName, id) {
+const detailModal = document.getElementById("detailModal");
+const btnCloseDetail = document.getElementById("btnCloseDetail");
+
+function openDetailModal() {
+  if (!detailModal) return;
+  detailModal.classList.add("pa-open");
+}
+
+function closeDetailModal() {
+  if (!detailModal) return;
+  detailModal.classList.remove("pa-open");
+  signatureData = null;
+}
+
+if (btnCloseDetail) {
+  btnCloseDetail.addEventListener("click", closeDetailModal);
+}
+if (detailModal) {
+  detailModal.addEventListener("click", (e) => {
+    if (e.target === detailModal) {
+      closeDetailModal();
+    }
+  });
+}
+
+async function openDetail(collectionName, id) {
   currentCollection = collectionName;
   currentID = id;
 
   const detailTitle = document.getElementById("detailTitle");
+  const detailSubtitle = document.getElementById("detailSubtitle");
   const feedbackDiv = document.getElementById("feedbackInfo");
-  const detailBlock = document.getElementById("detailBlock");
   const editable = document.getElementById("editableZone");
   const msg = document.getElementById("agentMsg");
-
-  if (!feedbackDiv || !detailBlock || !editable || !msg) return;
+  if (!feedbackDiv || !editable || !msg) return;
 
   if (!currentAdvisorName) {
     alert("No se encontró el nombre del asesor asociado a tu usuario.");
@@ -349,11 +407,12 @@ window.openDetail = async function (collectionName, id) {
   currentDocData = r;
   signatureData = null;
   msg.textContent = "";
-  msg.style.color = "#4ade80";
+  msg.style.color = "#22c55e";
 
   if (collectionName === "registros") {
-    // ---------- DETALLE FEEDBACK ----------
     if (detailTitle) detailTitle.textContent = "Detalle del Feedback";
+    if (detailSubtitle)
+      detailSubtitle.textContent = "Carta de retroalimentación de calidad";
 
     const fecha = toJSDate(r.fecha);
     const esReafirmacion = Number(r.nota) === 100;
@@ -364,12 +423,12 @@ window.openDetail = async function (collectionName, id) {
       (r.items || [])
         .map(
           (it) => `
-          <div style="margin-bottom:4px">
-            <strong>${escapeHTML(it.name || "")}</strong>
-            ${it.perc ? ` (${escapeHTML(it.perc.toString())}%)` : ""}
-            <div style="margin-left:8px">${escapeHTML(it.detail || "")}</div>
-          </div>
-        `
+        <div style="margin-bottom:4px">
+          <strong>${escapeHTML(it.name || "")}</strong>
+          ${it.perc ? ` (${escapeHTML(it.perc.toString())}%)` : ""}
+          <div style="margin-left:8px">${escapeHTML(it.detail || "")}</div>
+        </div>
+      `
         )
         .join("") || "<em>Sin ítems observados</em>";
 
@@ -377,10 +436,10 @@ window.openDetail = async function (collectionName, id) {
       (r.imagenes || [])
         .map(
           (im) => `
-          <img src="${escapeHTML(
-            im.url
-          )}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
-        `
+        <img src="${escapeHTML(
+          im.url
+        )}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
+      `
         )
         .join("") || "<em>Sin evidencias adjuntas</em>";
 
@@ -391,19 +450,18 @@ window.openDetail = async function (collectionName, id) {
         <div class="letter-title">${escapeHTML(titulo)}</div>
         <img src="${FIRMA_ALEX_URL}" style="max-height:42px">
       </div>
-      <p>
+      <p class="section-content">
         Por medio de la presente se deja constancia que el
         <strong>${escapeHTML(formatearFechaLarga(fecha))}</strong> se realiza una
         <strong>${escapeHTML(titulo)}</strong> al/la colaborador(a)
-        <strong>${escapeHTML(r.asesor || "")}</strong> con DNI <strong>${escapeHTML(
-      dniGC
-    )}</strong>,
-        quien ejerce la función de Asesor (a) Financiero (a), para el cumplimiento
-        de los parámetros de la llamada.
+        <strong>${escapeHTML(r.asesor || "")}</strong> con DNI
+        <strong>${escapeHTML(dniGC)}</strong>, quien ejerce la función de Asesor(a) Financiero(a),
+        para el cumplimiento de los parámetros de la llamada.
       </p>
-      <p>
+      <p class="section-content">
         Registrado por: <span class="pill">${escapeHTML(registrador)}</span>
       </p>
+
       <div class="section-title">Cliente</div>
       <div class="section-content">
         <div><strong>DNI:</strong> ${escapeHTML(r.cliente?.dni || "")}</div>
@@ -414,6 +472,7 @@ window.openDetail = async function (collectionName, id) {
           r.observacionCliente || ""
         )}</div>
       </div>
+
       <div class="section-title">Gestión monitoreada</div>
       <div class="section-content">
         <div><strong>ID Llamada:</strong> ${escapeHTML(r.idLlamada || "")}</div>
@@ -426,10 +485,12 @@ window.openDetail = async function (collectionName, id) {
           </div>
         </div>
       </div>
+
       <div class="section-title">Ítems observados</div>
       <div class="section-content">
         ${itemsHtml}
       </div>
+
       <div class="section-title">Nota obtenida</div>
       <div class="section-content nota-box">
         <div class="nota-pill">
@@ -439,10 +500,12 @@ window.openDetail = async function (collectionName, id) {
           Estado: <strong>${escapeHTML(r.estado || "PENDIENTE")}</strong>
         </div>
       </div>
+
       <div class="section-title">Compromiso del agente</div>
       <div class="section-content">
         ${r.compromiso ? escapeHTML(r.compromiso) : "<em>Pendiente</em>"}
       </div>
+
       <div class="section-title">Evidencias</div>
       <div class="section-content">
         ${imgsHtml}
@@ -461,10 +524,11 @@ window.openDetail = async function (collectionName, id) {
       updateSignaturePreview();
     }
   } else {
-    // ---------- DETALLE REFUERZO ----------
-    if (detailTitle) {
-      detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
-    }
+    // REFUERZO / CAPACITACIÓN
+    if (detailTitle) detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
+    if (detailSubtitle)
+      detailSubtitle.textContent =
+        "Constancia de refuerzo / capacitación aplicada";
 
     const fechaRef = toJSDate(r.fechaRefuerzo);
     const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
@@ -492,10 +556,9 @@ window.openDetail = async function (collectionName, id) {
         <div class="letter-title">REFUERZO / CAPACITACIÓN</div>
         <img src="${FIRMA_ALEX_URL}" style="max-height:42px">
       </div>
-      <p>
-        Se deja constancia que el <strong>${escapeHTML(
-          formatearFechaLarga(fechaRef)
-        )}</strong>
+      <p class="section-content">
+        Se deja constancia que el
+        <strong>${escapeHTML(formatearFechaLarga(fechaRef))}</strong>
         se realizó un <strong>${escapeHTML(
           r.tipo || "refuerzo / capacitación"
         )}</strong> sobre
@@ -504,20 +567,23 @@ window.openDetail = async function (collectionName, id) {
       <p class="section-content">
         ${asesoresTexto}
       </p>
-      <p>
+      <p class="section-content">
         Responsable de la sesión:
         <span class="pill">${escapeHTML(
           r.responsable || "Calidad & Formación"
         )}</span>
       </p>
+
       <div class="section-title">Objetivo del refuerzo</div>
       <div class="section-content">
         ${escapeHTML(r.objetivo || "—")}
       </div>
+
       <div class="section-title">Detalle / acuerdos clave</div>
       <div class="section-content">
         ${escapeHTML(r.detalle || "—")}
       </div>
+
       <div class="section-title">Compromiso del agente</div>
       <div class="section-content">
         ${
@@ -526,6 +592,7 @@ window.openDetail = async function (collectionName, id) {
             : "<em>Pendiente</em>"
         }
       </div>
+
       <div class="section-title">Firma actual del agente</div>
       <div class="section-content">
         ${
@@ -554,8 +621,8 @@ window.openDetail = async function (collectionName, id) {
     }
   }
 
-  detailBlock.style.display = "block";
-};
+  openDetailModal();
+}
 
 /* ------------------------------
    PREVIEW DE FIRMA
@@ -576,12 +643,11 @@ function updateSignaturePreview() {
 /* ------------------------------
    GUARDAR FIRMA + COMPROMISO
 ------------------------------ */
-window.saveSignature = async function () {
+async function saveSignature() {
   if (!currentID || !currentCollection) {
     alert("No hay documento abierto.");
     return;
   }
-
   const ta = document.getElementById("compromiso");
   const msg = document.getElementById("agentMsg");
   const editable = document.getElementById("editableZone");
@@ -601,7 +667,7 @@ window.saveSignature = async function () {
     return;
   }
 
-  msg.style.color = "#4ade80";
+  msg.style.color = "#22c55e";
   msg.textContent = "Guardando...";
 
   try {
@@ -617,11 +683,9 @@ window.saveSignature = async function () {
     const sigRef = ref(storage, `${pathFolder}/${fileName}`);
     await uploadString(sigRef, signatureData, "data_url");
     const url = await getDownloadURL(sigRef);
-
     const docRef = doc(db, currentCollection, currentID);
 
     if (currentCollection === "registros") {
-      // FEEDBACK
       await updateDoc(docRef, {
         compromiso,
         firmaUrl: url,
@@ -629,7 +693,6 @@ window.saveSignature = async function () {
       });
       msg.textContent = "Feedback completado ✓";
     } else {
-      // REFUERZOS
       const snap = await getDoc(docRef);
       const data = snap.data() || {};
       const firmas = Array.isArray(data.firmas) ? data.firmas : [];
@@ -662,21 +725,48 @@ window.saveSignature = async function () {
     }
 
     editable.style.display = "none";
-    await loadAgentList(); // refrescar tabla + dashboard
+    await loadAgentList();
   } catch (e) {
     console.error(e);
     msg.style.color = "red";
     msg.textContent = "Error: " + e.message;
   }
-};
+}
+
+/* Bind botón guardar */
+const btnSave = document.getElementById("btnSave");
+if (btnSave) {
+  btnSave.addEventListener("click", () => {
+    saveSignature();
+  });
+}
 
 /* ------------------------------
-   DIBUJAR FIRMA EN CANVAS
+   MODAL FIRMA - CANVAS
 ------------------------------ */
-const modal = document.getElementById("signatureModal");
+const signatureModal = document.getElementById("signatureModal");
 const canvas = document.getElementById("sigCanvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
 let drawing = false;
+
+function openSignatureModal() {
+  if (!signatureModal || !ctx || !canvas) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  signatureModal.classList.add("pa-open");
+}
+
+function closeSignatureModal() {
+  if (!signatureModal) return;
+  signatureModal.classList.remove("pa-open");
+}
+
+if (signatureModal) {
+  signatureModal.addEventListener("click", (e) => {
+    if (e.target === signatureModal) {
+      closeSignatureModal();
+    }
+  });
+}
 
 function getPos(e) {
   const r = canvas.getBoundingClientRect();
@@ -735,28 +825,30 @@ if (canvas && ctx) {
   );
 }
 
-function openDrawModal() {
-  if (!modal || !ctx || !canvas) return;
+function clearCanvas() {
+  if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  modal.style.display = "flex";
-}
-
-function closeDrawModal() {
-  if (!modal) return;
-  modal.style.display = "none";
 }
 
 function saveDrawnSignature() {
   if (!canvas) return;
   signatureData = canvas.toDataURL("image/png");
   updateSignaturePreview();
-  if (modal) modal.style.display = "none";
+  closeSignatureModal();
 }
 
-function clearCanvas() {
-  if (!ctx || !canvas) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
+/* Botones modal firma */
+const btnDraw = document.getElementById("btnDraw");
+if (btnDraw) btnDraw.addEventListener("click", openSignatureModal);
+
+const btnClear = document.getElementById("btnClear");
+if (btnClear) btnClear.addEventListener("click", clearCanvas);
+
+const btnCancel = document.getElementById("btnCancel");
+if (btnCancel) btnCancel.addEventListener("click", closeSignatureModal);
+
+const btnUse = document.getElementById("btnUse");
+if (btnUse) btnUse.addEventListener("click", saveDrawnSignature);
 
 /* ------------------------------
    SUBIR ARCHIVO DE FIRMA
@@ -765,6 +857,9 @@ function triggerUpload() {
   const input = document.getElementById("fileSignature");
   if (input) input.click();
 }
+
+const btnUpload = document.getElementById("btnUpload");
+if (btnUpload) btnUpload.addEventListener("click", triggerUpload);
 
 const fileInput = document.getElementById("fileSignature");
 if (fileInput) {
@@ -781,31 +876,12 @@ if (fileInput) {
 }
 
 /* ------------------------------
-   LISTENERS DE BOTONES Y FILTROS
+   LISTENERS DE FILTROS
 ------------------------------ */
-const btnDraw = document.getElementById("btnDraw");
-if (btnDraw) btnDraw.addEventListener("click", openDrawModal);
-
-const btnUpload = document.getElementById("btnUpload");
-if (btnUpload) btnUpload.addEventListener("click", triggerUpload);
-
-const btnSave = document.getElementById("btnSave");
-if (btnSave) btnSave.addEventListener("click", () => saveSignature());
-
-const btnClear = document.getElementById("btnClear");
-if (btnClear) btnClear.addEventListener("click", clearCanvas);
-
-const btnCancel = document.getElementById("btnCancel");
-if (btnCancel) btnCancel.addEventListener("click", closeDrawModal);
-
-const btnUse = document.getElementById("btnUse");
-if (btnUse) btnUse.addEventListener("click", saveDrawnSignature);
-
 const selTipoDoc = document.getElementById("selTipoDoc");
 if (selTipoDoc) {
   selTipoDoc.addEventListener("change", () => loadAgentList());
 }
-
 const selReg = document.getElementById("selRegistrador");
 if (selReg) {
   selReg.addEventListener("change", () => loadAgentList());

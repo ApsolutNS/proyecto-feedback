@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel Admin – Gestión de Usuarios</title>
+
+  <link rel="stylesheet" href="css/admin.css">
+
+  <!-- Firebase Auth solo para verificar sesión -->
+  <script type="module" src="js/admin.js" defer></script>
+</head>
+<body>
+
+  <header>
+    <h1>Panel de Administración</h1>
+    <button id="logoutBtn">Cerrar sesión</button>
+  </header>
+
+  <section class="container">
+
+    <h2>Usuarios registrados</h2>
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>UID</th>
+          <th>Rol</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Crear nuevo usuario</h2>
+    <div class="create-user">
+      <input id="newEmail" type="email" placeholder="Correo nuevo">
+      <input id="newPass" type="password" placeholder="Contraseña">
+      <select id="newRole">
+        <option value="agente">Agente</option>
+        <option value="supervisor">Supervisor</option>
+      </select>
+      <button id="btnCreateUser">Crear usuario</button>
+    </div>
+
+  </section>
+
+</body>
+</html>

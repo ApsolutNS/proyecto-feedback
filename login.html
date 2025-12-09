@@ -1,27 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ingreso al Sistema</title>
-
-  <!-- CSS -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iniciar Sesión</title>
   <link rel="stylesheet" href="css/login.css">
-
-  <!-- Firebase -->
-  <script type="module" src="js/login.js"></script>
 </head>
 
 <body>
   <div class="login-container">
-    <h2>Acceso al Sistema</h2>
+    <h2>Acceso Sistema Calidad</h2>
 
-    <input id="email" type="email" placeholder="Correo" required>
-    <input id="password" type="password" placeholder="Contraseña" required>
-
-    <button id="btnLogin">Ingresar</button>
-
-    <p id="msgError" class="error"></p>
+    <form id="loginForm" class="login-form">
+      <input type="email" id="email" placeholder="Correo institucional" required>
+      <input type="password" id="password" placeholder="Contraseña" required>
+      <button type="submit">Ingresar</button>
+    </form>
   </div>
+
+  <!-- JS externo (NO inline por CSP) -->
+  <script type="module" src="js/login.js"></script>
 </body>
 </html>

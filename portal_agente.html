@@ -1,118 +1,216 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Portal del Agente — Feedback & Refuerzos</title>
-    <link rel="stylesheet" href="css/portal_agente.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Portal del Agente — Feedback & Refuerzos</title>
+  <link rel="stylesheet" href="css/portal_agente.css">
 </head>
 <body>
-
-    <div class="card">
-        <h2>Portal del Agente</h2>
-
-        <!-- DASHBOARD -->
-        <div id="agentStats">
-            <div class="statBox">
-                <h3>Promedio general</h3>
-                <div id="avgScore">–</div>
-            </div>
-            <div class="statBox">
-                <h3>Total feedbacks</h3>
-                <div id="totalFb">–</div>
-            </div>
-            <div class="statBox">
-                <h3>Aprobados (≥85%)</h3>
-                <div id="okCount">–</div>
-            </div>
-            <div class="statBox">
-                <h3>No aprobados (&lt;85%)</h3>
-                <div id="badCount">–</div>
-            </div>
+  <div class="pa-root">
+    <!-- TOP BAR -->
+    <header class="pa-topbar">
+      <div class="pa-topbar-left">
+        <div class="pa-app-title">Feedback Center</div>
+        <div class="pa-app-subtitle">Portal del Agente</div>
+      </div>
+      <div class="pa-topbar-right">
+        <button class="pa-icon-button" id="btnTheme" aria-label="Cambiar tema">
+          🌙
+        </button>
+        <div class="pa-user-chip">
+          <div class="pa-user-avatar">AG</div>
+          <div class="pa-user-info">
+            <span class="pa-user-name" id="agentNameSpan">(Agente)</span>
+            <span class="pa-user-role">Agente</span>
+          </div>
         </div>
+        <button class="pa-tonal-button" id="btnLogout">
+          Cerrar sesión
+        </button>
+      </div>
+    </header>
 
-        <!-- FILTROS (SIN SELECT DE ASESOR) -->
-        <div class="filters">
-            <div>
-                <label>Tipo documento</label>
-                <select id="selTipoDoc">
-                    <option value="registros">Feedback de calidad</option>
-                    <option value="refuerzos_calidad">Refuerzos</option>
-                </select>
+    <!-- MAIN LAYOUT -->
+    <main class="pa-main">
+      <!-- COLUMNA IZQUIERDA: FILTROS + TABLA -->
+      <section class="pa-main-left">
+        <!-- FILTROS -->
+        <div class="pa-card pa-filters-card">
+          <div class="pa-card-header">
+            <h2>Mis documentos</h2>
+            <span id="pendingBadge" class="pa-pending-badge"></span>
+          </div>
+          <div class="pa-filters-grid">
+            <div class="pa-field">
+              <label for="selTipoDoc">Tipo de documento</label>
+              <select id="selTipoDoc">
+                <option value="registros">Feedback de calidad</option>
+                <option value="refuerzos_calidad">Refuerzos / Capacitaciones</option>
+              </select>
             </div>
-
-            <div>
-                <label>Registrado por</label>
-                <select id="selRegistrador">
-                    <option value="">Todos</option>
-                    <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
-                        Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
-                    </option>
-                    <option value="César Alonso Torres Montes - Supervisor">
-                        César Alonso Torres Montes - Supervisor
-                    </option>
-                    <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
-                        Karen Vanessa Vital Cordova - Líder de Operaciones
-                    </option>
-                </select>
+            <div class="pa-field">
+              <label for="selRegistrador">Registrado por</label>
+              <select id="selRegistrador">
+                <option value="">Todos</option>
+                <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
+                  Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
+                </option>
+                <option value="César Alonso Torres Montes - Supervisor">
+                  César Alonso Torres Montes - Supervisor
+                </option>
+                <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
+                  Karen Vanessa Vital Cordova - Líder de Operaciones
+                </option>
+              </select>
             </div>
+          </div>
         </div>
 
         <!-- TABLA -->
-        <table id="agentTable">
-            <thead>
+        <div class="pa-card pa-table-card">
+          <div class="pa-table-wrapper">
+            <table id="agentTable">
+              <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Fecha</th>
-                    <th>Detalle</th>
-                    <th>Estado</th>
-                    <th>Acción</th>
+                  <th>ID</th>
+                  <th>Fecha</th>
+                  <th>Detalle</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
                 </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <p id="pendingBadge"></p>
-    </div>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="5" style="text-align:center;font-size:13px;">
+                    Cargando documentos...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 
-    <!-- DETALLE -->
-    <div class="card" id="detailBlock" style="display:none">
-        <h3 id="detailTitle">Detalle</h3>
-        <div id="feedbackInfo"></div>
+      <!-- COLUMNA DERECHA: DASHBOARD -->
+      <aside class="pa-main-right">
+        <div class="pa-card">
+          <div class="pa-card-header">
+            <h2>Mi resumen</h2>
+          </div>
+          <div id="agentStats" class="pa-kpi-grid">
+            <div class="pa-kpi-card">
+              <div class="pa-kpi-label">Promedio general</div>
+              <div class="pa-kpi-value" id="avgScore">–</div>
+            </div>
+            <div class="pa-kpi-card">
+              <div class="pa-kpi-label">Total feedbacks</div>
+              <div class="pa-kpi-value" id="totalFb">–</div>
+            </div>
+            <div class="pa-kpi-card">
+              <div class="pa-kpi-label">Aprobados (≥85%)</div>
+              <div class="pa-kpi-value pa-kpi-ok" id="okCount">–</div>
+            </div>
+            <div class="pa-kpi-card">
+              <div class="pa-kpi-label">No aprobados (&lt;85%)</div>
+              <div class="pa-kpi-value pa-kpi-bad" id="badCount">–</div>
+            </div>
+          </div>
+          <p class="pa-kpi-helper">
+            El resumen se calcula solo con tus feedbacks de la colección
+            <strong>registros</strong>.
+          </p>
+        </div>
+      </aside>
+    </main>
+  </div>
 
-        <div id="editableZone">
-            <label>Compromiso del agente</label>
-            <textarea id="compromiso"></textarea>
+  <!-- MODAL DETALLE DOCUMENTO -->
+  <div id="detailModal" class="pa-modal-backdrop">
+    <div class="pa-modal pa-modal-lg">
+      <div class="pa-modal-surface">
+        <header class="pa-modal-header">
+          <div>
+            <h2 id="detailTitle">Detalle</h2>
+            <p id="detailSubtitle" class="pa-modal-subtitle">
+              Información del documento seleccionado
+            </p>
+          </div>
+          <button class="pa-icon-button" id="btnCloseDetail" aria-label="Cerrar detalle">
+            ✕
+          </button>
+        </header>
+        <div class="pa-modal-body">
+          <div id="feedbackInfo"></div>
 
-            <label>Firma del agente</label>
-            <div class="row">
-                <button class="btn" id="btnDraw">Dibujar</button>
-                <button class="btn ghost" id="btnUpload">Subir</button>
+          <!-- ZONA EDITABLE (COMPROMISO + FIRMA) -->
+          <div id="editableZone" class="pa-editable-zone">
+            <h3>Acciones del agente</h3>
+            <div class="pa-field">
+              <label for="compromiso">Compromiso del agente</label>
+              <textarea id="compromiso" rows="3"
+                placeholder="Escribe tu compromiso o plan de mejora."></textarea>
+            </div>
+
+            <div class="pa-field">
+              <label>Firma del agente</label>
+              <div class="pa-row">
+                <button class="pa-filled-button" id="btnDraw">
+                  ✏️ Dibujar firma
+                </button>
+                <button class="pa-tonal-button" id="btnUpload">
+                  📁 Subir imagen
+                </button>
                 <input id="fileSignature" type="file" accept="image/*" hidden>
-            </div>
-
-            <div id="signaturePreview" class="signature-preview-empty">
+              </div>
+              <div id="signaturePreview" class="signature-preview-empty">
                 Sin firma seleccionada
+              </div>
             </div>
 
-            <button class="btn" id="btnSave">Enviar firma y completar</button>
-            <p id="agentMsg"></p>
-        </div>
-    </div>
-
-    <!-- MODAL PARA FIRMA -->
-    <div id="signatureModal" class="modal-backdrop">
-        <div class="modal-box">
-            <h3>Dibujar firma</h3>
-            <canvas id="sigCanvas" width="700" height="160"></canvas>
-
-            <div class="modal-buttons">
-                <button class="btn ghost" id="btnClear">Limpiar</button>
-                <button class="btn ghost" id="btnCancel">Cancelar</button>
-                <button class="btn" id="btnUse">Usar firma</button>
+            <div class="pa-row pa-row-end">
+              <button class="pa-filled-button pa-filled-button-primary" id="btnSave">
+                Enviar firma y completar
+              </button>
             </div>
+            <p id="agentMsg" class="pa-agent-msg"></p>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 
-    <script type="module" src="js/portal_agente.js"></script>
+  <!-- MODAL DIBUJAR FIRMA -->
+  <div id="signatureModal" class="pa-modal-backdrop">
+    <div class="pa-modal pa-modal-sm">
+      <div class="pa-modal-surface">
+        <header class="pa-modal-header">
+          <div>
+            <h2>Dibujar firma</h2>
+            <p class="pa-modal-subtitle">
+              Firma con el mouse o tu dedo si estás en un dispositivo táctil.
+            </p>
+          </div>
+          <button class="pa-icon-button" id="btnCancel" aria-label="Cerrar">
+            ✕
+          </button>
+        </header>
+        <div class="pa-modal-body">
+          <canvas id="sigCanvas" width="700" height="160"></canvas>
+        </div>
+        <footer class="pa-modal-footer">
+          <button class="pa-tonal-button" id="btnClear">
+            Limpiar
+          </button>
+          <button class="pa-tonal-button" id="btnUse">
+            Usar firma
+          </button>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script type="module" src="js/portal_agente.js"></script>
 </body>
 </html>

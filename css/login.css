@@ -1,66 +1,49 @@
 body {
-  margin: 0;
   font-family: Arial, sans-serif;
-  background: #0f1624;
+  background: #0f172a;
+  color: white;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
 }
 
-.login-container {
-  width: 100%;
-  max-width: 380px;
-  padding: 20px;
-}
-
-.card {
-  background: #1c2537;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.3);
-  color: white;
-}
-
-h2 {
-  margin-top: 0;
-  margin-bottom: 20px;
+.login-box {
+  background: #1e293b;
+  padding: 25px;
+  border-radius: 10px;
+  width: 320px;
   text-align: center;
-}
-
-.field {
-  margin-bottom: 15px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.4);
 }
 
 input {
   width: 100%;
   padding: 12px;
+  margin-top: 12px;
   border-radius: 6px;
-  border: 1px solid #333;
-  background: #0f1624;
-  color: #fff;
-  font-size: 14px;
+  border: none;
+  outline: none;
 }
 
 button {
+  margin-top: 15px;
   width: 100%;
   padding: 12px;
-  background: #25d366;
   border: none;
+  background: #3b82f6;
+  color: white;
   border-radius: 6px;
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
   font-size: 16px;
+  cursor: pointer;
 }
 
 button:hover {
-  background: #1ebe5c;
+  background: #2563eb;
 }
 
 .msg {
-  margin-top: 10px;
-  text-align: center;
-  color: #ff4d4d;
+  margin-top: 15px;
+  font-size: 14px;
   min-height: 20px;
 }

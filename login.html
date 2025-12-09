@@ -1,68 +1,35 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Acceso Seguro</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body{
-  background:#0f172a;
-  font-family:Arial;
-  color:white;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-.card{
-  background:#1e293b;
-  padding:25px;
-  border-radius:12px;
-  width:320px;
-  box-shadow:0 0 20px rgba(0,0,0,0.4);
-  border:1px solid #334155;
-}
-input{
-  width:100%;
-  padding:10px;
-  margin-top:8px;
-  border-radius:6px;
-  border:1px solid #475569;
-  background:#0f172a;
-  color:white;
-}
-button{
-  width:100%;
-  margin-top:12px;
-  padding:10px;
-  border:none;
-  border-radius:6px;
-  background:#22c55e;
-  font-weight:bold;
-  cursor:pointer;
-}
-button:hover{
-  background:#16a34a;
-}
-#error{
-  color:#f87171;
-  margin-top:10px;
-  font-size:14px;
-  display:none;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Acceso Seguro</title>
+
+  <link rel="stylesheet" href="css/login.css">
+
+  <!-- Firebase -->
+  <script type="module" src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+
+  <!-- Tu archivo firebase.js -->
+  <script type="module" src="js/firebase.js"></script>
+
+  <!-- Login JS -->
+  <script type="module" src="js/login.js"></script>
 </head>
 <body>
 
-<div class="card">
-  <h3>Acceso Seguro</h3>
-  <input id="email" type="email" placeholder="Correo autorizado">
-  <input id="password" type="password" placeholder="Contraseña">
-  <button id="loginBtn">Ingresar</button>
-  <div id="error"></div>
-</div>
+  <div class="login-container">
+    <div class="card">
+      <h2>Acceso Seguro</h2>
 
-<script type="module" src="js/login.js"></script>
+      <input type="email" id="email" placeholder="Correo" autocomplete="off">
+      <input type="password" id="password" placeholder="Contraseña">
+
+      <button id="loginBtn">Ingresar</button>
+
+      <p id="msg" class="msg"></p>
+    </div>
+  </div>
 
 </body>
 </html>

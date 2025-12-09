@@ -2,29 +2,35 @@
    Requiere:
    - js/firebase.js exportando { db }
    - Chart.js cargado en index.html
+   - login.html usando Firebase Auth
 */
-
-import { getAuth, onAuthStateChanged, signOut } 
-  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
-const auth = getAuth();
-
-onAuthStateChanged(auth, user => {
-  if (!user) {
-    location.href = "login.html"; // No logueado → expulsar
-  }
-});
-
-// botón cerrar sesión:
-window.logout = () => signOut(auth);
-
 "use strict";
 
+/* ------------------------------
+   IMPORTS FIREBASE
+------------------------------ */
+import { getAuth, onAuthStateChanged, signOut } 
+  from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { db } from "./firebase.js";
 import {
   collection,
   getDocs
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+/* ------------------------------
+   AUTH: PROTEGER EL DASHBOARD
+------------------------------ */
+const auth = getAuth();
+
+// Redirigir si NO hay usuario logueado
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    location.href = "login.html";
+  }
+});
+
+// botón cerrar sesión: <button onclick="logout()">Cerrar sesión</button>
+window.logout = () => signOut(auth);
 
 /* ------------------------------
    Helpers básicos
@@ -34,11 +40,13 @@ import {
 function escapeHTML(str) {
   return (str ?? "")
     .toString()
-    .replace(/[&<>"']/g, c => ({
+    .replace(/[&<>"']/g, (c) => ({
       "&": "&amp;",
       "<": "&lt;",
       ">": "&gt;",
       '"': "&quot;"
+      // Si quieres también comilla simple, descomenta:
+      // "'": "&#39;"
     }[c] || c));
 }
 
@@ -55,6 +63,7 @@ function normalize(str) {
 function parseFecha(fecha) {
   if (!fecha) return new Date();
   if (fecha.toDate) return fecha.toDate(); // Timestamp Firestore
+
   if (typeof fecha === "string") {
     if (fecha.includes("T")) return new Date(fecha);
     if (fecha.includes("/")) {
@@ -85,17 +94,19 @@ function getWeeksOfMonth(date = new Date()) {
    Firebase: cargar datos
 ------------------------------ */
 
+// registros (monitoreos)
 async function loadRegistros() {
   const snap = await getDocs(collection(db, "registros"));
   const arr = [];
-  snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
+  snap.forEach((doc) => arr.push({ id: doc.id, ...doc.data() }));
   return arr;
 }
 
+// asesores con GC
 async function loadAsesores() {
   const snap = await getDocs(collection(db, "asesores"));
   const mapa = {};
-  snap.forEach(doc => {
+  snap.forEach((doc) => {
     const d = doc.data();
     if (d.nombre) {
       mapa[d.nombre.trim()] = d.GC || "SIN GC";
@@ -108,7 +119,7 @@ async function loadAsesores() {
 async function getMergedData() {
   const registros = await loadRegistros();
   const asesores = await loadAsesores();
-  return registros.map(r => ({
+  return registros.map((r) => ({
     ...r,
     gc: asesores[r.asesor?.trim()] || "SIN GC",
     registradoPor: r.registradoPor || ""
@@ -118,7 +129,6 @@ async function getMergedData() {
 /* ------------------------------
    Estado global
 ------------------------------ */
-
 let rawData = [];      // todos los registros
 let filteredData = []; // registros tras filtros
 let allYears = [];     // años detectados
@@ -130,7 +140,6 @@ let itemsModalAsesor = null; // null = general, string = nombre asesor
 /* ------------------------------
    Chart semanal
 ------------------------------ */
-
 const chart = new Chart(document.getElementById("chartMonth"), {
   type: "bar",
   data: {
@@ -150,13 +159,15 @@ const chart = new Chart(document.getElementById("chartMonth"), {
 /* ------------------------------
    Vista ejecutiva por asesor
 ------------------------------ */
-
 function renderExecView(data) {
   const porAsesor = {};
-  data.forEach(r => {
+
+  data.forEach((r) => {
     if (!r.asesor) return;
+
     const key = r.asesor;
     const nota = Number(r.nota || 0);
+
     if (!porAsesor[key]) {
       porAsesor[key] = {
         asesor: key,
@@ -169,6 +180,7 @@ function renderExecView(data) {
         bad: 0
       };
     }
+
     const a = porAsesor[key];
     a.total += 1;
     a.sumaNota += nota;
@@ -179,7 +191,7 @@ function renderExecView(data) {
   });
 
   const lista = Object.values(porAsesor)
-    .map(a => ({
+    .map((a) => ({
       ...a,
       promedio: a.total ? a.sumaNota / a.total : 0
     }))
@@ -191,13 +203,14 @@ function renderExecView(data) {
     return;
   }
 
-  cont.innerHTML = lista.map(a => {
+  cont.innerHTML = lista.map((a) => {
     const prom = Math.round(a.promedio * 10) / 10;
     const esVerde = prom >= 85;
     const pillClass = esVerde ? "green" : "red";
     const label = esVerde ? "🟢 85 – 100" : "🔴 0 – 84";
     const maxTxt = a.max !== null ? `${a.max}%` : "-";
     const minTxt = a.min !== null ? `${a.min}%` : "-";
+
     return `
       <div class="exec-card" data-asesor="${escapeHTML(a.asesor)}">
         <div class="exec-header">
@@ -226,8 +239,8 @@ function renderExecView(data) {
     `;
   }).join("");
 
-  // Delegar click en tarjetas para abrir modal por asesor
-  cont.querySelectorAll(".exec-card").forEach(card => {
+  // Click en tarjetas → modal por asesor
+  cont.querySelectorAll(".exec-card").forEach((card) => {
     card.addEventListener("click", () => {
       const asesor = card.getAttribute("data-asesor") || "";
       openItemsModal(asesor || null);
@@ -238,7 +251,6 @@ function renderExecView(data) {
 /* ------------------------------
    Render global desde filteredData
 ------------------------------ */
-
 function renderFromFilteredData() {
   const data = filteredData;
 
@@ -251,6 +263,7 @@ function renderFromFilteredData() {
   const valueReg = selReg.value;
   const valueMes = selMes.value;
   const valueAnio = selAnio.value;
+
   let resumen = `Mostrando ${data.length} registros`;
   if (valueMes !== "") {
     const mesTexto = selMes.options[selMes.selectedIndex].text;
@@ -275,31 +288,39 @@ function renderFromFilteredData() {
 
   // Contadores por tipo
   const counts = {
-    EFECTIVA: 0, EFECTIVANK: 0, XPERTO: 0,
-    FACEBOOK: 0, INSTAGRAM: 0, CORREO: 0, OTRO: 0
+    EFECTIVA: 0,
+    EFECTIVANK: 0,
+    XPERTO: 0,
+    FACEBOOK: 0,
+    INSTAGRAM: 0,
+    CORREO: 0,
+    OTRO: 0
   };
-  data.forEach(r => {
+
+  data.forEach((r) => {
     const tipo = (r.tipo || "OTRO").toUpperCase();
     if (!Object.prototype.hasOwnProperty.call(counts, tipo)) counts.OTRO++;
     else counts[tipo]++;
   });
-  document.getElementById("cntEfectiva").innerText = counts.EFECTIVA;
+
+  document.getElementById("cntEfectiva").innerText   = counts.EFECTIVA;
   document.getElementById("cntEfectivank").innerText = counts.EFECTIVANK;
-  document.getElementById("cntXperto").innerText = counts.XPERTO;
-  document.getElementById("cntFb").innerText = counts.FACEBOOK;
-  document.getElementById("cntIg").innerText = counts.INSTAGRAM;
-  document.getElementById("cntMail").innerText = counts.CORREO;
+  document.getElementById("cntXperto").innerText     = counts.XPERTO;
+  document.getElementById("cntFb").innerText         = counts.FACEBOOK;
+  document.getElementById("cntIg").innerText         = counts.INSTAGRAM;
+  document.getElementById("cntMail").innerText       = counts.CORREO;
 
   // Últimos registros
   const recent = data
     .slice()
     .sort((a, b) => parseFecha(b.fecha) - parseFecha(a.fecha))
     .slice(0, 8);
+
   const tbodyRecent = document.querySelector("#recentTable tbody");
   if (!recent.length) {
     tbodyRecent.innerHTML = `<tr><td colspan="5">Sin registros</td></tr>`;
   } else {
-    tbodyRecent.innerHTML = recent.map(r => `
+    tbodyRecent.innerHTML = recent.map((r) => `
       <tr>
         <td>${escapeHTML(parseFecha(r.fecha).toLocaleString("es-PE"))}</td>
         <td>${escapeHTML(r.asesor)} — ${escapeHTML(r.gc)}</td>
@@ -314,27 +335,32 @@ function renderFromFilteredData() {
   const baseDate = data.length ? parseFecha(data[0].fecha) : new Date();
   currentWeeks = getWeeksOfMonth(baseDate);
 
-  const asesoresUnicos = [...new Set(data.map(r => r.asesor))].filter(Boolean);
+  const asesoresUnicos = [...new Set(data.map((r) => r.asesor))].filter(Boolean);
+
   const head = `<tr><th>ASESOR</th>` +
     currentWeeks.map((_, i) => `<th>S${i + 1} C1</th><th>S${i + 1} C2</th>`).join("") +
     `</tr>`;
   document.getElementById("weeklyHead").innerHTML = head;
 
-  const cuerpo = asesoresUnicos.map(a => {
-    const reg = data.find(r => r.asesor === a);
+  const cuerpo = asesoresUnicos.map((a) => {
+    const reg = data.find((r) => r.asesor === a);
     const gc = reg?.gc || "SIN GC";
     let row = `<tr><td>${escapeHTML(a)} — ${escapeHTML(gc)}</td>`;
+
     for (let w = 0; w < currentWeeks.length; w++) {
-      const recs = data.filter(r => {
+      const recs = data.filter((r) => {
         const f = parseFecha(r.fecha);
         const d = f.getDate();
-        return r.asesor === a &&
+        return (
+          r.asesor === a &&
           d >= currentWeeks[w].startDay &&
-          d <= currentWeeks[w].endDay;
+          d <= currentWeeks[w].endDay
+        );
       });
       row += `<td>${escapeHTML(recs[0]?.tipo || "-")}</td>`;
       row += `<td>${escapeHTML(recs[1]?.tipo || "-")}</td>`;
     }
+
     return row + "</tr>";
   }).join("");
 
@@ -342,8 +368,8 @@ function renderFromFilteredData() {
     cuerpo || `<tr><td colspan="${1 + currentWeeks.length * 2}">Sin registros</td></tr>`;
 
   // Datos para gráfico semanal
-  const values = currentWeeks.map(w => {
-    const recs = data.filter(r => {
+  const values = currentWeeks.map((w) => {
+    const recs = data.filter((r) => {
       const f = parseFecha(r.fecha);
       const d = f.getDate();
       return d >= w.startDay && d <= w.endDay;
@@ -352,6 +378,7 @@ function renderFromFilteredData() {
     const avg = recs.reduce((t, r) => t + (parseFloat(r.nota) || 0), 0) / recs.length;
     return Math.round(avg);
   });
+
   chart.data.labels = currentWeeks.map((_, i) => `S${i + 1}`);
   chart.data.datasets[0].data = values;
   chart.update();
@@ -360,7 +387,6 @@ function renderFromFilteredData() {
 /* ------------------------------
    Aplicar filtros
 ------------------------------ */
-
 function applyFilters() {
   const selReg = document.getElementById("filterRegistrado");
   const selMes = document.getElementById("filterMes");
@@ -373,21 +399,21 @@ function applyFilters() {
   let data = rawData.slice();
 
   if (filterAnio !== null) {
-    data = data.filter(r => {
+    data = data.filter((r) => {
       const f = parseFecha(r.fecha);
       return f.getFullYear() === filterAnio;
     });
   }
 
   if (filterMes !== null) {
-    data = data.filter(r => {
+    data = data.filter((r) => {
       const f = parseFecha(r.fecha);
       return f.getMonth() === filterMes;
     });
   }
 
   if (filterValueReg) {
-    data = data.filter(r => normalize(r.registradoPor) === filterValueReg);
+    data = data.filter((r) => normalize(r.registradoPor) === filterValueReg);
   }
 
   filteredData = data;
@@ -397,7 +423,6 @@ function applyFilters() {
 /* ------------------------------
    Filtro de años
 ------------------------------ */
-
 function setupYearFilter() {
   const selAnio = document.getElementById("filterAnio");
   selAnio.innerHTML = "";
@@ -408,7 +433,7 @@ function setupYearFilter() {
   selAnio.appendChild(optionAll);
 
   allYears.sort((a, b) => a - b);
-  allYears.forEach(y => {
+  allYears.forEach((y) => {
     const op = document.createElement("option");
     op.value = y;
     op.textContent = y;
@@ -428,9 +453,10 @@ function setupYearFilter() {
 // Construye agregación de ítems a partir de un arreglo de registros
 function aggregateItems(records) {
   const mapa = {};
-  records.forEach(reg => {
+
+  records.forEach((reg) => {
     const items = Array.isArray(reg.items) ? reg.items : [];
-    items.forEach(it => {
+    items.forEach((it) => {
       const name = it.name || "Sin nombre";
       const key = name;
       const tipo = it.tipo || "—";
@@ -447,6 +473,7 @@ function aggregateItems(records) {
           sampleDetail: ""
         };
       }
+
       const o = mapa[key];
       o.count += 1;
       o.sumPerc += perc;
@@ -456,7 +483,7 @@ function aggregateItems(records) {
   });
 
   return Object.values(mapa)
-    .map(o => ({
+    .map((o) => ({
       ...o,
       avgPerc: o.count ? Math.round((o.sumPerc / o.count) * 10) / 10 : 0
     }))
@@ -489,16 +516,15 @@ function renderItemsModalTable() {
   const value = sel.value || "mes";
 
   let data = filteredData.slice();
-
   if (itemsModalAsesor) {
-    data = data.filter(r => r.asesor === itemsModalAsesor);
+    data = data.filter((r) => r.asesor === itemsModalAsesor);
   }
 
   if (value.startsWith("week-")) {
     const idx = Number(value.split("-")[1] || "0");
     const w = currentWeeks[idx];
     if (w) {
-      data = data.filter(r => {
+      data = data.filter((r) => {
         const f = parseFecha(r.fecha);
         const d = f.getDate();
         return d >= w.startDay && d <= w.endDay;
@@ -514,7 +540,7 @@ function renderItemsModalTable() {
     return;
   }
 
-  tbody.innerHTML = agg.map(it => `
+  tbody.innerHTML = agg.map((it) => `
     <tr>
       <td>${escapeHTML(it.name)}</td>
       <td>${escapeHTML(it.tipo)}</td>
@@ -534,15 +560,16 @@ function openItemsModal(asesor = null) {
 
   if (asesor) {
     titulo.textContent = `Ítems debitados – ${asesor}`;
-    subtitulo.textContent = "Ranking de ítems más debitados para este asesor, según los filtros seleccionados.";
+    subtitulo.textContent =
+      "Ranking de ítems más debitados para este asesor, según los filtros seleccionados.";
   } else {
     titulo.textContent = "Ranking general de ítems debitados";
-    subtitulo.textContent = "Basado en todos los registros filtrados (Mes / Año / Registrado por).";
+    subtitulo.textContent =
+      "Basado en todos los registros filtrados (Mes / Año / Registrado por).";
   }
 
   fillItemsPeriodSelect();
   renderItemsModalTable();
-
   document.getElementById("itemsModal").style.display = "flex";
 }
 
@@ -553,12 +580,12 @@ function closeItemsModal() {
 /* ------------------------------
    Tema claro / oscuro
 ------------------------------ */
-
 const THEME_KEY = "dash_theme";
 
 function applyTheme(theme) {
   const body = document.body;
   const btn = document.getElementById("btnTheme");
+
   if (theme === "light") {
     body.classList.add("light");
     if (btn) btn.textContent = "🌙 Modo oscuro";
@@ -571,16 +598,15 @@ function applyTheme(theme) {
 /* ------------------------------
    Inicialización dashboard
 ------------------------------ */
-
 async function refreshDashboard() {
   let data = await getMergedData();
-
+  // Ordenar por fecha ascendente
   data = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
   rawData = data;
 
   // años detectados
   const yearsSet = new Set();
-  data.forEach(r => {
+  data.forEach((r) => {
     const f = parseFecha(r.fecha);
     yearsSet.add(f.getFullYear());
   });
@@ -592,13 +618,13 @@ async function refreshDashboard() {
   const hoy = new Date();
   document.getElementById("filterMes").value = hoy.getMonth().toString();
 
+  // aplicar filtros iniciales
   applyFilters();
 }
 
 /* ------------------------------
    Listeners
 ------------------------------ */
-
 document.getElementById("filterRegistrado").addEventListener("change", applyFilters);
 document.getElementById("filterMes").addEventListener("change", applyFilters);
 document.getElementById("filterAnio").addEventListener("change", applyFilters);
@@ -606,9 +632,7 @@ document.getElementById("filterAnio").addEventListener("change", applyFilters);
 document.getElementById("btnOpenItemsModal").addEventListener("click", () => {
   openItemsModal(null);
 });
-
 document.getElementById("btnCloseItemsModal").addEventListener("click", closeItemsModal);
-
 document.getElementById("itemsPeriodSelect").addEventListener("change", renderItemsModalTable);
 
 // cerrar modal al hacer click fuera
@@ -621,17 +645,18 @@ document.getElementById("itemsModal").addEventListener("click", (e) => {
 // tema
 const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
 applyTheme(savedTheme);
-
 const btnTheme = document.getElementById("btnTheme");
-btnTheme.addEventListener("click", () => {
-  const next = document.body.classList.contains("light") ? "dark" : "light";
-  localStorage.setItem(THEME_KEY, next);
-  applyTheme(next);
-});
+if (btnTheme) {
+  btnTheme.addEventListener("click", () => {
+    const next = document.body.classList.contains("light") ? "dark" : "light";
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  });
+}
 
 /* ------------------------------
    Start
 ------------------------------ */
-refreshDashboard().catch(err => {
+refreshDashboard().catch((err) => {
   console.error("Error al cargar dashboard:", err);
 });

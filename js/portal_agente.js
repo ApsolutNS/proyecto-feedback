@@ -1,5 +1,4 @@
-// js/portal_agente.js
-// Portal del Agente – MD3, modo claro/oscuro, modal, Auth + rol "agente"
+// js/portal_agente_m3.js
 "use strict";
 
 /* ------------------------------
@@ -43,13 +42,13 @@ function escapeHTML(str) {
 
 function toJSDate(value) {
   if (!value) return new Date();
-  if (value.toDate) return value.toDate(); // Firestore Timestamp
+  if (value.toDate) return value.toDate();
   if (value instanceof Date) return value;
   return new Date(value);
 }
 
 function formatearFechaLarga(fecha) {
-  const f = fecha && fecha.toDate ? fecha.toDate() : new Date(fecha || Date.now());
+  const f = toJSDate(fecha);
   const opts = {
     weekday: "long",
     year: "numeric",
@@ -61,56 +60,63 @@ function formatearFechaLarga(fecha) {
 }
 
 /* ------------------------------
-   THEME (LIGHT / DARK)
------------------------------- */
-const THEME_KEY = "portal_agent_theme";
-
-function applyTheme(theme) {
-  const root = document.documentElement;
-  const btn = document.getElementById("btnTheme");
-  root.setAttribute("data-theme", theme);
-  if (btn) {
-    btn.textContent = theme === "light" ? "🌙" : "☀️";
-  }
-}
-
-(function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY);
-  const initial = saved === "light" || saved === "dark" ? saved : "dark";
-  applyTheme(initial);
-})();
-
-const themeBtn = document.getElementById("btnTheme");
-if (themeBtn) {
-  themeBtn.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme") || "dark";
-    const next = current === "dark" ? "light" : "dark";
-    localStorage.setItem(THEME_KEY, next);
-    applyTheme(next);
-  });
-}
-
-/* ------------------------------
-   AUTH + ROL AGENTE
+   ESTADO GLOBAL
 ------------------------------ */
 const auth = getAuth(app);
-
 let currentUser = null;
 let currentRole = null;
 let currentAdvisorName = "";
 
 let currentID = null;
-let currentCollection = null; // "registros" o "refuerzos_calidad"
+let currentCollection = null;
 let currentDocData = null;
 let signatureData = null;
 
-// Dashboard: solo feedbacks de "registros" del agente
 let ultimosFeedbacks = [];
 
 // Logo / firma Alex
 const FIRMA_ALEX_URL =
   "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media";
 
+/* ------------------------------
+   THEME TOGGLE
+------------------------------ */
+const htmlEl = document.documentElement;
+const themeToggleBtn = document.getElementById("themeToggle");
+const themeIcon = document.getElementById("themeIcon");
+
+function setTheme(theme) {
+  htmlEl.setAttribute("data-theme", theme);
+  if (themeIcon) {
+    themeIcon.textContent = theme === "dark" ? "light_mode" : "dark_mode";
+  }
+  try {
+    localStorage.setItem("portalTheme", theme);
+  } catch {}
+}
+
+(function initTheme() {
+  let saved = null;
+  try {
+    saved = localStorage.getItem("portalTheme");
+  } catch {}
+  if (saved === "dark" || saved === "light") {
+    setTheme(saved);
+  } else {
+    setTheme("light");
+  }
+})();
+
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener("click", () => {
+    const current = htmlEl.getAttribute("data-theme") || "light";
+    setTheme(current === "light" ? "dark" : "light");
+  });
+}
+
+/* ------------------------------
+   AUTH + ROL AGENTE
+------------------------------ */
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     location.href = "login.html";
@@ -137,7 +143,7 @@ onAuthStateChanged(auth, async (user) => {
       data.displayName ||
       "";
 
-    const allowedRoles = ["agente"]; // si quieres pruebas, puedes añadir "admin"
+    const allowedRoles = ["agente"]; // puedes añadir "admin" para pruebas
     if (!allowedRoles.includes(currentRole)) {
       alert("No tienes acceso al Portal del Agente.");
       await signOut(auth);
@@ -146,24 +152,14 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     const spanName = document.getElementById("agentNameSpan");
-    const avatar = document.querySelector(".pa-user-avatar");
     if (spanName) {
       spanName.textContent =
         currentAdvisorName || currentUser.email || "(Agente)";
     }
-    if (avatar) {
-      const base = (currentAdvisorName || currentUser.email || "AG").trim();
-      const initials = base
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((p) => p[0]?.toUpperCase() || "")
-        .join("");
-      avatar.textContent = initials || "AG";
-    }
 
     if (!currentAdvisorName) {
       alert(
-        "Tu usuario no tiene configurado el nombre de asesor (campo 'nombreAsesor' en 'usuarios')."
+        "Tu usuario no tiene configurado el campo 'nombreAsesor' en la colección 'usuarios'."
       );
       return;
     }
@@ -171,29 +167,27 @@ onAuthStateChanged(auth, async (user) => {
     await loadAgentList();
   } catch (err) {
     console.error("Error al validar rol del usuario:", err);
-    alert("Error al validar tus permisos. Intenta luego.");
+    alert("Error al validar tus permisos. Intenta nuevamente.");
     await signOut(auth);
     location.href = "login.html";
   }
 });
 
-/* Logout */
-const btnLogout = document.getElementById("btnLogout");
-if (btnLogout) {
-  btnLogout.addEventListener("click", async () => {
-    await signOut(auth);
-    location.href = "login.html";
-  });
-}
+// Por si luego agregas botón de logout
+window.logout = async () => {
+  await signOut(auth);
+  location.href = "login.html";
+};
 
 /* ------------------------------
-   DASHBOARD DEL AGENTE
+   DASHBOARD
 ------------------------------ */
 function renderAgentDashboard() {
   const avgEl = document.getElementById("avgScore");
   const totalEl = document.getElementById("totalFb");
   const okEl = document.getElementById("okCount");
   const badEl = document.getElementById("badCount");
+
   if (!avgEl || !totalEl || !okEl || !badEl) return;
 
   if (!ultimosFeedbacks.length) {
@@ -207,6 +201,7 @@ function renderAgentDashboard() {
   const notas = ultimosFeedbacks
     .map((f) => Number(f.bruto?.nota || 0))
     .filter((n) => !Number.isNaN(n));
+
   const total = notas.length;
   const suma = notas.reduce((t, n) => t + n, 0);
   const promedio = total ? Math.round((suma / total) * 10) / 10 : 0;
@@ -214,34 +209,39 @@ function renderAgentDashboard() {
   const noAprobados = total - aprobados;
 
   avgEl.textContent = `${promedio}%`;
-  totalEl.textContent = `${total}`;
-  okEl.textContent = `${aprobados}`;
-  badEl.textContent = `${noAprobados}`;
+  totalEl.textContent = String(total);
+  okEl.textContent = String(aprobados);
+  badEl.textContent = String(noAprobados);
 }
 
 /* ------------------------------
-   BADGE PENDIENTES
+   BADGE DE PENDIENTES
 ------------------------------ */
 function updatePendingBadge(list) {
   const pend = list.filter(
     (x) => (x.estado || "").toUpperCase() === "PENDIENTE"
   ).length;
+
   const badge = document.getElementById("pendingBadge");
   if (!badge) return;
+
   badge.innerHTML = pend
-    ? `<span class="badgePending">${pend} pendientes</span>`
+    ? `<span class="badgePending">
+         <span class="material-symbols-rounded" style="font-size:16px;">pending_actions</span>
+         ${pend} pendientes
+       </span>`
     : "";
 }
 
 /* ------------------------------
-   CARGA LISTA DOCUMENTOS
+   CARGAR LISTA
 ------------------------------ */
-async function loadAgentList() {
+window.loadAgentList = async function () {
   const tbody = document.querySelector("#agentTable tbody");
   if (!tbody) return;
 
   const tipoDoc = document.getElementById("selTipoDoc")?.value || "registros";
-  const filtroRegistrador =
+  const filtroReg =
     document.getElementById("selRegistrador")?.value || "";
 
   currentCollection = tipoDoc;
@@ -263,18 +263,18 @@ async function loadAgentList() {
     const snap = await getDocs(qRef);
     snap.forEach((d) => {
       const r = d.data();
-      const fecha = toJSDate(r.fecha);
       list.push({
         id: d.id,
         collection: "registros",
-        fecha,
-        detalle: `${r.nota ?? 0}%`,
+        fecha: toJSDate(r.fecha),
+        detalle: `${r.nota ?? 0}% Feedback`,
         estado: r.estado || "PENDIENTE",
         registradoPor: r.registrado_por || r.registradoPor || "No especificado",
         etiqueta: "Feedback",
         bruto: r,
       });
     });
+
     ultimosFeedbacks = list.slice();
     renderAgentDashboard();
   } else {
@@ -286,15 +286,18 @@ async function loadAgentList() {
         (a) => a.nombre === currentAdvisorName
       );
       if (!pertenece) return;
+
       const firmas = Array.isArray(r.firmas) ? r.firmas : [];
-      const firmaAgente = firmas.find((f) => f.nombre === currentAdvisorName);
+      const firmaAgente = firmas.find(
+        (f) => f.nombre === currentAdvisorName
+      );
       const estadoAgente =
         firmaAgente && firmaAgente.url ? "COMPLETADO" : "PENDIENTE";
-      const fecha = toJSDate(r.fechaRefuerzo);
+
       list.push({
         id: d.id,
         collection: "refuerzos_calidad",
-        fecha,
+        fecha: toJSDate(r.fechaRefuerzo),
         detalle: r.tema || r.tipo || "Refuerzo / Capacitación",
         estado: estadoAgente,
         registradoPor: r.responsable || "No especificado",
@@ -307,20 +310,20 @@ async function loadAgentList() {
   list.sort((a, b) => b.fecha - a.fecha);
   updatePendingBadge(list);
 
-  const filtrada = filtroRegistrador
-    ? list.filter((x) => x.registradoPor === filtroRegistrador)
+  const filtrada = filtroReg
+    ? list.filter((x) => x.registradoPor === filtroReg)
     : list;
 
   if (!filtrada.length) {
     tbody.innerHTML =
-      "<tr><td colspan='5'>Sin registros para este filtro</td></tr>";
+      "<tr><td colspan='5'>Sin registros para este filtro.</td></tr>";
     return;
   }
 
   tbody.innerHTML = filtrada
     .map(
       (r) => `
-      <tr data-id="${escapeHTML(r.id)}" data-col="${escapeHTML(r.collection)}">
+      <tr>
         <td>${escapeHTML(r.id)}</td>
         <td>${escapeHTML(r.fecha.toLocaleString("es-PE"))}</td>
         <td>
@@ -329,7 +332,8 @@ async function loadAgentList() {
         </td>
         <td>${escapeHTML(r.estado)}</td>
         <td>
-          <button class="pa-tonal-button pa-tonal-button-sm pa-open-detail">
+          <button class="pa-tonal-button btn sm" data-open-detail
+                  data-col="${r.collection}" data-id="${r.id}">
             Abrir
           </button>
         </td>
@@ -338,59 +342,49 @@ async function loadAgentList() {
     )
     .join("");
 
-  // Adjuntar listeners a los botones "Abrir" (sin inline JS)
-  tbody.querySelectorAll(".pa-open-detail").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      const tr = e.currentTarget.closest("tr");
-      if (!tr) return;
-      const id = tr.getAttribute("data-id");
-      const col = tr.getAttribute("data-col");
-      if (id && col) openDetail(col, id);
-    });
-  });
-}
-
-/* Exponer para eventos de filtros */
-window.loadAgentList = loadAgentList;
+  // Listeners de botones "Abrir" sin inline JS
+  tbody
+    .querySelectorAll("[data-open-detail]")
+    .forEach((btn) =>
+      btn.addEventListener("click", () =>
+        openDetail(btn.dataset.col, btn.dataset.id)
+      )
+    );
+};
 
 /* ------------------------------
-   MODAL DETALLE (FEEDBACK / REFUERZO)
+   MODAL DETALLE
 ------------------------------ */
 const detailModal = document.getElementById("detailModal");
+const feedbackDiv = document.getElementById("feedbackInfo");
+const editableZone = document.getElementById("editableZone");
+const agentMsg = document.getElementById("agentMsg");
+
 const btnCloseDetail = document.getElementById("btnCloseDetail");
+if (btnCloseDetail) {
+  btnCloseDetail.addEventListener("click", () => closeDetailModal());
+}
 
 function openDetailModal() {
   if (!detailModal) return;
   detailModal.classList.add("pa-open");
+  detailModal.setAttribute("aria-hidden", "false");
 }
 
 function closeDetailModal() {
   if (!detailModal) return;
   detailModal.classList.remove("pa-open");
-  signatureData = null;
+  detailModal.setAttribute("aria-hidden", "true");
 }
 
-if (btnCloseDetail) {
-  btnCloseDetail.addEventListener("click", closeDetailModal);
-}
-if (detailModal) {
-  detailModal.addEventListener("click", (e) => {
-    if (e.target === detailModal) {
-      closeDetailModal();
-    }
-  });
-}
-
+/* ------------------------------
+   DETALLE (FEEDBACK / REFUERZO)
+------------------------------ */
 async function openDetail(collectionName, id) {
   currentCollection = collectionName;
   currentID = id;
 
-  const detailTitle = document.getElementById("detailTitle");
-  const detailSubtitle = document.getElementById("detailSubtitle");
-  const feedbackDiv = document.getElementById("feedbackInfo");
-  const editable = document.getElementById("editableZone");
-  const msg = document.getElementById("agentMsg");
-  if (!feedbackDiv || !editable || !msg) return;
+  if (!feedbackDiv || !editableZone || !agentMsg) return;
 
   if (!currentAdvisorName) {
     alert("No se encontró el nombre del asesor asociado a tu usuario.");
@@ -406,13 +400,13 @@ async function openDetail(collectionName, id) {
   const r = snap.data();
   currentDocData = r;
   signatureData = null;
-  msg.textContent = "";
-  msg.style.color = "#22c55e";
+  agentMsg.textContent = "";
+  agentMsg.style.color = "";
+
+  const detailTitle = document.querySelector(".pa-modal-title");
 
   if (collectionName === "registros") {
     if (detailTitle) detailTitle.textContent = "Detalle del Feedback";
-    if (detailSubtitle)
-      detailSubtitle.textContent = "Carta de retroalimentación de calidad";
 
     const fecha = toJSDate(r.fecha);
     const esReafirmacion = Number(r.nota) === 100;
@@ -423,12 +417,12 @@ async function openDetail(collectionName, id) {
       (r.items || [])
         .map(
           (it) => `
-        <div style="margin-bottom:4px">
-          <strong>${escapeHTML(it.name || "")}</strong>
-          ${it.perc ? ` (${escapeHTML(it.perc.toString())}%)` : ""}
-          <div style="margin-left:8px">${escapeHTML(it.detail || "")}</div>
-        </div>
-      `
+          <div style="margin-bottom:4px">
+            <strong>${escapeHTML(it.name || "")}</strong>
+            ${it.perc ? ` (${escapeHTML(String(it.perc))}%)` : ""}
+            <div style="margin-left:8px">${escapeHTML(it.detail || "")}</div>
+          </div>
+        `
         )
         .join("") || "<em>Sin ítems observados</em>";
 
@@ -436,29 +430,32 @@ async function openDetail(collectionName, id) {
       (r.imagenes || [])
         .map(
           (im) => `
-        <img src="${escapeHTML(
-          im.url
-        )}" style="width:100%;max-width:680px;margin-top:8px;border-radius:6px">
-      `
+          <img src="${escapeHTML(
+            im.url
+          )}" style="width:100%;max-width:680px;margin-top:8px;border-radius:8px">
+        `
         )
         .join("") || "<em>Sin evidencias adjuntas</em>";
 
-    const registrador = r.registrado_por || r.registradoPor || "No especificado";
+    const registrador =
+      r.registrado_por || r.registradoPor || "No especificado";
 
     feedbackDiv.innerHTML = `
       <div class="letter-header">
         <div class="letter-title">${escapeHTML(titulo)}</div>
         <img src="${FIRMA_ALEX_URL}" style="max-height:42px">
       </div>
-      <p class="section-content">
+      <p>
         Por medio de la presente se deja constancia que el
         <strong>${escapeHTML(formatearFechaLarga(fecha))}</strong> se realiza una
         <strong>${escapeHTML(titulo)}</strong> al/la colaborador(a)
-        <strong>${escapeHTML(r.asesor || "")}</strong> con DNI
-        <strong>${escapeHTML(dniGC)}</strong>, quien ejerce la función de Asesor(a) Financiero(a),
-        para el cumplimiento de los parámetros de la llamada.
+        <strong>${escapeHTML(r.asesor || "")}</strong> con DNI <strong>${escapeHTML(
+      dniGC
+    )}</strong>,
+        quien ejerce la función de Asesor (a) Financiero (a), para el cumplimiento
+        de los parámetros de la llamada.
       </p>
-      <p class="section-content">
+      <p>
         Registrado por: <span class="pill">${escapeHTML(registrador)}</span>
       </p>
 
@@ -494,7 +491,7 @@ async function openDetail(collectionName, id) {
       <div class="section-title">Nota obtenida</div>
       <div class="section-content nota-box">
         <div class="nota-pill">
-          ${escapeHTML((r.nota || 0).toString())}%
+          ${escapeHTML(String(r.nota || 0))}%
         </div>
         <div class="nota-estado">
           Estado: <strong>${escapeHTML(r.estado || "PENDIENTE")}</strong>
@@ -513,22 +510,19 @@ async function openDetail(collectionName, id) {
     `;
 
     if ((r.estado || "").toUpperCase() === "COMPLETADO") {
-      editable.style.display = "none";
-      msg.style.color = "#22c55e";
-      msg.textContent = "Este feedback ya fue completado.";
+      editableZone.style.display = "none";
+      agentMsg.style.color = "#22c55e";
+      agentMsg.textContent = "Este feedback ya fue completado.";
     } else {
-      editable.style.display = "block";
+      editableZone.style.display = "block";
       const ta = document.getElementById("compromiso");
       if (ta) ta.value = r.compromiso || "";
       signatureData = r.firmaUrl || null;
       updateSignaturePreview();
     }
   } else {
-    // REFUERZO / CAPACITACIÓN
-    if (detailTitle) detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
-    if (detailSubtitle)
-      detailSubtitle.textContent =
-        "Constancia de refuerzo / capacitación aplicada";
+    if (detailTitle)
+      detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
 
     const fechaRef = toJSDate(r.fechaRefuerzo);
     const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
@@ -544,7 +538,9 @@ async function openDetail(collectionName, id) {
           .join(", ")
       : escapeHTML(r.publico || "—");
 
-    const firmaAgente = firmas.find((f) => f.nombre === currentAdvisorName);
+    const firmaAgente = firmas.find(
+      (f) => f.nombre === currentAdvisorName
+    );
     const compromisoAgente = firmaAgente?.compromiso || "";
     const firmaUrlAgente = firmaAgente?.url || null;
     const fechaFirma = firmaAgente?.fechaFirma
@@ -556,9 +552,10 @@ async function openDetail(collectionName, id) {
         <div class="letter-title">REFUERZO / CAPACITACIÓN</div>
         <img src="${FIRMA_ALEX_URL}" style="max-height:42px">
       </div>
-      <p class="section-content">
-        Se deja constancia que el
-        <strong>${escapeHTML(formatearFechaLarga(fechaRef))}</strong>
+      <p>
+        Se deja constancia que el <strong>${escapeHTML(
+          formatearFechaLarga(fechaRef)
+        )}</strong>
         se realizó un <strong>${escapeHTML(
           r.tipo || "refuerzo / capacitación"
         )}</strong> sobre
@@ -567,7 +564,7 @@ async function openDetail(collectionName, id) {
       <p class="section-content">
         ${asesoresTexto}
       </p>
-      <p class="section-content">
+      <p>
         Responsable de la sesión:
         <span class="pill">${escapeHTML(
           r.responsable || "Calidad & Formación"
@@ -599,7 +596,7 @@ async function openDetail(collectionName, id) {
           firmaUrlAgente
             ? `<img src="${escapeHTML(
                 firmaUrlAgente
-              )}" style="max-width:260px;border:1px solid #475569;border-radius:6px;margin-top:6px">
+              )}" style="max-width:260px;border-radius:8px;border:1px solid #e5e7eb;margin-top:6px">
                <div class="nota-estado">Fecha de firma: ${escapeHTML(
                  fechaFirma
                )}</div>`
@@ -609,11 +606,11 @@ async function openDetail(collectionName, id) {
     `;
 
     if (firmaUrlAgente && compromisoAgente) {
-      editable.style.display = "none";
-      msg.style.color = "#22c55e";
-      msg.textContent = "Este refuerzo ya fue firmado por este agente.";
+      editableZone.style.display = "none";
+      agentMsg.style.color = "#22c55e";
+      agentMsg.textContent = "Este refuerzo ya fue firmado por este agente.";
     } else {
-      editable.style.display = "block";
+      editableZone.style.display = "block";
       const ta = document.getElementById("compromiso");
       if (ta) ta.value = compromisoAgente || "";
       signatureData = firmaUrlAgente || null;
@@ -625,35 +622,58 @@ async function openDetail(collectionName, id) {
 }
 
 /* ------------------------------
-   PREVIEW DE FIRMA
+   PREVIEW FIRMA
 ------------------------------ */
 function updateSignaturePreview() {
   const box = document.getElementById("signaturePreview");
   if (!box) return;
 
   if (signatureData) {
-    box.className = "signature-preview";
+    box.className = "pa-signature-preview";
     box.innerHTML = `<img src="${signatureData}">`;
   } else {
-    box.className = "signature-preview-empty";
+    box.className = "pa-signature-preview-empty";
     box.textContent = "Sin firma seleccionada";
   }
 }
+
+/* ------------------------------
+   FIRMA ÚNICA POR USUARIO
+   (no duplicar en Storage)
+------------------------------ */
+async function getOrCreateSignatureUrl(dataUrl) {
+  if (!currentUser) throw new Error("Usuario no autenticado.");
+
+  const userRef = doc(db, "usuarios", currentUser.uid);
+  const snap = await getDoc(userRef);
+  let userData = snap.data() || {};
+
+  if (userData.firmaUrlPersonal) {
+    return userData.firmaUrlPersonal;
+  }
+
+  // Subir solo 1 vez al path firmas_usuarios/{uid}.png
+  const sigRef = ref(storage, `firmas_usuarios/${currentUser.uid}.png`);
+  await uploadString(sigRef, dataUrl, "data_url");
+  const url = await getDownloadURL(sigRef);
+
+  await updateDoc(userRef, {
+    firmaUrlPersonal: url,
+  });
+
+  return url;
+}
+
 /* ------------------------------
    GUARDAR FIRMA + COMPROMISO
-   (con prevención de duplicado)
 ------------------------------ */
-window.saveSignature = async function () {
+async function saveSignature() {
   if (!currentID || !currentCollection) {
     alert("No hay documento abierto.");
     return;
   }
-
   const ta = document.getElementById("compromiso");
-  const msg = document.getElementById("agentMsg");
-  const editable = document.getElementById("editableZone");
-
-  if (!ta || !msg || !editable) return;
+  if (!ta || !agentMsg || !editableZone) return;
 
   const compromiso = ta.value.trim();
   if (!compromiso) {
@@ -669,78 +689,34 @@ window.saveSignature = async function () {
     return;
   }
 
-  msg.style.color = "#4ade80";
-  msg.textContent = "Guardando...";
+  agentMsg.style.color = "";
+  agentMsg.textContent = "Guardando...";
 
   try {
+    // 1) Obtener URL única de firma del usuario (no se duplica)
+    const firmaUrlGlobal = await getOrCreateSignatureUrl(signatureData);
+
     const docRef = doc(db, currentCollection, currentID);
-    const snap = await getDoc(docRef);
-    const data = snap.data() || {};
-
-    /* ==========================================================
-       🔍 1) VERIFICAR SI YA EXISTE UNA FIRMA (NO SUBIR DE NUEVO)
-       ========================================================== */
-    let existingSignatureURL = null;
-
-    if (currentCollection === "registros") {
-      // feedback clásico
-      existingSignatureURL = data.firmaUrl || null;
-
-    } else if (currentCollection === "refuerzos_calidad") {
-      // refuerzo/capacitación
-      const firmas = Array.isArray(data.firmas) ? data.firmas : [];
-      const fAgente = firmas.find(f => f.nombre === currentAdvisorName);
-      existingSignatureURL = fAgente?.url || null;
-    }
-
-    let finalURL = existingSignatureURL;
-
-    /* ==========================================================
-       🔄 2) SUBIR SOLO SI NO EXISTE FIRMA PREVIA
-       ========================================================== */
-    if (!existingSignatureURL) {
-      // Carpeta correcta según tipo
-      let pathFolder = currentCollection === "registros"
-        ? "firmas"
-        : "firmas_refuerzos";
-
-      let fileName =
-        currentCollection === "registros"
-          ? `${currentID}.png`
-          : `${currentID}_${currentAdvisorName.replace(/[^a-zA-Z0-9]/g, "_")}.png`;
-
-      const sigRef = ref(storage, `${pathFolder}/${fileName}`);
-
-      // subir
-      await uploadString(sigRef, signatureData, "data_url");
-
-      // obtener url final
-      finalURL = await getDownloadURL(sigRef);
-    }
-
-    /* ==========================================================
-       📝 3) ACTUALIZAR DOCUMENTO
-       ========================================================== */
 
     if (currentCollection === "registros") {
       await updateDoc(docRef, {
         compromiso,
-        firmaUrl: finalURL,
+        firmaUrl: firmaUrlGlobal,
         estado: "COMPLETADO",
       });
-
-      msg.textContent = "Feedback completado ✓";
-
+      agentMsg.style.color = "#22c55e";
+      agentMsg.textContent = "Feedback completado ✓";
     } else {
-      // REFUERZOS
+      const snap = await getDoc(docRef);
+      const data = snap.data() || {};
       const firmas = Array.isArray(data.firmas) ? data.firmas : [];
       const nowIso = new Date().toISOString();
 
-      const nuevasFirmas = firmas.map(f => {
+      const nuevasFirmas = firmas.map((f) => {
         if (f.nombre === currentAdvisorName) {
           return {
             ...f,
-            url: finalURL,
+            url: firmaUrlGlobal,
             fechaFirma: nowIso,
             compromiso,
           };
@@ -748,7 +724,8 @@ window.saveSignature = async function () {
         return f;
       });
 
-      const allFirmados = nuevasFirmas.length > 0 && nuevasFirmas.every(f => f.url);
+      const allFirmados =
+        nuevasFirmas.length > 0 && nuevasFirmas.every((f) => f.url);
 
       await updateDoc(docRef, {
         firmas: nuevasFirmas,
@@ -758,55 +735,50 @@ window.saveSignature = async function () {
         agenteNombre: currentAdvisorName,
       });
 
-      msg.textContent = "Refuerzo firmado ✓";
+      agentMsg.style.color = "#22c55e";
+      agentMsg.textContent = "Refuerzo firmado ✓";
     }
 
-    /* ==========================================================
-       ✔ FINAL
-       ========================================================== */
-    editable.style.display = "none";
-    await loadAgentList(); // refrescar lista + dashboard
-
+    editableZone.style.display = "none";
+    await loadAgentList();
   } catch (e) {
     console.error(e);
-    msg.style.color = "red";
-    msg.textContent = "Error: " + e.message;
+    agentMsg.style.color = "red";
+    agentMsg.textContent = "Error: " + e.message;
   }
-};
-
-/* Bind botón guardar */
-const btnSave = document.getElementById("btnSave");
-if (btnSave) {
-  btnSave.addEventListener("click", () => {
-    saveSignature();
-  });
 }
 
 /* ------------------------------
-   MODAL FIRMA - CANVAS
+   CANVAS FIRMA
 ------------------------------ */
-const signatureModal = document.getElementById("signatureModal");
+const sigModal = document.getElementById("signatureModal");
 const canvas = document.getElementById("sigCanvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
 let drawing = false;
 
-function openSignatureModal() {
-  if (!signatureModal || !ctx || !canvas) return;
+function openDrawModal() {
+  if (!sigModal || !canvas || !ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  signatureModal.classList.add("pa-open");
+  sigModal.classList.add("pa-open");
+  sigModal.setAttribute("aria-hidden", "false");
 }
 
-function closeSignatureModal() {
-  if (!signatureModal) return;
-  signatureModal.classList.remove("pa-open");
+function closeDrawModal() {
+  if (!sigModal) return;
+  sigModal.classList.remove("pa-open");
+  sigModal.setAttribute("aria-hidden", "true");
 }
 
-if (signatureModal) {
-  signatureModal.addEventListener("click", (e) => {
-    if (e.target === signatureModal) {
-      closeSignatureModal();
-    }
-  });
+function clearCanvas() {
+  if (!canvas || !ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function saveDrawnSignature() {
+  if (!canvas) return;
+  signatureData = canvas.toDataURL("image/png");
+  updateSignaturePreview();
+  closeDrawModal();
 }
 
 function getPos(e) {
@@ -818,15 +790,15 @@ function getPos(e) {
 }
 
 if (canvas && ctx) {
-  canvas.onmousedown = (e) => {
+  canvas.addEventListener("mousedown", (e) => {
     drawing = true;
     ctx.beginPath();
     const p = getPos(e);
     ctx.moveTo(p.x, p.y);
-  };
-  canvas.onmouseup = () => (drawing = false);
-  canvas.onmouseleave = () => (drawing = false);
-  canvas.onmousemove = (e) => {
+  });
+  canvas.addEventListener("mouseup", () => (drawing = false));
+  canvas.addEventListener("mouseleave", () => (drawing = false));
+  canvas.addEventListener("mousemove", (e) => {
     if (!drawing) return;
     const p = getPos(e);
     ctx.lineWidth = 2;
@@ -834,7 +806,7 @@ if (canvas && ctx) {
     ctx.strokeStyle = "#000";
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
-  };
+  });
 
   canvas.addEventListener(
     "touchstart",
@@ -866,45 +838,17 @@ if (canvas && ctx) {
   );
 }
 
-function clearCanvas() {
-  if (!ctx || !canvas) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-function saveDrawnSignature() {
-  if (!canvas) return;
-  signatureData = canvas.toDataURL("image/png");
-  updateSignaturePreview();
-  closeSignatureModal();
-}
-
-/* Botones modal firma */
-const btnDraw = document.getElementById("btnDraw");
-if (btnDraw) btnDraw.addEventListener("click", openSignatureModal);
-
-const btnClear = document.getElementById("btnClear");
-if (btnClear) btnClear.addEventListener("click", clearCanvas);
-
-const btnCancel = document.getElementById("btnCancel");
-if (btnCancel) btnCancel.addEventListener("click", closeSignatureModal);
-
-const btnUse = document.getElementById("btnUse");
-if (btnUse) btnUse.addEventListener("click", saveDrawnSignature);
-
 /* ------------------------------
-   SUBIR ARCHIVO DE FIRMA
+   SUBIR ARCHIVO FIRMA
 ------------------------------ */
 function triggerUpload() {
   const input = document.getElementById("fileSignature");
   if (input) input.click();
 }
 
-const btnUpload = document.getElementById("btnUpload");
-if (btnUpload) btnUpload.addEventListener("click", triggerUpload);
-
 const fileInput = document.getElementById("fileSignature");
 if (fileInput) {
-  fileInput.onchange = (e) => {
+  fileInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -913,12 +857,33 @@ if (fileInput) {
       updateSignaturePreview();
     };
     reader.readAsDataURL(file);
-  };
+  });
 }
 
 /* ------------------------------
-   LISTENERS DE FILTROS
+   LISTENERS BOTONES / FILTROS
 ------------------------------ */
+const btnDraw = document.getElementById("btnDraw");
+if (btnDraw) btnDraw.addEventListener("click", openDrawModal);
+
+const btnUpload = document.getElementById("btnUpload");
+if (btnUpload) btnUpload.addEventListener("click", triggerUpload);
+
+const btnSave = document.getElementById("btnSave");
+if (btnSave) btnSave.addEventListener("click", () => saveSignature());
+
+const btnClear = document.getElementById("btnClear");
+if (btnClear) btnClear.addEventListener("click", clearCanvas);
+
+const btnCancel = document.getElementById("btnCancel");
+if (btnCancel) btnCancel.addEventListener("click", closeDrawModal);
+
+const btnUse = document.getElementById("btnUse");
+if (btnUse) btnUse.addEventListener("click", saveDrawnSignature);
+
+const btnCloseDraw = document.getElementById("btnCloseDraw");
+if (btnCloseDraw) btnCloseDraw.addEventListener("click", closeDrawModal);
+
 const selTipoDoc = document.getElementById("selTipoDoc");
 if (selTipoDoc) {
   selTipoDoc.addEventListener("change", () => loadAgentList());

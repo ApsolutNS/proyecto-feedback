@@ -1,49 +1,55 @@
 body {
-  font-family: Arial, sans-serif;
   background: #0f172a;
+  font-family: Arial, sans-serif;
   color: white;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  margin: 0;
 }
 
-.login-box {
+.login-container {
   background: #1e293b;
-  padding: 25px;
-  border-radius: 10px;
-  width: 320px;
+  padding: 35px;
+  width: 330px;
+  border-radius: 12px;
   text-align: center;
-  box-shadow: 0 0 15px rgba(0,0,0,0.4);
+  box-shadow: 0px 0px 20px #0005;
+}
+
+.login-container h2 {
+  margin-top: 0;
+  margin-bottom: 25px;
 }
 
 input {
   width: 100%;
   padding: 12px;
-  margin-top: 12px;
+  margin-bottom: 12px;
   border-radius: 6px;
   border: none;
-  outline: none;
+  font-size: 15px;
 }
 
 button {
-  margin-top: 15px;
   width: 100%;
   padding: 12px;
+  margin-top: 10px;
+  background: #2563eb;
   border: none;
-  background: #3b82f6;
-  color: white;
   border-radius: 6px;
+  color: white;
   font-size: 16px;
   cursor: pointer;
 }
 
 button:hover {
-  background: #2563eb;
+  background: #1d4ed8;
 }
 
-.msg {
+.error {
   margin-top: 15px;
-  font-size: 14px;
+  color: #f87171;
   min-height: 20px;
 }

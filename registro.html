@@ -3,154 +3,189 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Registro del Monitoreo</title>
-  <link rel="stylesheet" href="registro.css" />
+  <title>Registro del Monitoreo · M3</title>
+
+  <!-- Material Symbols (opcional, para iconos si luego los usas) -->
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+  />
+
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="css/registro.css" />
 </head>
-<body>
-<div class="shell">
-  <div class="header-bar">
-    <div class="header-left">
-      <h1>Registro del Monitoreo</h1>
-      <div class="subtitle">Supervisor · Versión PREMIUM con cálculo automático de nota</div>
-    </div>
-    <div>
-      <label style="margin-top:0;font-size:12px;">Registrado por</label>
-      <select id="registradoPor" style="min-width:210px">
-        <option value="">Selecciona...</option>
-        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
-        <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
-        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
-      </select>
-      <div class="tag" style="margin-top:6px;text-align:center">Firestore + Storage · v3 + UID</div>
-    </div>
+<body class="md3-body">
+  <div class="shell">
+    <header class="header-bar md3-surface">
+      <div class="header-left">
+        <h1 class="app-title">Registro del Monitoreo</h1>
+        <div class="subtitle">
+          Supervisor · Versión PREMIUM con cálculo automático de nota
+        </div>
+      </div>
+      <div class="header-right">
+        <label class="field-label">Registrado por</label>
+        <select id="registradoPor" class="md3-field">
+          <option value="">Selecciona...</option>
+          <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
+            Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
+          </option>
+          <option value="César Alonso Torres Montes - Supervisor">
+            César Alonso Torres Montes - Supervisor
+          </option>
+          <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
+            Karen Vanessa Vital Cordova - Líder de Operaciones
+          </option>
+        </select>
+        <div class="tag md3-chip">
+          Firestore + Storage · v3 · M3
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- COLUMNA IZQUIERDA: FORMULARIO -->
+      <section class="card md3-surface">
+        <h2 class="section-title">Datos del monitoreo</h2>
+
+        <div class="row">
+          <div class="col">
+            <label for="idLlamada" class="field-label">ID LLAMADA</label>
+            <input id="idLlamada" class="md3-field" placeholder="Ej: intefectiva_123" />
+          </div>
+          <div class="col">
+            <label for="idContacto" class="field-label">ID CONTACTO</label>
+            <input id="idContacto" class="md3-field" placeholder="Ej: contacto_456" />
+          </div>
+        </div>
+
+        <label for="tipoDetectado" class="field-label">Tipo detectado</label>
+        <input id="tipoDetectado" class="md3-field" readonly />
+
+        <div class="row margin-top-6">
+          <div class="col">
+            <label for="asesor" class="field-label">Asesor</label>
+            <select id="asesor" class="md3-field"></select>
+            <small class="small">
+              * Cargado desde colección <b>asesores</b> (nombre + GC)
+            </small>
+          </div>
+          <div class="col col-small">
+            <label for="cargo" class="field-label">Cargo</label>
+            <select id="cargo" class="md3-field">
+              <option>ASESOR INBOUND</option>
+              <option>ASESOR CORREOS</option>
+              <option>ASESOR REDES</option>
+            </select>
+          </div>
+        </div>
+
+        <h3 class="section-subtitle">Datos del cliente</h3>
+        <div class="row">
+          <div class="col">
+            <label for="cliDni" class="field-label">DNI cliente</label>
+            <input id="cliDni" class="md3-field" />
+          </div>
+          <div class="col">
+            <label for="cliNombre" class="field-label">Nombre cliente</label>
+            <input id="cliNombre" class="md3-field" />
+          </div>
+          <div class="col">
+            <label for="cliTel" class="field-label">Teléfono</label>
+            <input id="cliTel" class="md3-field" />
+          </div>
+        </div>
+
+        <label for="cliTipif" class="field-label">Tipificación</label>
+        <input id="cliTipif" class="md3-field" />
+
+        <label for="cliObs" class="field-label">Observaciones Tipificación</label>
+        <textarea id="cliObs" class="md3-field md3-textarea"
+                  placeholder="27/11/2025 Usuario gescob - consulta de ejemplo - solución de ejemplo"></textarea>
+
+        <label for="resumen" class="field-label">Resumen de la llamada</label>
+        <textarea id="resumen" class="md3-field md3-textarea" rows="4"
+                  placeholder="Describe brevemente la gestión realizada por el asesor."></textarea>
+
+        <h3 class="section-subtitle">Ítems observados</h3>
+        <div class="small">
+          Marca los ítems en los que el asesor falla y describe el contexto en el detalle.
+          Recuerda: sólo se registran incumplimientos (no aciertos).
+        </div>
+
+        <div class="chips-row">
+          <span class="chip chip-error">ERROR INEXCUSABLE ⇒ nota 0</span>
+          <span class="chip">PENCUF ⇒ resta hasta 25 pts según %</span>
+          <span class="chip">PECNEG ⇒ -30 pts fijo</span>
+          <span class="chip">PECUF ⇒ -35 pts fijo</span>
+          <span class="chip">PECCUMP ⇒ -10 pts fijo</span>
+        </div>
+
+        <div class="actions-row">
+          <button id="btnAddItem" class="btn small" type="button">
+            + Agregar ítem
+          </button>
+          <button id="btnClearItems" class="btn ghost small" type="button">
+            Limpiar ítems
+          </button>
+        </div>
+
+        <div id="itemsContainer" class="items-list"></div>
+
+        <label for="imgs" class="field-label margin-top-12">
+          Adjuntar imágenes (evidencias)
+        </label>
+        <input id="imgs" type="file" multiple accept="image/*" class="md3-field" />
+        <div id="imgPreview" class="img-preview-row"></div>
+
+        <button id="btnSubmit" class="btn full" type="button">
+          Registrar monitoreo
+        </button>
+        <div id="msg" class="msg-status"></div>
+      </section>
+
+      <!-- COLUMNA DERECHA: RESUMEN / NOTA -->
+      <aside class="card md3-surface">
+        <div class="summary-title">Resumen de nota</div>
+        <div id="scoreCircle" class="score-circle">
+          <span id="notaPreview">100</span>%
+        </div>
+
+        <div class="summary-row">
+          <span>Clasificación</span>
+          <span id="badgeCalidad" class="badge good">🟢 Aprobado</span>
+        </div>
+        <div class="summary-row">
+          <span>PENCUF</span>
+          <span id="infoPENCUF" class="small">Sin descuentos</span>
+        </div>
+        <div class="summary-row">
+          <span>PECNEG</span>
+          <span id="infoPECNEG" class="small">Sin descuentos</span>
+        </div>
+        <div class="summary-row">
+          <span>PECUF</span>
+          <span id="infoPECUF" class="small">Sin descuentos</span>
+        </div>
+        <div class="summary-row">
+          <span>PECCUMP</span>
+          <span id="infoPECCUMP" class="small">Sin descuentos</span>
+        </div>
+        <div class="summary-row">
+          <span>ERROR INEXCUSABLE</span>
+          <span id="infoEI" class="small">No aplicado</span>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="small">
+          La nota se recalcula automáticamente según los ítems marcados.<br />
+          <b>Regla:</b> si hay <b>ERROR INEXCUSABLE</b> la nota es siempre <b>0</b>.
+        </div>
+      </aside>
+    </main>
   </div>
 
-  <div class="layout">
-    <!-- COLUMNA IZQUIERDA: FORMULARIO -->
-    <div class="card">
-      <h2>Datos del monitoreo</h2>
-      <div class="row">
-        <div class="col">
-          <label for="idLlamada">ID LLAMADA</label>
-          <input id="idLlamada" placeholder="Ej: intefectiva_123">
-        </div>
-        <div class="col">
-          <label for="idContacto">ID CONTACTO</label>
-          <input id="idContacto" placeholder="Ej: contacto_456">
-        </div>
-      </div>
-
-      <label for="tipoDetectado">Tipo detectado</label>
-      <input id="tipoDetectado" readonly>
-
-      <div class="row" style="margin-top:6px">
-        <div class="col">
-          <label for="asesor">Asesor</label>
-          <select id="asesor"></select>
-          <small class="small">* Cargado desde colección <b>asesores</b> (nombre + GC + UID)</small>
-        </div>
-        <div class="col" style="max-width:230px">
-          <label for="cargo">Cargo</label>
-          <select id="cargo">
-            <option>ASESOR INBOUND</option>
-            <option>ASESOR CORREOS</option>
-            <option>ASESOR REDES</option>
-          </select>
-        </div>
-      </div>
-
-      <h3>Datos del cliente</h3>
-      <div class="row">
-        <div class="col">
-          <label for="cliDni">DNI cliente</label>
-          <input id="cliDni">
-        </div>
-        <div class="col">
-          <label for="cliNombre">Nombre cliente</label>
-          <input id="cliNombre">
-        </div>
-        <div class="col">
-          <label for="cliTel">Teléfono</label>
-          <input id="cliTel">
-        </div>
-      </div>
-
-      <label for="cliTipif">Tipificación</label>
-      <input id="cliTipif">
-
-      <label for="cliObs">Observaciones Tipificación</label>
-      <textarea id="cliObs" placeholder="27/11/2025 Usuario gescob - consulta de ejemplo - solución de ejemplo"></textarea>
-
-      <label for="resumen">Resumen de la llamada</label>
-      <textarea id="resumen" rows="4" placeholder="Describe brevemente la gestión realizada por el asesor."></textarea>
-
-      <h3>Ítems observados</h3>
-      <div class="small">
-        Marca los ítems en los que el asesor falla y describe el contexto en el detalle.
-        Recuerda: sólo se registran incumplimientos (no aciertos).
-      </div>
-      <div class="chips-row">
-        <span class="chip error">ERROR INEXCUSABLE ⇒ nota 0</span>
-        <span class="chip">PENCUF ⇒ resta hasta 25 pts según %</span>
-        <span class="chip">PECNEG ⇒ -30 pts fijo</span>
-        <span class="chip">PECUF ⇒ -35 pts fijo</span>
-        <span class="chip">PECCUMP ⇒ -10 pts fijo</span>
-      </div>
-
-      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <button class="btn small" type="button" id="btnAddItem">+ Agregar ítem</button>
-        <button class="btn ghost small" type="button" id="btnClearItems">Limpiar ítems</button>
-      </div>
-
-      <div id="itemsContainer" class="items-list"></div>
-
-      <label style="margin-top:12px" for="imgs">Adjuntar imágenes (evidencias)</label>
-      <input id="imgs" type="file" multiple accept="image/*" />
-      <div id="imgPreview" style="display:flex;margin-top:8px;flex-wrap:wrap"></div>
-
-      <button class="btn full" type="button" id="btnSubmit">Registrar monitoreo</button>
-      <div id="msg" class="msg-status"></div>
-    </div>
-
-    <!-- COLUMNA DERECHA: RESUMEN / NOTA -->
-    <div class="card">
-      <div class="summary-title">Resumen de nota</div>
-      <div id="scoreCircle" class="score-circle">
-        <span id="notaPreview">100</span>%
-      </div>
-      <div class="summary-row">
-        <span>Clasificación</span>
-        <span id="badgeCalidad" class="badge good">🟢 Aprobado</span>
-      </div>
-      <div class="summary-row">
-        <span>PENCUF</span>
-        <span id="infoPENCUF" class="small">Sin descuentos</span>
-      </div>
-      <div class="summary-row">
-        <span>PECNEG</span>
-        <span id="infoPECNEG" class="small">Sin descuentos</span>
-      </div>
-      <div class="summary-row">
-        <span>PECUF</span>
-        <span id="infoPECUF" class="small">Sin descuentos</span>
-      </div>
-      <div class="summary-row">
-        <span>PECCUMP</span>
-        <span id="infoPECCUMP" class="small">Sin descuentos</span>
-      </div>
-      <div class="summary-row">
-        <span>ERROR INEXCUSABLE</span>
-        <span id="infoEI" class="small">No aplicado</span>
-      </div>
-      <hr style="margin:10px 0;border:none;border-top:1px solid #e5e7eb">
-      <div class="small">
-        La nota se recalcula automáticamente según los ítems marcados.<br>
-        <b>Regla:</b> si hay <b>ERROR INEXCUSABLE</b> la nota es siempre <b>0</b>.
-      </div>
-    </div>
-  </div>
-</div>
-
-<script type="module" src="registro.js"></script>
+  <!-- Lógica JS (Módulo ES) -->
+  <script type="module" src="js/registro.js"></script>
 </body>
 </html>

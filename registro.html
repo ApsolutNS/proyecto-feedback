@@ -1,169 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Registro del Monitoreo</title>
-<style>
-  body{
-    font-family:Arial,Helvetica,sans-serif;
-    background:#0f172a;
-    margin:0;
-    padding:18px;
-    color:#0b1220;
-  }
-  .shell{
-    max-width:1120px;
-    margin:auto;
-  }
-  .header-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    margin-bottom:12px;
-    color:#e5e7eb;
-    gap:12px;
-    flex-wrap:wrap;
-  }
-  .header-left h1{
-    margin:0;
-    font-size:18px;
-  }
-  .header-left .subtitle{
-    font-size:12px;
-    color:#9ca3af;
-  }
-  .tag{
-    font-size:11px;
-    padding:4px 8px;
-    border-radius:999px;
-    background:rgba(15,23,42,0.7);
-    border:1px solid rgba(148,163,184,0.5);
-  }
-  .layout{
-    display:grid;
-    grid-template-columns: minmax(0,2.1fr) minmax(260px,0.9fr);
-    gap:14px;
-  }
-  @media(max-width:900px){
-    .layout{
-      grid-template-columns:1fr;
-    }
-  }
-  .card{
-    background:#f8fafc;
-    border-radius:10px;
-    padding:14px 16px;
-    box-shadow:0 10px 30px rgba(15,23,42,0.15);
-  }
-  h2{margin:0 0 8px;font-size:16px}
-  h3{margin:12px 0 6px;font-size:14px}
-  label{display:block;margin-top:8px;font-weight:600;font-size:13px}
-  input,select,textarea{
-    width:100%;
-    padding:7px 8px;
-    border-radius:6px;
-    border:1px solid #d4d4d8;
-    margin-top:4px;
-    box-sizing:border-box;
-    font-size:13px;
-  }
-  textarea{resize:vertical;min-height:60px}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  .col{flex:1 1 0}
-  .small{font-size:12px;color:#6b7280}
-  .items-list{margin-top:8px}
-  .item-block{
-    border:1px solid #e2e8f0;
-    padding:8px;
-    border-radius:8px;
-    margin-top:8px;
-    display:flex;
-    gap:8px;
-    align-items:flex-start;
-    background:#fff;
-  }
-  .item-main{flex:1}
-  .item-meta{font-size:11px;color:#64748b;margin-top:2px}
-  .btn{
-    background:#0f4c81;
-    color:#fff;
-    border:none;
-    padding:9px 12px;
-    border-radius:6px;
-    cursor:pointer;
-    font-size:13px;
-    font-weight:600;
-  }
-  .btn.ghost{
-    background:#fff;
-    color:#0f4c81;
-    border:1px solid #cbd5e1;
-  }
-  .btn.small{padding:6px 10px;font-size:12px}
-  .btn.full{width:100%;margin-top:10px}
-  .chips-row{
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-    margin-top:6px;
-  }
-  .chip{
-    font-size:11px;
-    padding:4px 6px;
-    border-radius:999px;
-    border:1px solid #e5e7eb;
-    background:#f9fafb;
-  }
-  .chip.error{border-color:#fecaca;background:#fef2f2;color:#b91c1c}
-  .chip.ok{border-color:#bbf7d0;background:#ecfdf5;color:#166534}
-  .img-preview{
-    max-height:80px;
-    margin-right:6px;
-    border-radius:6px;
-    border:1px solid #e5e7eb;
-  }
-  /* Panel resumen */
-  .summary-title{
-    font-size:13px;
-    font-weight:700;
-    margin-bottom:6px;
-  }
-  .score-circle{
-    width:120px;
-    height:120px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:auto;
-    margin-bottom:8px;
-    border:4px solid #22c55e; /* verde por defecto */
-    background:#f0fdf4;
-    color:#166534;
-    font-size:26px;
-    font-weight:800;
-  }
-  .score-circle.bad{
-    border-color:#ef4444;
-    background:#fef2f2;
-    color:#b91c1c;
-  }
-  .summary-row{
-    display:flex;
-    justify-content:space-between;
-    font-size:12px;
-    margin-top:4px;
-  }
-  .badge{
-    font-size:11px;
-    padding:2px 6px;
-    border-radius:999px;
-    background:#e5e7eb;
-  }
-  .badge.good{background:#bbf7d0;color:#166534}
-  .badge.bad{background:#fecaca;color:#991b1b}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Registro del Monitoreo</title>
+  <link rel="stylesheet" href="registro.css" />
 </head>
 <body>
 <div class="shell">
@@ -180,7 +21,7 @@
         <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
         <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
       </select>
-      <div class="tag" style="margin-top:6px;text-align:center">Firestore + Storage · v3</div>
+      <div class="tag" style="margin-top:6px;text-align:center">Firestore + Storage · v3 + UID</div>
     </div>
   </div>
 
@@ -188,29 +29,28 @@
     <!-- COLUMNA IZQUIERDA: FORMULARIO -->
     <div class="card">
       <h2>Datos del monitoreo</h2>
-
       <div class="row">
         <div class="col">
-          <label>ID LLAMADA</label>
+          <label for="idLlamada">ID LLAMADA</label>
           <input id="idLlamada" placeholder="Ej: intefectiva_123">
         </div>
         <div class="col">
-          <label>ID CONTACTO</label>
+          <label for="idContacto">ID CONTACTO</label>
           <input id="idContacto" placeholder="Ej: contacto_456">
         </div>
       </div>
 
-      <label>Tipo detectado</label>
+      <label for="tipoDetectado">Tipo detectado</label>
       <input id="tipoDetectado" readonly>
 
       <div class="row" style="margin-top:6px">
         <div class="col">
-          <label>Asesor</label>
+          <label for="asesor">Asesor</label>
           <select id="asesor"></select>
-          <small class="small">* Cargado desde colección <b>asesores</b> (nombre + GC)</small>
+          <small class="small">* Cargado desde colección <b>asesores</b> (nombre + GC + UID)</small>
         </div>
         <div class="col" style="max-width:230px">
-          <label>Cargo</label>
+          <label for="cargo">Cargo</label>
           <select id="cargo">
             <option>ASESOR INBOUND</option>
             <option>ASESOR CORREOS</option>
@@ -222,26 +62,26 @@
       <h3>Datos del cliente</h3>
       <div class="row">
         <div class="col">
-          <label>DNI cliente</label>
+          <label for="cliDni">DNI cliente</label>
           <input id="cliDni">
         </div>
         <div class="col">
-          <label>Nombre cliente</label>
+          <label for="cliNombre">Nombre cliente</label>
           <input id="cliNombre">
         </div>
         <div class="col">
-          <label>Teléfono</label>
+          <label for="cliTel">Teléfono</label>
           <input id="cliTel">
         </div>
       </div>
 
-      <label>Tipificación</label>
+      <label for="cliTipif">Tipificación</label>
       <input id="cliTipif">
 
-      <label>Observaciones Tipificación</label>
+      <label for="cliObs">Observaciones Tipificación</label>
       <textarea id="cliObs" placeholder="27/11/2025 Usuario gescob - consulta de ejemplo - solución de ejemplo"></textarea>
 
-      <label>Resumen de la llamada</label>
+      <label for="resumen">Resumen de la llamada</label>
       <textarea id="resumen" rows="4" placeholder="Describe brevemente la gestión realizada por el asesor."></textarea>
 
       <h3>Ítems observados</h3>
@@ -249,7 +89,6 @@
         Marca los ítems en los que el asesor falla y describe el contexto en el detalle.
         Recuerda: sólo se registran incumplimientos (no aciertos).
       </div>
-
       <div class="chips-row">
         <span class="chip error">ERROR INEXCUSABLE ⇒ nota 0</span>
         <span class="chip">PENCUF ⇒ resta hasta 25 pts según %</span>
@@ -259,18 +98,18 @@
       </div>
 
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <button class="btn small" type="button" onclick="window.addItemBlock()">+ Agregar ítem</button>
-        <button class="btn ghost small" type="button" onclick="window.clearItems()">Limpiar ítems</button>
+        <button class="btn small" type="button" id="btnAddItem">+ Agregar ítem</button>
+        <button class="btn ghost small" type="button" id="btnClearItems">Limpiar ítems</button>
       </div>
 
       <div id="itemsContainer" class="items-list"></div>
 
-      <label style="margin-top:12px">Adjuntar imágenes (evidencias)</label>
+      <label style="margin-top:12px" for="imgs">Adjuntar imágenes (evidencias)</label>
       <input id="imgs" type="file" multiple accept="image/*" />
       <div id="imgPreview" style="display:flex;margin-top:8px;flex-wrap:wrap"></div>
 
-      <button class="btn full" type="button" onclick="window.submitRecord()">Registrar monitoreo</button>
-      <div id="msg" style="margin-top:10px;font-size:13px;color:green"></div>
+      <button class="btn full" type="button" id="btnSubmit">Registrar monitoreo</button>
+      <div id="msg" class="msg-status"></div>
     </div>
 
     <!-- COLUMNA DERECHA: RESUMEN / NOTA -->
@@ -279,12 +118,10 @@
       <div id="scoreCircle" class="score-circle">
         <span id="notaPreview">100</span>%
       </div>
-
       <div class="summary-row">
         <span>Clasificación</span>
         <span id="badgeCalidad" class="badge good">🟢 Aprobado</span>
       </div>
-
       <div class="summary-row">
         <span>PENCUF</span>
         <span id="infoPENCUF" class="small">Sin descuentos</span>
@@ -305,9 +142,7 @@
         <span>ERROR INEXCUSABLE</span>
         <span id="infoEI" class="small">No aplicado</span>
       </div>
-
       <hr style="margin:10px 0;border:none;border-top:1px solid #e5e7eb">
-
       <div class="small">
         La nota se recalcula automáticamente según los ítems marcados.<br>
         <b>Regla:</b> si hay <b>ERROR INEXCUSABLE</b> la nota es siempre <b>0</b>.
@@ -316,370 +151,6 @@
   </div>
 </div>
 
-<script type="module">
-/* --------------------- FIREBASE IMPORTS ---------------------- */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-import {
-  getStorage, ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
-
-/* --------------------- CONFIG ------------------------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
-  authDomain: "feedback-app-ac30e.firebaseapp.com",
-  projectId: "feedback-app-ac30e",
-  storageBucket: "feedback-app-ac30e.firebasestorage.app",
-  messagingSenderId: "512179147778",
-  appId: "1:512179147778:web:795e4a8b177fe766d3431b",
-  measurementId: "G-X6MP0FFH9P"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
-/* --------------------- ITEMS COMPLETOS ---------------------- */
-/* name, perc (porcentaje), tipo (grupo) */
-const ITEMS = [
-  // ERROR INEXCUSABLE (nota 0 si aparece uno)
-  { name:"Corte de Gestión", perc:100, tipo:"ERROR_INEXCUSABLE" },
-  { name:"Insulto / Falta de Respeto", perc:100, tipo:"ERROR_INEXCUSABLE" },
-  { name:"Normativa Regulatoria", perc:100, tipo:"ERROR_INEXCUSABLE" },
-  { name:"Protección de datos", perc:100, tipo:"ERROR_INEXCUSABLE" },
-
-  // PENCUF - Penalización acumulable hasta 25 puntos (según porcentaje)
-  { name:"Contestación sin demora", perc:5, tipo:"PENCUF" },
-  { name:"Optimización de esperas", perc:5, tipo:"PENCUF" },
-  { name:"Empatía e implicación", perc:7, tipo:"PENCUF" },
-  { name:"Escucha Activa", perc:7, tipo:"PENCUF" },
-  { name:"Sondeo", perc:7, tipo:"PENCUF" },
-  { name:"Solicita datos de forma correcta y oportuna", perc:7, tipo:"PENCUF" },
-  { name:"Herramientas de Gestión", perc:10, tipo:"PENCUF" },
-  { name:"Codificación y Registro inConcert", perc:7, tipo:"PENCUF" },
-  { name:"Codificación y Registro en Monitor Logístico", perc:7, tipo:"PENCUF" },
-  { name:"Codificación y Registro en SmartSheet", perc:7, tipo:"PENCUF" },
-  { name:"Presentación", perc:7, tipo:"PENCUF" },
-  { name:"Personalización", perc:7, tipo:"PENCUF" },
-  { name:"Despedida", perc:7, tipo:"PENCUF" },
-  { name:"Encuesta de satisfacción", perc:10, tipo:"PENCUF" },
-
-  // PECNEG
-    { name:"Lenguaje", perc:30, tipo:"PECNEG" },
-  { name:"Voz", perc:30, tipo:"PECNEG" },
-  { name:"Redacta de forma Correcta", perc:30, tipo:"PECNEG" },
-  { name:"Imagen trasladada", perc:30, tipo:"PECNEG" },
-  { name:"Actitud comercial", perc:30, tipo:"PECNEG" },
-  { name:"Operativa", perc:30, tipo:"PECNEG" },
-  { name:"Tramita la gestión correspondiente", perc:30, tipo:"PECNEG" },
-  { name:"Transferencia", perc:30, tipo:"PECNEG" },
-
-  // PECUF – un solo ítem → -35 pts (se acumula con PENCUF y otros grupos)
-  { name:"Cumple con devolución de llamado", perc:35, tipo:"PECUF" },
-  { name:"Actitud - Manejo de llamada", perc:35, tipo:"PECUF" },
-  { name:"Conocimientos para resolver la consulta", perc:35, tipo:"PECUF" },
-  { name:"Asesoramiento de Producto o Servicio (Pagina Web | Posible Compra | Servicios)", perc:35, tipo:"PECUF" },
-  { name:"Solución al primer contacto", perc:35, tipo:"PECUF" },
-
-  // PECCUMP – un solo ítem → -10 pts (tu regla final)
-  { name:"Verificación de datos", perc:10, tipo:"PECCUMP" },
-  { name:"Damos el número de Ticket", perc:10, tipo:"PECCUMP" },
-
-  // Ninguno
-  { name:"Ninguno", perc:0, tipo:"NINGUNO" }
-];
-
-/* --------------------- CARGAR ASESORES ------------------------- */
-async function cargarAsesores() {
-  try {
-    const snap = await getDocs(collection(db, "asesores"));
-    const lista = [];
-    snap.forEach(d => {
-      const data = d.data();
-      lista.push({
-        id: d.id,
-        nombre: (data.nombre || "SIN NOMBRE").trim(),
-        gc: (data.GC || "SIN GC").trim()
-      });
-    });
-    lista.sort((a,b)=> a.nombre.localeCompare(b.nombre));
-    const sel = document.getElementById("asesor");
-    sel.innerHTML = lista.map(a =>
-      `<option value="${a.nombre}" data-gc="${a.gc}">
-         ${a.nombre} — ${a.gc}
-       </option>`
-    ).join("");
-  } catch (err) {
-    console.error("Error cargando asesores:", err);
-  }
-}
-cargarAsesores();
-
-/* --------------------- DETECTAR TIPO -------------------------- */
-function detectarTipoTexto(text){
-  if(!text) return 'NO IDENTIFICADO';
-  text = text.toLowerCase();
-  if(text.includes('intefectivank') || text.includes('vank')) return 'EFECTIVANK';
-  if(text.includes('intefectiva')) return 'EFECTIVA';
-  if(text.includes('intxperto')) return 'XPERTO';
-  if(text.includes('facebook')) return 'FACEBOOK';
-  if(text.includes('instagram')) return 'INSTAGRAM';
-  if(text.includes('correo') || text.includes('mail')) return 'CORREO';
-  return 'OTRO';
-}
-document.getElementById('idLlamada').addEventListener('input', updateDetected);
-document.getElementById('idContacto').addEventListener('input', updateDetected);
-function updateDetected(){
-  const v = idLlamada.value + " " + idContacto.value;
-  tipoDetectado.value = detectarTipoTexto(v);
-}
-
-/* --------------------- UI: ITEMS ---------------------- */
-window.addItemBlock = function() {
-  const w = document.createElement('div');
-  w.className = 'item-block';
-  w.innerHTML = `
-    <div class="item-main">
-      <select class="item-select">
-        <option value="">-- Selecciona ítem --</option>
-        ${ITEMS.map(it => `<option value="${it.name}">${it.name}</option>`).join("")}
-      </select>
-      <div class="item-meta small"></div>
-      <textarea class="item-detail" placeholder="Detalle del ítem: contexto, frase del cliente/asesor, impacto, etc."></textarea>
-    </div>
-    <button class="btn ghost small item-remove" type="button">Eliminar</button>
-  `;
-  document.getElementById("itemsContainer").appendChild(w);
-
-  const select = w.querySelector(".item-select");
-  const meta = w.querySelector(".item-meta");
-  const removeBtn = w.querySelector(".item-remove");
-
-  select.addEventListener("change", ()=>{
-    const it = ITEMS.find(x=>x.name === select.value);
-    if(it){
-      const grupo = it.tipo.replace(/_/g," ");
-      meta.textContent = `${it.perc}% · ${grupo}`;
-    } else {
-      meta.textContent = "";
-    }
-    recalcularNotaPreview();
-  });
-
-  w.querySelector(".item-detail").addEventListener("input", ()=>{});
-
-  removeBtn.addEventListener("click", ()=>{
-    w.remove();
-    recalcularNotaPreview();
-  });
-
-  recalcularNotaPreview();
-};
-
-window.clearItems = function(){
-  document.getElementById("itemsContainer").innerHTML = "";
-  recalcularNotaPreview();
-};
-
-/* --------------------- PREVIEW IMÁGENES ---------------------- */
-document.getElementById('imgs').addEventListener('change', function(){
-  const preview = document.getElementById('imgPreview');
-  preview.innerHTML = "";
-  [...this.files].forEach(f=>{
-    const fr = new FileReader();
-    fr.onload = e=>{
-      const img = document.createElement("img");
-      img.src = e.target.result;
-      img.className = "img-preview";
-      img.style.maxWidth = "120px";
-      preview.appendChild(img);
-    };
-    fr.readAsDataURL(f);
-  });
-});
-
-/* --------------------- CÁLCULO DE NOTA ---------------------- */
-/*
-  Reglas:
-  - Si hay ERROR_INEXCUSABLE → nota = 0
-  - Nota base: 100
-  - PENCUF → resta: 25 * (sumaPercPENCUF / 100)
-  - PECNEG → si hay al menos uno: -30
-  - PECUF → si hay al menos uno: -35
-  - PECCUMP → si hay al menos uno: -10
-*/
-function calcularNota(items){
-  if(items.some(i => i.tipo === "ERROR_INEXCUSABLE")){
-    return 0;
-  }
-  let nota = 100;
-
-  const totalPENCUF = items
-    .filter(i => i.tipo === "PENCUF")
-    .reduce((sum,i)=> sum + (i.perc || 0), 0);
-  const dedPENCUF = 25 * (totalPENCUF / 100);
-
-  const hasPECNEG   = items.some(i => i.tipo === "PECNEG");
-  const hasPECUF    = items.some(i => i.tipo === "PECUF");
-  const hasPECCUMP  = items.some(i => i.tipo === "PECCUMP");
-
-  nota -= dedPENCUF;
-  if(hasPECNEG)  nota -= 30;
-  if(hasPECUF)   nota -= 35;
-  if(hasPECCUMP) nota -= 10;
-
-  if(nota < 0) nota = 0;
-  if(nota > 100) nota = 100;
-
-  return Math.round(nota * 10) / 10; // 1 decimal
-}
-
-/* --------------------- PREVIEW PANEL DERECHA ---------------------- */
-function obtenerItemsFormulario(){
-  const blocks = [...document.querySelectorAll(".item-block")];
-  const items = [];
-  blocks.forEach(b=>{
-    const select = b.querySelector(".item-select");
-    const detail = b.querySelector(".item-detail").value;
-    const name = select.value;
-    if(!name) return;
-    const meta = ITEMS.find(i=>i.name === name) || { tipo:"NINGUNO", perc:0 };
-    items.push({
-      name,
-      tipo: meta.tipo,
-      perc: meta.perc,
-      detail
-    });
-  });
-  return items;
-}
-
-function recalcularNotaPreview(){
-  const items = obtenerItemsFormulario();
-  const nota = calcularNota(items);
-
-  // círculo
-  const notaEl = document.getElementById("notaPreview");
-  const circle = document.getElementById("scoreCircle");
-  const badge = document.getElementById("badgeCalidad");
-
-  notaEl.textContent = nota.toFixed(1).replace(/\.0$/,"");
-
-  if(nota >= 85){
-    circle.classList.remove("bad");
-    badge.classList.remove("bad");
-    badge.classList.add("good");
-    badge.textContent = "🟢 Aprobado";
-  } else {
-    circle.classList.add("bad");
-    badge.classList.remove("good");
-    badge.classList.add("bad");
-    badge.textContent = "🔴 No aprobado";
-  }
-
-  // detalle grupos
-  const infoPENCUF  = document.getElementById("infoPENCUF");
-  const infoPECNEG  = document.getElementById("infoPECNEG");
-  const infoPECUF   = document.getElementById("infoPECUF");
-  const infoPECCUMP = document.getElementById("infoPECCUMP");
-  const infoEI      = document.getElementById("infoEI");
-
-  const totalPENCUF = items.filter(i=>i.tipo==="PENCUF")
-                           .reduce((s,i)=>s+(i.perc||0),0);
-  const dedPENCUF = 25 * (totalPENCUF / 100);
-
-  infoPENCUF.textContent = totalPENCUF
-    ? `-${dedPENCUF.toFixed(1)} pts (suma ${totalPENCUF}%)`
-    : "Sin descuentos";
-
-  const hasPECNEG  = items.some(i=>i.tipo==="PECNEG");
-  const hasPECUF   = items.some(i=>i.tipo==="PECUF");
-  const hasPECCUMP = items.some(i=>i.tipo==="PECCUMP");
-  const hasEI      = items.some(i=>i.tipo==="ERROR_INEXCUSABLE");
-
-  infoPECNEG.textContent  = hasPECNEG  ? "-30 pts"  : "Sin descuentos";
-  infoPECUF.textContent   = hasPECUF   ? "-35 pts"  : "Sin descuentos";
-  infoPECCUMP.textContent = hasPECCUMP ? "-10 pts"  : "Sin descuentos";
-  infoEI.textContent      = hasEI      ? "Aplica ⇒ nota 0" : "No aplicado";
-}
-
-/* --------------------- GUARDAR REGISTRO ---------------------- */
-window.submitRecord = async function() {
-  const msgEl = document.getElementById('msg');
-  msgEl.style.color = 'green';
-  msgEl.textContent = "⏳ Subiendo...";
-
-  try{
-    const registradoPor = document.getElementById("registradoPor").value;
-    if(!registradoPor){
-      msgEl.style.color = 'red';
-      msgEl.textContent = "Debes seleccionar quién registra el monitoreo.";
-      return;
-    }
-
-    const items = obtenerItemsFormulario();
-    const nota = calcularNota(items);
-
-    // subir imágenes
-    const files = document.getElementById('imgs').files;
-    const imageURLs = [];
-    for(const f of files){
-      const storageRef = ref(storage, `monitoreo_imagenes/${Date.now()}_${f.name}`);
-      await uploadBytes(storageRef, f);
-      const url = await getDownloadURL(storageRef);
-      imageURLs.push({name: f.name, url, storagePath: storageRef.fullPath});
-    }
-
-    const asesorSel = document.getElementById('asesor');
-    const gc = asesorSel.options[asesorSel.selectedIndex]?.dataset.gc || "SIN GC";
-
-    const data = {
-      idLlamada: idLlamada.value,
-      idContacto: idContacto.value,
-      tipo: tipoDetectado.value,
-      asesor: asesorSel.value,
-      gc,
-      cargo: cargo.value,
-      cliente:{
-        dni: cliDni.value,
-        nombre: cliNombre.value,
-        tel: cliTel.value
-      },
-      tipificacion: cliTipif.value,
-      observacionCliente: cliObs.value,
-      resumen: resumen.value,
-      items,
-      nota,
-      imagenes: imageURLs,
-      fecha: new Date().toISOString(),
-      registradoPor,          // 🔹 NUEVO: quién ingresó el monitoreo
-      estado: "PENDIENTE"     // para el portal del agente
-    };
-
-    await addDoc(collection(db, "registros"), data);
-
-    msgEl.style.color = 'green';
-    msgEl.textContent = `✔ Guardado correctamente · Nota final: ${nota}`;
-
-    clearItems();
-    document.getElementById('imgPreview').innerHTML = "";
-    recalcularNotaPreview();
-
-  } catch(err){
-    msgEl.style.color = 'red';
-    msgEl.textContent = "❌ Error: " + err.message;
-    console.error(err);
-  }
-};
-
-// inicializar preview en 100
-recalcularNotaPreview();
-</script>
+<script type="module" src="registro.js"></script>
 </body>
 </html>
-
-
-
-
-

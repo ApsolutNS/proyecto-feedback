@@ -8,16 +8,21 @@
   <!-- Estilos M3 -->
   <link rel="stylesheet" href="css/visualizacion_feedback.css" />
 
-  <!-- jsPDF + html2canvas (sin .map para evitar CSP) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js?no-map"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?no-map"></script>
+  <!-- jsPDF + html2canvas (externos, sin inline) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="m3-card main-container">
     <h1 class="m3-title">Visualización de Feedback</h1>
 
+    <!-- BANNER DE ACCESO -->
+    <div id="accessWarning" class="m3-access-warning" style="display:none;">
+      No tienes permisos para visualizar los feedbacks. Solo administradores y supervisores pueden acceder.
+    </div>
+
     <!-- FILTROS -->
-    <section class="m3-section">
+    <section class="m3-section" id="filtersSection" style="display:none;">
       <label class="m3-label" for="filtroAsesor">Filtrar por asesor</label>
       <select id="filtroAsesor" class="m3-select">
         <option value="">— Selecciona un asesor —</option>
@@ -39,8 +44,8 @@
     </section>
 
     <!-- TABLA -->
-    <section class="m3-section">
-      <table id="tablaFeedback" class="m3-table" style="display:none">
+    <section class="m3-section" id="tableSection" style="display:none;">
+      <table id="tablaFeedback" class="m3-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -60,7 +65,7 @@
     </section>
 
     <!-- DETALLE -->
-    <section id="detailBox" class="m3-detail-card" style="display:none">
+    <section id="detailBox" class="m3-detail-card" style="display:none;">
       <header class="detail-header">
         <div>
           <h2 id="tituloRetro" class="detail-title">RETROALIMENTACIÓN</h2>
@@ -83,8 +88,7 @@
     </section>
   </div>
 
-  <!-- Lógica de la página -->
+  <!-- JS principal (MÓDULO, sin inline) -->
   <script type="module" src="js/visualizacion_feedback.js"></script>
 </body>
 </html>
-

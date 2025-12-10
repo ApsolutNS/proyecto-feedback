@@ -431,3 +431,86 @@ body.md-body {
 .md-field-margin-top {
   margin-top: 10px;
 }
+/* =====================================================
+   EXPANDIBLE CARDS (ITEMS)
+   ===================================================== */
+.expand-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.expand-item {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all .25s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,.05);
+}
+
+.expand-item.open {
+  border-color: #0f4c81;
+  box-shadow: 0 8px 20px rgba(15,76,129,.15);
+}
+
+.expand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.expand-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.expand-icon {
+  font-size: 20px;
+  color: #dc2626;
+}
+
+.expand-toggle span {
+  transition: transform .25s ease;
+}
+
+.expand-item.open .expand-toggle span {
+  transform: rotate(180deg);
+}
+
+.expand-meta {
+  padding: 0 14px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.expand-body {
+  padding: 12px 14px 16px;
+  display: none;
+  animation: expandFade .25s ease;
+}
+
+.expand-item.open .expand-body {
+  display: block;
+}
+
+.expand-detail {
+  width: 100%;
+  min-height: 70px;
+  resize: vertical;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 13px;
+}
+
+@keyframes expandFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

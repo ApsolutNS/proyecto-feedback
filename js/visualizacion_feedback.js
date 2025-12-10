@@ -25,7 +25,7 @@ const auth = getAuth(app);
 const SUPERVISOR_EMAILS = [
   "anunez@gefectiva.com",
   "ctorres@gefectiva.com",
-  "karen@example.com",
+  "kvital@gefectiva.com",
 ];
 
 let registros = [];

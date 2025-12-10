@@ -150,7 +150,7 @@ idContacto.addEventListener("input", updateDetected);
  *   - doc.id === asesorId (UID real del asesor)
  *   - data.nombre, data.GC
  * En registros se guardará:
- *   asesorId, asesorNombre, gc y campo "asesor" (por compatibilidad)
+ *   asesorId, asesorNombre, GC y campo "asesor" (por compatibilidad)
  */
 async function cargarAsesores() {
   try {
@@ -161,7 +161,7 @@ async function cargarAsesores() {
       lista.push({
         id: d.id,
         nombre: (data.nombre || "SIN NOMBRE").trim(),
-        gc: (data.GC || "SIN GC").trim()
+        GC: (data.GC || "SIN GC").trim()
       });
     });
 
@@ -178,8 +178,8 @@ async function cargarAsesores() {
       const opt = document.createElement("option");
       opt.value = a.id; // UID real del asesor
       opt.dataset.nombre = a.nombre;
-      opt.dataset.gc = a.gc;
-      opt.textContent = `${a.nombre} — ${a.gc}`;
+      opt.dataset.GC = a.GC;
+      opt.textContent = `${a.nombre} — ${a.GC}`;
       asesorSelect.appendChild(opt);
     });
   } catch (err) {
@@ -419,12 +419,12 @@ async function submitRecord() {
       });
     }
 
-    // Asesor: guardamos UID + nombre + gc
+    // Asesor: guardamos UID + nombre + GC
     const selectedOption =
       asesorSelect.options[asesorSelect.selectedIndex] || null;
     const asesorId = selectedOption?.value || null; // UID
     const asesorNombre = selectedOption?.dataset.nombre || "";
-    const gc = selectedOption?.dataset.gc || "SIN GC";
+    const GC = selectedOption?.dataset.GC || "SIN GC";
 
     const data = {
       idLlamada: idLlamada.value,
@@ -433,7 +433,7 @@ async function submitRecord() {
       asesorId, // UID real
       asesorNombre, // campo explícito
       asesor: asesorNombre, // compatibilidad con portal actual
-      gc,
+      GC,
       cargo: cargoSelect.value,
       cliente: {
         dni: cliDni.value,

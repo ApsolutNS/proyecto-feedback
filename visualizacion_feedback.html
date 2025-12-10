@@ -3,422 +3,67 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Visualización de Feedback — PREMIUM DARK/LIGHT MIX</title>
+<title>Visualización de Feedback — M3 Pro</title>
+
+<link rel="stylesheet" href="visualizacion_feedback.css">
 
 <!-- jsPDF + html2canvas -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<style>
-/* ------------------- DARK MODE GENERAL ------------------- */
-body{
-  font-family:Arial,Helvetica,sans-serif;
-  background:#0f172a;
-  margin:0;
-  padding:20px;
-  color:#e2e8f0;
-}
-.card{
-  max-width:1300px;
-  margin:auto;
-  background:#1e293b;
-  padding:20px;
-  border-radius:12px;
-  border:1px solid #334155;
-  box-shadow:0 0 20px rgba(0,0,0,0.4);
-}
-
-/* Titles */
-h2{
-  margin-top:0;
-  font-size:24px;
-  text-align:center;
-  color:white;
-}
-
-/* Inputs */
-label{
-  display:block;
-  margin-top:10px;
-  font-weight:600;
-  color:#cbd5e1;
-}
-select{
-  width:100%;
-  padding:10px;
-  border-radius:6px;
-  border:1px solid #475569;
-  background:#0f172a;
-  color:#e2e8f0;
-}
-
-/* Table (initially hidden) */
-#tablaFeedback{
-  display:none;
-  margin-top:15px;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:13px;
-}
-th{
-  background:#334155;
-  padding:8px;
-  color:#e2e8f0;
-  border-bottom:1px solid #475569;
-}
-td{
-  padding:8px;
-  border-bottom:1px solid #334155;
-}
-
-/* ------------------- LIGHT DETAIL BOX ------------------- */
-#detailBox{
-  margin-top:25px;
-  display:none;
-  background:white;
-  padding:25px;
-  border-radius:14px;
-  border:1px solid #d1d5db;
-  color:#1e293b;
-}
-
-/* Title white box (RETROALIMENTACIÓN / REAFIRMACIÓN) */
-.detail-title{
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
-  color:black;
-  margin-bottom:10px;
-}
-
-/* Logo */
-.logo{
-  text-align:right;
-  margin-bottom:20px;
-}
-.logo img{
-  max-height:50px;
-}
-
-/* Sections */
-.section-title{
-  margin-top:15px;
-  font-size:15px;
-  font-weight:700;
-  color:#0f172a;
-}
-
-/* Ítems */
-.item-block{
-  padding-left:6px;
-  border-left:3px solid #2563eb;
-  margin-bottom:6px;
-}
-
-/* Signature */
-.firma-box{
-  width:320px;
-  height:140px;
-  border:2px solid #000;
-  border-radius:4px;
-  background:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin-top:10px;
-}
-.firma-box img{
-  max-width:300px;
-  max-height:130px;
-  object-fit:contain;
-}
-
-/* Evidence */
-.evidence-img{
-  max-width:650px;
-  width:100%;
-  border-radius:6px;
-  margin-top:8px;
-  border:1px solid #d1d5db;
-}
-
-/* Button */
-.btn{
-  background:#10b981;
-  color:white;
-  border:none;
-  padding:10px 16px;
-  border-radius:6px;
-  font-weight:bold;
-  cursor:pointer;
-  margin-top:20px;
-}
-.btn:hover{background:#059669}
-.btn.sm{
-  padding:6px 10px;
-  font-size:12px;
-}
-</style>
 </head>
 <body>
 
-<div class="card">
-  <h2>Visualización de Feedback</h2>
+<div class="m3-card main-container">
 
-  <!-- SELECTOR DE ASESOR -->
-  <label>Filtrar por asesor</label>
-  <select id="filtroAsesor">
-    <option value="">— Selecciona un asesor —</option>
-  </select>
+    <h2 class="m3-title">Visualización de Feedback</h2>
 
-  <!-- FILTRO REGISTRADO POR -->
-  <label>Filtrar por quién registró</label>
-  <select id="filtroRegistrado">
-    <option value="">— Todos —</option>
-    <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
-      Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
-    </option>
-    <option value="César Alonso Torres Montes - Supervisor">
-      César Alonso Torres Montes - Supervisor
-    </option>
-    <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
-      Karen Vanessa Vital Cordova - Lílder de Operaciones
-    </option>
-  </select>
+    <!-- FILTROS -->
+    <div class="m3-section">
+        <label class="m3-label">Filtrar por asesor</label>
+        <select id="filtroAsesor" class="m3-select">
+            <option value="">— Selecciona un asesor —</option>
+        </select>
 
-  <!-- TABLA (SE OCULTA HASTA SELECCIONAR ASESOR) -->
-  <table id="tablaFeedback">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Fecha</th>
-        <th>Nota</th>
-        <th>Registrado por</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <!-- DETALLE -->
-  <div id="detailBox">
-    <div class="logo">
-      <img src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media">
+        <label class="m3-label">Filtrar por quién registró</label>
+        <select id="filtroRegistrado" class="m3-select">
+            <option value="">— Todos —</option>
+            <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
+            <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
+            <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
+        </select>
     </div>
 
-    <div class="detail-title" id="tituloRetro">RETROALIMENTACIÓN</div>
+    <!-- TABLA -->
+    <table id="tablaFeedback" class="m3-table" style="display:none">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Nota</th>
+                <th>Estado</th>
+                <th>Registrado por</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-    <div id="detailContent"></div>
+    <!-- DETALLE -->
+    <div id="detailBox" class="m3-detail-card" style="display:none">
+        <div class="detail-header">
+            <img class="logo" src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media">
+        </div>
 
-    <button id="pdfBtn" class="btn">Exportar PDF</button>
-  </div>
+        <h3 id="tituloRetro" class="detail-title">RETROALIMENTACIÓN</h3>
+
+        <div id="detailContent"></div>
+
+        <button id="pdfBtn" class="m3-btn primary">Exportar PDF</button>
+    </div>
+
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey:"AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
-  authDomain:"feedback-app-ac30e.firebaseapp.com",
-  projectId:"feedback-app-ac30e",
-  storageBucket:"feedback-app-ac30e.firebasestorage.app"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-let registros = [];
-
-/* ---------------- LOAD RECORDS ---------------- */
-async function cargarRegistros(){
-  const snap = await getDocs(collection(db,"registros"));
-  registros = [];
-
-  snap.forEach(d=>{
-    const r = d.data();
-    registros.push({
-      id: d.id,
-      ...r,
-      fechaObj: new Date(r.fecha),
-      registradoPor: r.registrado_por || r.registradoPor || "",
-      firmaUrl: r.firmaUrl || r.firma || "",
-      idLlamada: r.id_llamada || r.idLlamada || "-",
-      idContacto: r.id_contacto || r.idContacto || "-"
-    });
-  });
-
-  registros.sort((a,b)=>b.fechaObj - a.fechaObj);
-}
-
-/* ---------------- LOAD ADVISORS ---------------- */
-function cargarAsesoresFiltro(){
-  const asesores = [...new Set(registros.map(r => r.asesor))].sort();
-  filtroAsesor.innerHTML = `<option value="">— Selecciona un asesor —</option>`;
-  asesores.forEach(a => {
-    filtroAsesor.innerHTML += `<option value="${a}">${a}</option>`;
-  });
-}
-
-/* ---------------- RENDER TABLE ---------------- */
-function renderTabla(){
-  const filAs = filtroAsesor.value;
-  const filReg = filtroRegistrado.value;
-
-  const table = document.getElementById("tablaFeedback");
-  const tbody = table.querySelector("tbody");
-  tbody.innerHTML = "";
-
-  if(!filAs){
-    table.style.display = "none";
-    return;
-  }
-
-  table.style.display = "table";
-
-  registros
-    .filter(r => r.asesor === filAs)
-    .filter(r => !filReg || r.registradoPor === filReg)
-    .forEach(r=>{
-      tbody.innerHTML += `
-        <tr>
-          <td>${r.id}</td>
-          <td>${r.fechaObj.toLocaleString("es-PE")}</td>
-          <td>${r.nota}%</td>
-          <td>${r.registradoPor || "-"}</td>
-          <td><button class="btn sm" onclick="verDetalle('${r.id}')">Ver</button></td>
-        </tr>
-      `;
-    });
-}
-
-/* ---------------- HELPER: FECHA LARGA ---------------- */
-function formatearFechaLarga(date){
-  const opts = { weekday:"long", year:"numeric", month:"long", day:"numeric" };
-  let str = date.toLocaleDateString("es-PE", opts); // ej: "jueves, 20 de noviembre de 2025"
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-/* ---------------- SHOW DETAIL ---------------- */
-/* ---------------- SHOW DETAIL ---------------- */
-window.verDetalle = function(id){
-  const r = registros.find(x=>x.id===id);
-  if(!r) return;
-
-  const titulo = document.getElementById("tituloRetro");
-  const esReafirmacion = Number(r.nota) === 100;
-  const palabraRetro = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
-
-  // Cambia el título de la tarjeta
-  titulo.textContent = palabraRetro;
-
-  // ---- EXTRAER EL DNI DESDE GC ----
-  // Ejemplo: "GC77144634" → "77144634"
-  const dniDesdeGC = (r.gc || "").replace(/GC/gi, "").trim();
-
-  const itemsHtml = (r.items||[])
-      .map(it=>`
-        <div class="item-block">
-          <b>${it.name}</b> (${it.perc}%)
-          <div>${it.detail||""}</div>
-        </div>
-      `).join("");
-
-  const evidenciasHtml = (r.imagenes||[])
-      .map(img=>`<img class="evidence-img" src="${img.url}">`)
-      .join("");
-
-  const firmaHtml = r.firmaUrl
-      ? `<div class="firma-box"><img src="${r.firmaUrl}"></div>`
-      : `<div class="firma-box">Sin firma</div>`;
-
-  const fechaLarga = formatearFechaLarga(r.fechaObj);
-
-  document.getElementById("detailContent").innerHTML = `
-    <p><b>Registrado por:</b> ${r.registradoPor || "-"}</p>
-    <p>${palabraRetro} realizada a <b>${r.asesor}</b> (GC: ${r.gc || ""}) el 
-    ${r.fechaObj.toLocaleString("es-PE")}.</p>
-
-    <div class="section-title">Constancia</div>
-    <p>
-      Por medio de la presente se deja constancia que el 
-      <strong>${fechaLarga}</strong> se realiza una 
-      <strong>${palabraRetro}</strong> al/la colaborador(a) 
-      <strong>${r.asesor}</strong> con DNI 
-      <strong>${dniDesdeGC}</strong>, quien ejerce la función de 
-      Asesor(a) Financiero(a), para el cumplimiento de los parámetros de la llamada.
-    </p>
-
-    <div class="section-title">Gestión monitoreada</div>
-    <b>ID Llamada:</b> ${r.idLlamada}<br>
-    <b>ID Contacto:</b> ${r.idContacto}<br>
-    <b>Tipo:</b> ${r.tipo || ""}<br>
-
-    <div class="section-title">Cliente</div>
-    DNI: ${r.cliente?.dni||""}<br>
-    Nombre: ${r.cliente?.nombre||""}<br>
-    Teléfono: ${r.cliente?.tel||""}<br>
-    Tipificación: ${r.tipificacion||""}<br>
-    Comentario: ${r.observacionCliente||""}<br>
-
-    <div class="section-title">Resumen</div>
-    <div style="background:#e5e7eb;padding:10px;border-radius:6px;">
-      ${r.resumen || ""}
-    </div>
-
-    <div class="section-title">Ítems observados</div>
-    ${itemsHtml || "Sin ítems"}
-
-    <div class="section-title">Nota obtenida</div>
-    <div style="font-size:22px;font-weight:bold;">${r.nota}%</div>
-
-    <div class="section-title">Compromiso del agente</div>
-    ${r.compromiso || "<em>Sin compromiso registrado</em>"}
-
-    <div class="section-title">Firma del agente</div>
-    ${firmaHtml}
-
-    <div class="section-title">Evidencias</div>
-    ${evidenciasHtml || "<em>Sin evidencias adjuntas</em>"}
-  `;
-
-  document.getElementById("detailBox").style.display = "block";
-  window._CURRENT_FEEDBACK_ID = id;
-};
-
-
-/* ---------------- EXPORT TO PDF ---------------- */
-document.getElementById("pdfBtn").onclick = async ()=>{
-  const element = document.getElementById("detailBox");
-
-  const canvas = await html2canvas(element,{
-    scale:2,
-    useCORS:true,
-    allowTaint:true,
-    backgroundColor:"#ffffff"
-  });
-
-  const img = canvas.toDataURL("image/png");
-  const pdf = new jspdf.jsPDF("p","mm","a4");
-
-  const width = pdf.internal.pageSize.getWidth() - 20;
-  const height = (canvas.height * width) / canvas.width;
-
-  pdf.addImage(img,"PNG",10,10,width,height);
-  pdf.save(`feedback_${window._CURRENT_FEEDBACK_ID}.pdf`);
-};
-
-/* ---------------- INIT ---------------- */
-window.onload = async ()=>{
-  await cargarRegistros();
-  cargarAsesoresFiltro();
-  renderTabla();
-  filtroAsesor.onchange = renderTabla;
-  filtroRegistrado.onchange = renderTabla;
-};
-</script>
+<script type="module" src="visualizacion_feedback.js"></script>
 </body>
 </html>
-

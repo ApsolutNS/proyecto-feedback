@@ -1,5 +1,5 @@
 // js/portal_agente.js
-// Portal del Agente M3 — Auth + rol "agente" + dashboard + firma reutilizable
+// Portal del Agente M3 — Auth + rol "agente" + dashboard + firma reutilizable por UID
 "use strict";
 
 /* ------------------------------
@@ -72,7 +72,6 @@ let currentUser = null;
 let currentEmail = null;
 let currentRole = null;
 let currentAdvisorName = "";
-
 let currentCollection = null; // "registros" | "refuerzos_calidad"
 let currentID = null;
 let currentDocData = null;
@@ -87,17 +86,14 @@ let ultimosFeedbacks = [];
    ELEMENTOS DOM
 ------------------------------ */
 const body = document.body;
-
 const agentNameSpan = document.getElementById("agentNameSpan");
 const themeToggle = document.getElementById("themeToggle");
 const themeIcon = document.getElementById("themeIcon");
 const btnLogout = document.getElementById("btnLogout");
-
 const selTipoDoc = document.getElementById("selTipoDoc");
 const selRegistrador = document.getElementById("selRegistrador");
 const tableBody = document.querySelector("#agentTable tbody");
 const pendingBadge = document.getElementById("pendingBadge");
-
 const avgScoreEl = document.getElementById("avgScore");
 const totalFbEl = document.getElementById("totalFb");
 const okCountEl = document.getElementById("okCount");
@@ -160,7 +156,6 @@ if (storedTheme === "theme-dark" || storedTheme === "theme-light") {
 
 /* ------------------------------
    AUTH + ROL + USUARIO
-   (usa usuarios/{uid}: email, rol, nombreAsesor)
 ------------------------------ */
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -169,7 +164,6 @@ onAuthStateChanged(auth, async (user) => {
   }
   currentUser = user;
   currentEmail = user.email || "";
-
   try {
     const userRef = doc(db, "usuarios", user.uid);
     const snap = await getDoc(userRef);
@@ -179,7 +173,6 @@ onAuthStateChanged(auth, async (user) => {
       location.href = "login.html";
       return;
     }
-
     const data = snap.data();
     currentRole = data.rol || "";
     currentAdvisorName =
@@ -190,7 +183,6 @@ onAuthStateChanged(auth, async (user) => {
       currentEmail ||
       "";
 
-    // Solo agentes (y opcionalmente admin para pruebas)
     const isAdmin = currentEmail === "anunez@gefectiva.com";
     const isAgent = currentRole === "agente";
 
@@ -205,7 +197,6 @@ onAuthStateChanged(auth, async (user) => {
       agentNameSpan.textContent = currentAdvisorName || currentEmail || "Agente";
     }
 
-    // Cargar lista inicial
     await loadAgentList();
   } catch (err) {
     console.error("Error al cargar datos de usuario:", err);
@@ -240,7 +231,6 @@ function renderDashboard() {
   const notas = ultimosFeedbacks
     .map((r) => Number(r.bruto?.nota ?? r.nota ?? 0))
     .filter((n) => !Number.isNaN(n));
-
   const total = notas.length;
   const suma = notas.reduce((t, n) => t + n, 0);
   const promedio = total ? Math.round((suma / total) * 10) / 10 : 0;
@@ -270,21 +260,23 @@ function updatePendingBadge(list) {
 }
 
 /* ------------------------------
-   CARGAR LISTA — REGISTROS / REFUERZOS
+   CARGAR LISTA — REGISTROS / REFUERZOS (POR UID)
 ------------------------------ */
 async function loadAgentList() {
-  if (!tableBody || !currentAdvisorName) return;
+  if (!tableBody || !currentAdvisorName || !currentUser) return;
 
   const tipoDoc = selTipoDoc?.value || "registros";
   const filtroRegistrador = selRegistrador?.value || "";
   currentCollection = tipoDoc;
 
   const list = [];
+  const myUid = currentUser.uid;
 
   if (tipoDoc === "registros") {
-    const qRef = query(
+    // Preferimos asesorId == uid (nuevo esquema)
+    let qRef = query(
       collection(db, "registros"),
-      where("asesor", "==", currentAdvisorName)
+      where("asesorId", "==", myUid)
     );
     const snap = await getDocs(qRef);
 
@@ -303,25 +295,33 @@ async function loadAgentList() {
       });
     });
 
-    // Guardar para dashboard
+    // Guardamos para dashboard
     ultimosFeedbacks = list.slice();
     renderDashboard();
   } else {
+    // REFUERZOS
     const snap = await getDocs(collection(db, "refuerzos_calidad"));
     snap.forEach((d) => {
       const r = d.data();
       const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
+
       const pertenece = asesoresRef.some(
-        (a) => a.nombre === currentAdvisorName
+        (a) =>
+          (a.asesorId && a.asesorId === myUid) ||
+          a.nombre === currentAdvisorName
       );
       if (!pertenece) return;
 
       const firmas = Array.isArray(r.firmas) ? r.firmas : [];
-      const firmaAgente = firmas.find((f) => f.nombre === currentAdvisorName);
+      const firmaAgente = firmas.find(
+        (f) =>
+          (f.asesorId && f.asesorId === myUid) ||
+          f.nombre === currentAdvisorName
+      );
       const estadoAgente =
         firmaAgente && firmaAgente.url ? "COMPLETADO" : "PENDIENTE";
-
       const fecha = toJSDate(r.fechaRefuerzo);
+
       list.push({
         id: d.id,
         collection: "refuerzos_calidad",
@@ -337,7 +337,6 @@ async function loadAgentList() {
 
   // ordenar por fecha desc
   list.sort((a, b) => b.fecha - a.fecha);
-
   updatePendingBadge(list);
 
   const filtrada = filtroRegistrador
@@ -437,8 +436,8 @@ if (detailOverlay) {
    CARGAR DETALLE DE UN DOCUMENTO
 ------------------------------ */
 async function openDetail(collectionName, id) {
-  if (!feedbackInfo || !editableZone || !compromisoTextarea || !agentMsg) return;
-
+  if (!feedbackInfo || !editableZone || !compromisoTextarea || !agentMsg)
+    return;
   currentCollection = collectionName;
   currentID = id;
   signatureData = null;
@@ -450,23 +449,19 @@ async function openDetail(collectionName, id) {
     alert("El documento ya no existe.");
     return;
   }
-
   const r = snap.data();
   currentDocData = r;
 
-  // Subtítulo general
   if (detailSubtitle) {
     const fechaBase =
       collectionName === "registros" ? r.fecha : r.fechaRefuerzo;
     detailSubtitle.textContent = formatearFechaLarga(fechaBase);
   }
-
   if (collectionName === "registros") {
     renderDetailFeedback(r);
   } else {
     renderDetailRefuerzo(r);
   }
-
   openDetailModal();
 }
 
@@ -541,7 +536,6 @@ function renderDetailFeedback(r) {
         ${escapeHTML(registrador)}
       </span>
     </p>
-
     <div class="section-title">Cliente</div>
     <div class="section-content">
       <div><strong>DNI:</strong> ${escapeHTML(r.cliente?.dni || "")}</div>
@@ -552,7 +546,6 @@ function renderDetailFeedback(r) {
         r.observacionCliente || ""
       )}</div>
     </div>
-
     <div class="section-title">Gestión monitoreada</div>
     <div class="section-content">
       <div><strong>ID Llamada:</strong> ${escapeHTML(r.idLlamada || "")}</div>
@@ -565,12 +558,10 @@ function renderDetailFeedback(r) {
         </div>
       </div>
     </div>
-
     <div class="section-title">Ítems observados</div>
     <div class="section-content">
       ${itemsHtml}
     </div>
-
     <div class="section-title">Nota obtenida</div>
     <div class="section-content nota-box">
       <div class="nota-pill">
@@ -580,7 +571,6 @@ function renderDetailFeedback(r) {
         Estado: <strong>${escapeHTML(r.estado || "PENDIENTE")}</strong>
       </div>
     </div>
-
     <div class="section-title">Compromiso del agente</div>
     <div class="section-content">
       ${
@@ -589,14 +579,12 @@ function renderDetailFeedback(r) {
           : "<em>Pendiente</em>"
       }
     </div>
-
     <div class="section-title">Evidencias</div>
     <div class="section-content">
       ${imgsHtml}
     </div>
   `;
 
-  // Control editable
   if ((r.estado || "").toUpperCase() === "COMPLETADO" && r.firmaUrl) {
     editableZone.style.display = "none";
     agentMsg.style.color = "#16a34a";
@@ -615,7 +603,9 @@ function renderDetailFeedback(r) {
 function renderDetailRefuerzo(r) {
   if (!feedbackInfo || !editableZone || !compromisoTextarea || !agentMsg) return;
 
-  if (detailTitle) detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
+  if (detailTitle) {
+    detailTitle.textContent = "Detalle del Refuerzo / Capacitación";
+  }
 
   const fechaRef = r.fechaRefuerzo;
   const asesoresRef = Array.isArray(r.asesores) ? r.asesores : [];
@@ -631,7 +621,12 @@ function renderDetailRefuerzo(r) {
         .join(", ")
     : escapeHTML(r.publico || "—");
 
-  const firmaAgente = firmas.find((f) => f.nombre === currentAdvisorName);
+  const myUid = currentUser ? currentUser.uid : null;
+  const firmaAgente = firmas.find(
+    (f) =>
+      (f.asesorId && f.asesorId === myUid) ||
+      f.nombre === currentAdvisorName
+  );
   const compromisoAgente = firmaAgente?.compromiso || "";
   const firmaUrlAgente = firmaAgente?.url || null;
   const fechaFirma = firmaAgente?.fechaFirma
@@ -665,17 +660,14 @@ function renderDetailRefuerzo(r) {
         r.responsable || "Calidad & Formación"
       )}</span>
     </p>
-
     <div class="section-title">Objetivo del refuerzo</div>
     <div class="section-content">
       ${escapeHTML(r.objetivo || "—")}
     </div>
-
     <div class="section-title">Detalle / acuerdos clave</div>
     <div class="section-content">
       ${escapeHTML(r.detalle || "—")}
     </div>
-
     <div class="section-title">Compromiso del agente</div>
     <div class="section-content">
       ${
@@ -684,7 +676,6 @@ function renderDetailRefuerzo(r) {
           : "<em>Pendiente</em>"
       }
     </div>
-
     <div class="section-title">Firma actual del agente</div>
     <div class="section-content">
       ${
@@ -756,7 +747,6 @@ async function saveSignature() {
   agentMsg.textContent = "Guardando cambios...";
 
   try {
-    // RUTA ÚNICA POR USUARIO: evita duplicar archivo
     let pathFolder = "firmas";
     if (currentCollection === "refuerzos_calidad") {
       pathFolder = "firmas_refuerzos";
@@ -764,32 +754,33 @@ async function saveSignature() {
     const fileName = `${currentUser.uid}.png`;
     const sigRef = ref(storage, `${pathFolder}/${fileName}`);
 
-    // Sube / sobrescribe la firma
+    // Sube / sobrescribe la firma única por UID
     await uploadString(sigRef, signatureData, "data_url");
     const url = await getDownloadURL(sigRef);
 
     const docRef = doc(db, currentCollection, currentID);
 
     if (currentCollection === "registros") {
-      // Solo actualizamos los campos permitidos por tus rules
+      // Campos limitados, acordes a las rules
       await updateDoc(docRef, {
         compromiso,
         firmaUrl: url,
         estado: "COMPLETADO",
       });
-
       agentMsg.textContent = "Feedback completado y firmado correctamente.";
     } else {
-      // REFUERZOS: actualizar solo la entrada del agente en el array "firmas"
+      // REFUERZOS
       const snap = await getDoc(docRef);
       const data = snap.data() || {};
       const firmas = Array.isArray(data.firmas) ? data.firmas : [];
       const nowIso = new Date().toISOString();
+      const myUid = currentUser.uid;
 
       const nuevasFirmas = firmas.map((f) => {
-        if (f.nombre === currentAdvisorName) {
+        if ((f.asesorId && f.asesorId === myUid) || f.nombre === currentAdvisorName) {
           return {
             ...f,
+            asesorId: f.asesorId || myUid,
             url,
             compromiso,
             fechaFirma: nowIso,
@@ -875,7 +866,6 @@ if (sigCanvas && sigCtx) {
     sigCtx.lineTo(p.x, p.y);
     sigCtx.stroke();
   });
-
   sigCanvas.addEventListener(
     "touchstart",
     (e) => {
@@ -924,7 +914,6 @@ if (btnUse && sigCanvas) {
     closeSignatureModal();
   });
 }
-
 if (sigOverlay) {
   sigOverlay.addEventListener("click", (ev) => {
     if (ev.target === sigOverlay) {
@@ -938,7 +927,6 @@ if (sigOverlay) {
 ------------------------------ */
 if (btnUpload && fileSignature) {
   btnUpload.addEventListener("click", () => fileSignature.click());
-
   fileSignature.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;

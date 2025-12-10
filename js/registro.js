@@ -1,22 +1,26 @@
-// registro.js
+// js/registro.js
 "use strict";
 
-/* --------------------- FIREBASE IMPORTS ---------------------- */
+/* ---------------- FIREBASE IMPORTS ---------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
   getFirestore,
   collection,
   addDoc,
-  getDocs
+  getDocs,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import {
   getStorage,
   ref,
   uploadBytes,
-  getDownloadURL
+  getDownloadURL,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-/* --------------------- CONFIG ------------------------- */
+/* ---------------- CONFIG ---------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
@@ -24,22 +28,63 @@ const firebaseConfig = {
   storageBucket: "feedback-app-ac30e.firebasestorage.app",
   messagingSenderId: "512179147778",
   appId: "1:512179147778:web:795e4a8b177fe766d3431b",
-  measurementId: "G-X6MP0FFH9P"
+  measurementId: "G-X6MP0FFH9P",
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 
-/* --------------------- ITEMS COMPLETOS ---------------------- */
-/* name, perc (porcentaje), tipo (grupo) */
+/* ---------------- DOM REFS ---------------- */
+const userEmailLabel = document.getElementById("userEmailLabel");
+const registradoPorSel = document.getElementById("registradoPor");
+const asesorSel = document.getElementById("asesor");
+const cargoSel = document.getElementById("cargo");
+
+const idLlamadaInput = document.getElementById("idLlamada");
+const idContactoInput = document.getElementById("idContacto");
+const tipoDetectadoInput = document.getElementById("tipoDetectado");
+
+const cliDniInput = document.getElementById("cliDni");
+const cliNombreInput = document.getElementById("cliNombre");
+const cliTelInput = document.getElementById("cliTel");
+const cliTipifInput = document.getElementById("cliTipif");
+const cliObsInput = document.getElementById("cliObs");
+const resumenInput = document.getElementById("resumen");
+
+const itemsContainer = document.getElementById("itemsContainer");
+const imgsInput = document.getElementById("imgs");
+const imgPreviewContainer = document.getElementById("imgPreview");
+
+const btnAddItem = document.getElementById("btnAddItem");
+const btnClearItems = document.getElementById("btnClearItems");
+const btnSubmit = document.getElementById("btnSubmit");
+const msgEl = document.getElementById("msg");
+
+// resumen
+const notaPreviewEl = document.getElementById("notaPreview");
+const scoreCircleEl = document.getElementById("scoreCircle");
+const badgeCalidadEl = document.getElementById("badgeCalidad");
+const infoPENCUFEl = document.getElementById("infoPENCUF");
+const infoPECNEGEl = document.getElementById("infoPECNEG");
+const infoPECUFEl = document.getElementById("infoPECUF");
+const infoPECCUMPEl = document.getElementById("infoPECCUMP");
+const infoEIEl = document.getElementById("infoEI");
+
+/* ---------------- ESTADO ---------------- */
+let currentUser = null;
+
+/* ---------------- ITEMS DEFINICIÓN ---------------- */
+/* Cada ítem: name, perc, tipo */
 const ITEMS = [
-  // ERROR INEXCUSABLE (nota 0 si aparece uno)
+  // ERROR INEXCUSABLE
   { name: "Corte de Gestión", perc: 100, tipo: "ERROR_INEXCUSABLE" },
   { name: "Insulto / Falta de Respeto", perc: 100, tipo: "ERROR_INEXCUSABLE" },
   { name: "Normativa Regulatoria", perc: 100, tipo: "ERROR_INEXCUSABLE" },
   { name: "Protección de datos", perc: 100, tipo: "ERROR_INEXCUSABLE" },
-  // PENCUF - Penalización acumulable hasta 25 puntos (según porcentaje)
+
+  // PENCUF (hasta -25 pts según % acumulado)
   { name: "Contestación sin demora", perc: 5, tipo: "PENCUF" },
   { name: "Optimización de esperas", perc: 5, tipo: "PENCUF" },
   { name: "Empatía e implicación", perc: 7, tipo: "PENCUF" },
@@ -48,20 +93,21 @@ const ITEMS = [
   {
     name: "Solicita datos de forma correcta y oportuna",
     perc: 7,
-    tipo: "PENCUF"
+    tipo: "PENCUF",
   },
   { name: "Herramientas de Gestión", perc: 10, tipo: "PENCUF" },
   { name: "Codificación y Registro inConcert", perc: 7, tipo: "PENCUF" },
   {
     name: "Codificación y Registro en Monitor Logístico",
     perc: 7,
-    tipo: "PENCUF"
+    tipo: "PENCUF",
   },
   { name: "Codificación y Registro en SmartSheet", perc: 7, tipo: "PENCUF" },
   { name: "Presentación", perc: 7, tipo: "PENCUF" },
   { name: "Personalización", perc: 7, tipo: "PENCUF" },
   { name: "Despedida", perc: 7, tipo: "PENCUF" },
   { name: "Encuesta de satisfacción", perc: 10, tipo: "PENCUF" },
+
   // PECNEG
   { name: "Lenguaje", perc: 30, tipo: "PECNEG" },
   { name: "Voz", perc: 30, tipo: "PECNEG" },
@@ -71,229 +117,228 @@ const ITEMS = [
   { name: "Operativa", perc: 30, tipo: "PECNEG" },
   { name: "Tramita la gestión correspondiente", perc: 30, tipo: "PECNEG" },
   { name: "Transferencia", perc: 30, tipo: "PECNEG" },
-  // PECUF – un solo ítem → -35 pts (se acumula con PENCUF y otros grupos)
+
+  // PECUF
   { name: "Cumple con devolución de llamado", perc: 35, tipo: "PECUF" },
   { name: "Actitud - Manejo de llamada", perc: 35, tipo: "PECUF" },
   {
     name: "Conocimientos para resolver la consulta",
     perc: 35,
-    tipo: "PECUF"
+    tipo: "PECUF",
   },
   {
-    name:
-      "Asesoramiento de Producto o Servicio (Pagina Web | Posible Compra | Servicios)",
+    name: "Asesoramiento de Producto o Servicio (Pagina Web | Posible Compra | Servicios)",
     perc: 35,
-    tipo: "PECUF"
+    tipo: "PECUF",
   },
   { name: "Solución al primer contacto", perc: 35, tipo: "PECUF" },
-  // PECCUMP – un solo ítem → -10 pts
+
+  // PECCUMP
   { name: "Verificación de datos", perc: 10, tipo: "PECCUMP" },
   { name: "Damos el número de Ticket", perc: 10, tipo: "PECCUMP" },
-  // Ninguno
-  { name: "Ninguno", perc: 0, tipo: "NINGUNO" }
 ];
 
-/* --------------------- DOM HELPERS ---------------------- */
-const $ = (id) => document.getElementById(id);
+/* ---------------- AUTH & INIT ---------------- */
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    alert("Debes iniciar sesión para registrar monitoreos.");
+    location.href = "login.html";
+    return;
+  }
 
-const idLlamada = $("idLlamada");
-const idContacto = $("idContacto");
-const tipoDetectado = $("tipoDetectado");
-const asesorSelect = $("asesor");
-const cargoSelect = $("cargo");
-const cliDni = $("cliDni");
-const cliNombre = $("cliNombre");
-const cliTel = $("cliTel");
-const cliTipif = $("cliTipif");
-const cliObs = $("cliObs");
-const resumen = $("resumen");
-const registradoPorSel = $("registradoPor");
-const itemsContainer = $("itemsContainer");
-const imgsInput = $("imgs");
-const imgPreview = $("imgPreview");
-const msgEl = $("msg");
+  currentUser = user;
+  if (userEmailLabel) {
+    userEmailLabel.textContent = user.email || "Usuario autenticado";
+  }
 
-const notaPreview = $("notaPreview");
-const scoreCircle = $("scoreCircle");
-const badgeCalidad = $("badgeCalidad");
-const infoPENCUF = $("infoPENCUF");
-const infoPECNEG = $("infoPECNEG");
-const infoPECUF = $("infoPECUF");
-const infoPECCUMP = $("infoPECCUMP");
-const infoEI = $("infoEI");
+  await cargarAsesores();
+  inicializarEventos();
+  recalcularNotaPreview();
+});
 
-/* --------------------- DETECTAR TIPO -------------------------- */
-function detectarTipoTexto(text) {
-  if (!text) return "NO IDENTIFICADO";
-  const t = text.toLowerCase();
-  if (t.includes("intefectivank") || t.includes("vank")) return "EFECTIVANK";
-  if (t.includes("intefectiva")) return "EFECTIVA";
-  if (t.includes("intxperto")) return "XPERTO";
-  if (t.includes("facebook")) return "FACEBOOK";
-  if (t.includes("instagram")) return "INSTAGRAM";
-  if (t.includes("correo") || t.includes("mail")) return "CORREO";
-  return "OTRO";
-}
-
-function updateDetected() {
-  const v = `${idLlamada.value} ${idContacto.value}`;
-  tipoDetectado.value = detectarTipoTexto(v);
-}
-
-idLlamada.addEventListener("input", updateDetected);
-idContacto.addEventListener("input", updateDetected);
-
-/* --------------------- CARGAR ASESORES ------------------------- */
-/**
- * Carga asesores desde la colección "asesores".
- * Se asume:
- *   - doc.id === asesorId (UID real del asesor)
- *   - data.nombre, data.GC
- * En registros se guardará:
- *   asesorId, asesorNombre, GC y campo "asesor" (por compatibilidad)
- */
+/* ---------------- CARGAR ASESORES (UID reales) ---------------- */
 async function cargarAsesores() {
+  if (!asesorSel) return;
+
+  asesorSel.innerHTML = `<option value="">Cargando asesores...</option>`;
+
   try {
-    const snap = await getDocs(collection(db, "asesores"));
-    const lista = [];
-    snap.forEach((d) => {
+    const colRef = collection(db, "asesores");
+    const snap = await getDocs(colRef);
+
+    if (snap.empty) {
+      asesorSel.innerHTML =
+        '<option value="">(No hay asesores registrados)</option>';
+      return;
+    }
+
+    const lista = snap.docs.map((d) => {
       const data = d.data();
-      lista.push({
-        id: d.id,
+      return {
+        uid: d.id, // UID REAL
         nombre: (data.nombre || "SIN NOMBRE").trim(),
-        GC: (data.GC || "SIN GC").trim()
-      });
+        gc: (data.gc || data.GC || "").trim(),
+      };
     });
 
-    lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }));
+    lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 
-    // Limpiamos el select de forma segura
-    asesorSelect.innerHTML = "";
-    const optPlaceholder = document.createElement("option");
-    optPlaceholder.value = "";
-    optPlaceholder.textContent = "Selecciona asesor...";
-    asesorSelect.appendChild(optPlaceholder);
-
-    lista.forEach((a) => {
-      const opt = document.createElement("option");
-      opt.value = a.id; // UID real del asesor
-      opt.dataset.nombre = a.nombre;
-      opt.dataset.GC = a.GC;
-      opt.textContent = `${a.nombre} — ${a.GC}`;
-      asesorSelect.appendChild(opt);
-    });
+    asesorSel.innerHTML =
+      '<option value="">Selecciona asesor...</option>' +
+      lista
+        .map(
+          (a) => `
+        <option value="${a.nombre}"
+                data-uid="${a.uid}"
+                data-gc="${a.gc}">
+          ${a.nombre} — ${a.gc || "SIN GC"}
+        </option>`
+        )
+        .join("");
   } catch (err) {
     console.error("Error cargando asesores:", err);
+    asesorSel.innerHTML =
+      '<option value="">❌ Error al cargar asesores</option>';
+    if (msgEl) {
+      msgEl.style.color = "red";
+      msgEl.textContent =
+        "Error al cargar asesores. Verifica tus reglas o conexión.";
+    }
   }
 }
 
-cargarAsesores();
+/* ---------------- DETECTAR TIPO ---------------- */
+function detectarTipoTexto(text) {
+  if (!text) return "NO IDENTIFICADO";
+  const lower = text.toLowerCase();
+  if (lower.includes("intefectivank") || lower.includes("vank"))
+    return "EFECTIVANK";
+  if (lower.includes("intefectiva")) return "EFECTIVA";
+  if (lower.includes("intxperto")) return "XPERTO";
+  if (lower.includes("facebook")) return "FACEBOOK";
+  if (lower.includes("instagram")) return "INSTAGRAM";
+  if (lower.includes("correo") || lower.includes("mail")) return "CORREO";
+  return "OTRO";
+}
 
-/* --------------------- UI: ITEMS ---------------------- */
-function addItemBlock() {
-  const wrapper = document.createElement("div");
-  wrapper.className = "item-block";
+function actualizarTipoDetectado() {
+  const val =
+    (idLlamadaInput?.value || "") + " " + (idContactoInput?.value || "");
+  tipoDetectadoInput.value = detectarTipoTexto(val);
+}
 
-  const mainDiv = document.createElement("div");
-  mainDiv.className = "item-main";
+/* ---------------- UI: ÍTEMS ---------------- */
+function crearItemBlock() {
+  const w = document.createElement("div");
+  w.className = "item-block";
+  w.innerHTML = `
+    <div class="item-main">
+      <select class="item-select">
+        <option value="">-- Selecciona ítem --</option>
+        ${ITEMS.map(
+          (it) => `<option value="${it.name}">${it.name}</option>`
+        ).join("")}
+      </select>
+      <div class="item-meta"></div>
+      <textarea class="item-detail"
+        placeholder="Detalle del ítem: contexto, frase del cliente/asesor, impacto, etc."></textarea>
+    </div>
+    <button class="md-btn md-btn-text" type="button">
+      Eliminar
+    </button>
+  `;
 
-  const select = document.createElement("select");
-  select.className = "item-select md3-field";
-  const optDefault = document.createElement("option");
-  optDefault.value = "";
-  optDefault.textContent = "-- Selecciona ítem --";
-  select.appendChild(optDefault);
-
-  ITEMS.forEach((it) => {
-    const opt = document.createElement("option");
-    opt.value = it.name;
-    opt.textContent = it.name;
-    select.appendChild(opt);
-  });
-
-  const metaDiv = document.createElement("div");
-  metaDiv.className = "item-meta small";
-
-  const textarea = document.createElement("textarea");
-  textarea.className = "item-detail md3-field md3-textarea";
-  textarea.placeholder =
-    "Detalle del ítem: contexto, frase del cliente/asesor, impacto, etc.";
-
-  const removeBtn = document.createElement("button");
-  removeBtn.type = "button";
-  removeBtn.className = "btn ghost small item-remove";
-  removeBtn.textContent = "Eliminar";
-
-  mainDiv.appendChild(select);
-  mainDiv.appendChild(metaDiv);
-  mainDiv.appendChild(textarea);
-
-  wrapper.appendChild(mainDiv);
-  wrapper.appendChild(removeBtn);
-  itemsContainer.appendChild(wrapper);
+  const select = w.querySelector(".item-select");
+  const meta = w.querySelector(".item-meta");
+  const detail = w.querySelector(".item-detail");
+  const removeBtn = w.querySelector("button");
 
   select.addEventListener("change", () => {
     const it = ITEMS.find((x) => x.name === select.value);
     if (it) {
-      const grupo = it.tipo.replace(/_/g, " ");
-      metaDiv.textContent = `${it.perc}% · ${grupo}`;
+      meta.textContent = `${it.perc}% · ${it.tipo.replace(/_/g, " ")}`;
     } else {
-      metaDiv.textContent = "";
+      meta.textContent = "";
     }
     recalcularNotaPreview();
   });
 
+  detail.addEventListener("input", () => {
+    // no-op, pero permite futuro uso
+  });
+
   removeBtn.addEventListener("click", () => {
-    wrapper.remove();
+    w.remove();
     recalcularNotaPreview();
   });
 
-  // texto no afecta nota, pero podrías hacer validación si quieres
+  return w;
 }
 
-function clearItems() {
-  itemsContainer.innerHTML = "";
-  recalcularNotaPreview();
-}
+function obtenerItemsFormulario() {
+  const blocks = Array.from(itemsContainer.querySelectorAll(".item-block"));
+  const items = [];
 
-/* --------------------- PREVIEW IMÁGENES ---------------------- */
-if (imgsInput) {
-  imgsInput.addEventListener("change", () => {
-    imgPreview.innerHTML = "";
-    const files = Array.from(imgsInput.files || []);
-    files.forEach((f) => {
-      const fr = new FileReader();
-      fr.onload = (e) => {
-        const img = document.createElement("img");
-        img.src = e.target.result;
-        img.className = "img-preview";
-        imgPreview.appendChild(img);
-      };
-      fr.readAsDataURL(f);
+  for (const b of blocks) {
+    const select = b.querySelector(".item-select");
+    const detail = b.querySelector(".item-detail");
+    if (!select || !detail) continue;
+    const name = select.value;
+    if (!name) continue;
+
+    const meta = ITEMS.find((i) => i.name === name) || {
+      tipo: "OTRO",
+      perc: 0,
+    };
+
+    items.push({
+      name,
+      tipo: meta.tipo,
+      perc: meta.perc,
+      detail: detail.value || "",
     });
+  }
+  return items;
+}
+
+/* ---------------- PREVIEW IMÁGENES ---------------- */
+function manejarPreviewImagenes(event) {
+  const files = event.target.files;
+  imgPreviewContainer.innerHTML = "";
+  if (!files || !files.length) return;
+
+  Array.from(files).forEach((file) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = document.createElement("img");
+      img.src = ev.target.result;
+      imgPreviewContainer.appendChild(img);
+    };
+    reader.readAsDataURL(file);
   });
 }
 
-/* --------------------- CÁLCULO DE NOTA ---------------------- */
+/* ---------------- CÁLCULO DE NOTA ---------------- */
 /*
   Reglas:
   - Si hay ERROR_INEXCUSABLE → nota = 0
   - Nota base: 100
-  - PENCUF → resta: 25 * (sumaPercPENCUF / 100)
-  - PECNEG → si hay al menos uno: -30
-  - PECUF → si hay al menos uno: -35
-  - PECCUMP → si hay al menos uno: -10
+  - PENCUF → 25 * (sumaPercPENCUF / 100)
+  - PECNEG → -30 (si hay al menos uno)
+  - PECUF → -35 (si hay al menos uno)
+  - PECCUMP → -10 (si hay al menos uno)
 */
+
 function calcularNota(items) {
-  if (items.some((i) => i.tipo === "ERROR_INEXCUSABLE")) {
-    return 0;
-  }
+  if (items.some((i) => i.tipo === "ERROR_INEXCUSABLE")) return 0;
+
   let nota = 100;
+
   const totalPENCUF = items
     .filter((i) => i.tipo === "PENCUF")
     .reduce((sum, i) => sum + (i.perc || 0), 0);
-
   const dedPENCUF = 25 * (totalPENCUF / 100);
+
   const hasPECNEG = items.some((i) => i.tipo === "PECNEG");
   const hasPECUF = items.some((i) => i.tipo === "PECUF");
   const hasPECCUMP = items.some((i) => i.tipo === "PECCUMP");
@@ -306,181 +351,168 @@ function calcularNota(items) {
   if (nota < 0) nota = 0;
   if (nota > 100) nota = 100;
 
-  return Math.round(nota * 10) / 10; // 1 decimal
-}
-
-/* --------------------- PREVIEW PANEL DERECHA ---------------------- */
-function obtenerItemsFormulario() {
-  const blocks = Array.from(document.querySelectorAll(".item-block"));
-  const items = [];
-
-  blocks.forEach((b) => {
-    const select = b.querySelector(".item-select");
-    const detail = b.querySelector(".item-detail")?.value || "";
-    const name = select?.value || "";
-    if (!name) return;
-
-    const meta = ITEMS.find((i) => i.name === name) || {
-      tipo: "NINGUNO",
-      perc: 0
-    };
-
-    items.push({
-      name,
-      tipo: meta.tipo,
-      perc: meta.perc,
-      detail
-    });
-  });
-
-  return items;
+  return Math.round(nota * 10) / 10;
 }
 
 function recalcularNotaPreview() {
   const items = obtenerItemsFormulario();
   const nota = calcularNota(items);
 
-  if (notaPreview) {
-    notaPreview.textContent = nota.toFixed(1).replace(/\.0$/, "");
-  }
+  // nota
+  const texto = nota.toFixed(1).replace(/\.0$/, "");
+  notaPreviewEl.textContent = texto;
 
+  // estilo
   if (nota >= 85) {
-    scoreCircle?.classList.remove("bad");
-    badgeCalidad?.classList.remove("bad");
-    badgeCalidad?.classList.add("good");
-    if (badgeCalidad) badgeCalidad.textContent = "🟢 Aprobado";
+    scoreCircleEl.classList.remove("bad");
+    badgeCalidadEl.classList.remove("md-badge-bad");
+    badgeCalidadEl.classList.add("md-badge-good");
+    badgeCalidadEl.textContent = "🟢 Aprobado";
   } else {
-    scoreCircle?.classList.add("bad");
-    badgeCalidad?.classList.remove("good");
-    badgeCalidad?.classList.add("bad");
-    if (badgeCalidad) badgeCalidad.textContent = "🔴 No aprobado";
+    scoreCircleEl.classList.add("bad");
+    badgeCalidadEl.classList.remove("md-badge-good");
+    badgeCalidadEl.classList.add("md-badge-bad");
+    badgeCalidadEl.textContent = "🔴 No aprobado";
   }
 
+  // detalles por grupo
   const totalPENCUF = items
     .filter((i) => i.tipo === "PENCUF")
     .reduce((s, i) => s + (i.perc || 0), 0);
   const dedPENCUF = 25 * (totalPENCUF / 100);
-  if (infoPENCUF) {
-    infoPENCUF.textContent = totalPENCUF
-      ? `-${dedPENCUF.toFixed(1)} pts (suma ${totalPENCUF}%)`
-      : "Sin descuentos";
-  }
 
   const hasPECNEG = items.some((i) => i.tipo === "PECNEG");
   const hasPECUF = items.some((i) => i.tipo === "PECUF");
   const hasPECCUMP = items.some((i) => i.tipo === "PECCUMP");
   const hasEI = items.some((i) => i.tipo === "ERROR_INEXCUSABLE");
 
-  if (infoPECNEG) infoPECNEG.textContent = hasPECNEG ? "-30 pts" : "Sin descuentos";
-  if (infoPECUF) infoPECUF.textContent = hasPECUF ? "-35 pts" : "Sin descuentos";
-  if (infoPECCUMP)
-    infoPECCUMP.textContent = hasPECCUMP ? "-10 pts" : "Sin descuentos";
-  if (infoEI)
-    infoEI.textContent = hasEI ? "Aplica ⇒ nota 0" : "No aplicado";
+  infoPENCUFEl.textContent = totalPENCUF
+    ? `-${dedPENCUF.toFixed(1)} pts (suma ${totalPENCUF}%)`
+    : "Sin descuentos";
+  infoPECNEGEl.textContent = hasPECNEG ? "-30 pts" : "Sin descuentos";
+  infoPECUFEl.textContent = hasPECUF ? "-35 pts" : "Sin descuentos";
+  infoPECCUMPEl.textContent = hasPECCUMP ? "-10 pts" : "Sin descuentos";
+  infoEIEl.textContent = hasEI ? "Aplica ⇒ nota 0" : "No aplicado";
 }
 
-/* --------------------- GUARDAR REGISTRO ---------------------- */
-async function submitRecord() {
-  msgEl.style.color = "var(--md3-color-text)";
-  msgEl.textContent = "⏳ Subiendo...";
+/* ---------------- SUBMIT ---------------- */
+async function manejarSubmit() {
+  msgEl.style.color = "#15803d";
+  msgEl.textContent = "⏳ Subiendo monitoreo...";
 
   try {
-    const registradoPor = registradoPorSel.value;
-    if (!registradoPor) {
-      msgEl.style.color = "#dc2626";
+    if (!registradoPorSel.value) {
+      msgEl.style.color = "#b91c1c";
       msgEl.textContent = "Debes seleccionar quién registra el monitoreo.";
       return;
     }
+    if (!asesorSel.value) {
+      msgEl.style.color = "#b91c1c";
+      msgEl.textContent = "Debes seleccionar al asesor monitoreado.";
+      return;
+    }
 
-    if (!asesorSelect.value) {
-      msgEl.style.color = "#dc2626";
-      msgEl.textContent = "Debes seleccionar un asesor.";
+    const opt = asesorSel.options[asesorSel.selectedIndex];
+    const asesorNombre = asesorSel.value;
+    const asesorUid = opt.dataset.uid || "";
+    const gc = opt.dataset.gc || "SIN GC";
+
+    if (!asesorUid) {
+      msgEl.style.color = "#b91c1c";
+      msgEl.textContent =
+        "El asesor seleccionado no tiene UID configurado. Revisa la colección 'asesores'.";
       return;
     }
 
     const items = obtenerItemsFormulario();
     const nota = calcularNota(items);
 
-    // subir imágenes
-    const files = Array.from(imgsInput.files || []);
+    // subir evidencias
+    const files = imgsInput.files || [];
     const imageURLs = [];
 
     for (const f of files) {
-      const storageRef = ref(
-        storage,
-        `monitoreo_imagenes/${Date.now()}_${f.name}`
-      );
+      const safeName = f.name.replace(/[^\w.\-]/g, "_");
+      const path = `monitoreo_imagenes/${Date.now()}_${safeName}`;
+      const storageRef = ref(storage, path);
       await uploadBytes(storageRef, f);
       const url = await getDownloadURL(storageRef);
       imageURLs.push({
         name: f.name,
         url,
-        storagePath: storageRef.fullPath
+        storagePath: storageRef.fullPath,
       });
     }
 
-    // Asesor: guardamos UID + nombre + GC
-    const selectedOption =
-      asesorSelect.options[asesorSelect.selectedIndex] || null;
-    const asesorId = selectedOption?.value || null; // UID
-    const asesorNombre = selectedOption?.dataset.nombre || "";
-    const GC = selectedOption?.dataset.GC || "SIN GC";
-
     const data = {
-      idLlamada: idLlamada.value,
-      idContacto: idContacto.value,
-      tipo: tipoDetectado.value,
-      asesorId, // UID real
-      asesorNombre, // campo explícito
-      asesor: asesorNombre, // compatibilidad con portal actual
-      GC,
-      cargo: cargoSelect.value,
+      idLlamada: idLlamadaInput.value.trim(),
+      idContacto: idContactoInput.value.trim(),
+      tipo: tipoDetectadoInput.value.trim(),
+      asesor: asesorNombre,
+      asesorId: asesorUid, // ✅ UID REAL
+      gc,
+      cargo: cargoSel.value,
       cliente: {
-        dni: cliDni.value,
-        nombre: cliNombre.value,
-        tel: cliTel.value
+        dni: cliDniInput.value.trim(),
+        nombre: cliNombreInput.value.trim(),
+        tel: cliTelInput.value.trim(),
       },
-      tipificacion: cliTipif.value,
-      observacionCliente: cliObs.value,
-      resumen: resumen.value,
+      tipificacion: cliTipifInput.value.trim(),
+      observacionCliente: cliObsInput.value.trim(),
+      resumen: resumenInput.value.trim(),
       items,
       nota,
       imagenes: imageURLs,
       fecha: new Date().toISOString(),
-      registradoPor,
-      estado: "PENDIENTE"
+      registradoPor: registradoPorSel.value,
+      estado: "PENDIENTE",
     };
 
     await addDoc(collection(db, "registros"), data);
 
-    msgEl.style.color = "#16a34a";
+    msgEl.style.color = "#15803d";
     msgEl.textContent = `✔ Guardado correctamente · Nota final: ${nota}`;
 
-    clearItems();
-    imgPreview.innerHTML = "";
+    // limpiar
+    itemsContainer.innerHTML = "";
     imgsInput.value = "";
+    imgPreviewContainer.innerHTML = "";
     recalcularNotaPreview();
   } catch (err) {
     console.error(err);
-    msgEl.style.color = "#dc2626";
-    msgEl.textContent = "❌ Error: " + err.message;
+    msgEl.style.color = "#b91c1c";
+    msgEl.textContent = "❌ Error al guardar: " + err.message;
   }
 }
 
-/* --------------------- EVENT LISTENERS INIT ---------------------- */
-const btnAddItem = document.getElementById("btnAddItem");
-const btnClearItems = document.getElementById("btnClearItems");
-const btnSubmit = document.getElementById("btnSubmit");
+/* ---------------- EVENTOS ---------------- */
+function inicializarEventos() {
+  if (idLlamadaInput) {
+    idLlamadaInput.addEventListener("input", actualizarTipoDetectado);
+  }
+  if (idContactoInput) {
+    idContactoInput.addEventListener("input", actualizarTipoDetectado);
+  }
 
-if (btnAddItem) {
-  btnAddItem.addEventListener("click", addItemBlock);
-}
-if (btnClearItems) {
-  btnClearItems.addEventListener("click", clearItems);
-}
-if (btnSubmit) {
-  btnSubmit.addEventListener("click", submitRecord);
-}
+  if (btnAddItem) {
+    btnAddItem.addEventListener("click", () => {
+      itemsContainer.appendChild(crearItemBlock());
+      recalcularNotaPreview();
+    });
+  }
 
-// inicializar preview en 100
-recalcularNotaPreview();
+  if (btnClearItems) {
+    btnClearItems.addEventListener("click", () => {
+      itemsContainer.innerHTML = "";
+      recalcularNotaPreview();
+    });
+  }
+
+  if (imgsInput) {
+    imgsInput.addEventListener("change", manejarPreviewImagenes);
+  }
+
+  if (btnSubmit) {
+    btnSubmit.addEventListener("click", manejarSubmit);
+  }
+}

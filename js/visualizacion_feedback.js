@@ -21,7 +21,13 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Estado global
+// ======== CONFIG ROLES (Admin + Supervisores) ========
+const SUPERVISOR_EMAILS = [
+  "anunez@gefectiva.com",
+  "ctorres@gefectiva.com",
+  "karen@example.com",
+];
+
 let registros = [];
 let currentFeedbackId = null;
 
@@ -137,34 +143,40 @@ function renderTabla() {
   tabla.style.display = "table";
   vacio.style.display = "none";
 
-  filtrados.forEach((r) => {
-    const estadoCalculado = calcularEstado(r);
-    const estadoClass =
-      estadoCalculado === "COMPLETADO" ? "chip-estado done" : "chip-estado pending";
+  const rowsHtml = filtrados
+    .map((r) => {
+      const estadoCalculado = calcularEstado(r);
+      const estadoClass =
+        estadoCalculado === "COMPLETADO"
+          ? "chip-estado done"
+          : "chip-estado pending";
 
-    tbody.innerHTML += `
-      <tr>
-        <td>${r.id}</td>
-        <td>${r.fechaObj.toLocaleString("es-PE")}</td>
-        <td>${r.nota}%</td>
-        <td>
-          <span class="${estadoClass}">
-            ${estadoCalculado}
-          </span>
-        </td>
-        <td>${r.registradoPor || "-"}</td>
-        <td>
-          <button class="m3-btn primary" type="button" onclick="verDetalle('${r.id}')">
-            Ver
-          </button>
-        </td>
-      </tr>
-    `;
-  });
+      return `
+        <tr>
+          <td>${r.id}</td>
+          <td>${r.fechaObj.toLocaleString("es-PE")}</td>
+          <td>${r.nota}%</td>
+          <td>
+            <span class="${estadoClass}">
+              ${estadoCalculado}
+            </span>
+          </td>
+          <td>${r.registradoPor || "-"}</td>
+          <td>
+            <button class="m3-btn primary btn-ver" type="button" data-id="${r.id}">
+              Ver
+            </button>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  tbody.innerHTML = rowsHtml;
 }
 
 /* -------------------- DETALLE -------------------- */
-window.verDetalle = function (id) {
+function verDetalle(id) {
   const r = registros.find((x) => x.id === id);
   if (!r) return;
 
@@ -182,9 +194,9 @@ window.verDetalle = function (id) {
 
   const estadoCalculado = calcularEstado(r);
   subTituloEstado.innerHTML = `
-    <span>Estado: ${estadoCalculado}</span> ·
-    <span>Registrado por: ${r.registradoPor || "No especificado"}</span> ·
-    <span>Fecha: ${r.fechaObj.toLocaleString("es-PE")}</span>
+    Estado: ${estadoCalculado} ·
+    Registrado por: ${r.registradoPor || "No especificado"} ·
+    Fecha: ${r.fechaObj.toLocaleString("es-PE")}
   `;
 
   const dniDesdeGC = (r.gc || "").replace(/[^0-9]/g, "");
@@ -278,54 +290,107 @@ window.verDetalle = function (id) {
   `;
 
   detailBox.style.display = "block";
-};
+}
 
 /* -------------------- EXPORTAR PDF -------------------- */
-document.getElementById("pdfBtn").addEventListener("click", async () => {
-  const detailBox = document.getElementById("detailBox");
-  if (!detailBox) return;
+const pdfBtn = document.getElementById("pdfBtn");
+if (pdfBtn) {
+  pdfBtn.addEventListener("click", async () => {
+    const detailBox = document.getElementById("detailBox");
+    if (!detailBox) return;
 
-  const canvas = await html2canvas(detailBox, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff",
+    const canvas = await html2canvas(detailBox, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF) {
+      console.error("jsPDF no está disponible.");
+      alert("No se pudo generar el PDF. jsPDF no está cargado.");
+      return;
+    }
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pageWidth = pdf.internal.pageSize.getWidth() - 20;
+    const pageHeight = (canvas.height * pageWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 10, 10, pageWidth, pageHeight);
+    const filename = currentFeedbackId
+      ? `feedback_${currentFeedbackId}.pdf`
+      : "feedback.pdf";
+    pdf.save(filename);
   });
-
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jspdf.jsPDF("p", "mm", "a4");
-
-  const pageWidth = pdf.internal.pageSize.getWidth() - 20;
-  const pageHeight = (canvas.height * pageWidth) / canvas.width;
-
-  pdf.addImage(imgData, "PNG", 10, 10, pageWidth, pageHeight);
-  const filename = currentFeedbackId
-    ? `feedback_${currentFeedbackId}.pdf`
-    : "feedback.pdf";
-  pdf.save(filename);
-});
+}
 
 /* -------------------- INICIO + AUTH -------------------- */
 async function initApp() {
+  const filtersSection = document.getElementById("filtersSection");
+  const tableSection = document.getElementById("tableSection");
+  const filtroAsesor = document.getElementById("filtroAsesor");
+  const filtroRegistrado = document.getElementById("filtroRegistrado");
+  const tbody = document.querySelector("#tablaFeedback tbody");
+
   await cargarRegistros();
   cargarAsesoresFiltro();
   renderTabla();
 
-  const filtroAsesor = document.getElementById("filtroAsesor");
-  const filtroRegistrado = document.getElementById("filtroRegistrado");
+  filtersSection.style.display = "block";
+  tableSection.style.display = "block";
 
-  filtroAsesor.addEventListener("change", renderTabla);
-  filtroRegistrado.addEventListener("change", renderTabla);
+  filtroAsesor.addEventListener("change", () => {
+    renderTabla();
+    document.getElementById("detailBox").style.display = "none";
+  });
+
+  filtroRegistrado.addEventListener("change", () => {
+    renderTabla();
+    document.getElementById("detailBox").style.display = "none";
+  });
+
+  // Delegación de eventos para botones "Ver"
+  tbody.addEventListener("click", (e) => {
+    const btn = e.target.closest(".btn-ver");
+    if (!btn) return;
+    const id = btn.getAttribute("data-id");
+    if (id) verDetalle(id);
+  });
 }
 
-// Solo usuarios logueados pueden ver (coincide con tus rules)
+// Solo usuarios logueados y con rol de Admin/Supervisor
 onAuthStateChanged(auth, (user) => {
+  const accessWarning = document.getElementById("accessWarning");
+  const filtersSection = document.getElementById("filtersSection");
+  const tableSection = document.getElementById("tableSection");
+
   if (!user) {
-    // si no está logueado, redirige a tu login
-    window.location.href = "login.html";
+    accessWarning.style.display = "block";
+    accessWarning.textContent =
+      "No tienes sesión activa. Inicia sesión en el portal para acceder a la visualización de feedback.";
+    filtersSection.style.display = "none";
+    tableSection.style.display = "none";
     return;
   }
+
+  const email = user.email || "";
+  const isSupervisor = SUPERVISOR_EMAILS.includes(email);
+
+  if (!isSupervisor) {
+    accessWarning.style.display = "block";
+    filtersSection.style.display = "none";
+    tableSection.style.display = "none";
+    return;
+  }
+
+  // Tiene permisos
+  accessWarning.style.display = "none";
   initApp().catch((err) => {
     console.error("Error inicializando visualización:", err);
-    alert("Error al cargar feedbacks. Revisa la consola.");
+    accessWarning.style.display = "block";
+    accessWarning.textContent =
+      "Error al cargar feedbacks. Revisa la consola del navegador.";
   });
 });

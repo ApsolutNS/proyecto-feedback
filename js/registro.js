@@ -231,28 +231,59 @@ function actualizarTipoDetectado() {
 function crearItemBlock() {
   const w = document.createElement("div");
   w.className = "item-block";
+
   w.innerHTML = `
     <div class="item-main">
-      <select class="item-select">
-        <option value="">-- Selecciona ítem --</option>
-        ${ITEMS.map(
-          (it) => `<option value="${it.name}">${it.name}</option>`
-        ).join("")}
-      </select>
-      <div class="item-meta"></div>
-      <textarea class="item-detail"
-        placeholder="Detalle del ítem: contexto, frase del cliente/asesor, impacto, etc."></textarea>
+      <!-- HEADER DEL ÍTEM (select + meta + botones) -->
+      <div class="item-header-row">
+        <div class="item-header-left">
+          <select class="item-select">
+            <option value="">-- Selecciona ítem --</option>
+            ${ITEMS.map(
+              (it) => `<option value="${it.name}">${it.name}</option>`
+            ).join("")}
+          </select>
+          <div class="item-meta"></div>
+        </div>
+        <div class="item-header-right">
+          <button class="md-btn md-btn-text item-toggle" type="button" aria-expanded="false">
+            <span class="material-symbols-outlined md-btn-icon">expand_more</span>
+            Detalle
+          </button>
+          <button class="md-btn md-btn-text item-remove" type="button">
+            Eliminar
+          </button>
+        </div>
+      </div>
+
+      <!-- CUERPO EXPANDIBLE (detalle) -->
+      <div class="item-body" style="display:none;">
+        <div class="md-field">
+          <label class="md-label">Detalle del ítem</label>
+          <div class="md-input-wrapper">
+            <textarea
+              class="item-detail"
+              rows="2"
+              placeholder="Describe el incumplimiento: contexto, frase del cliente/asesor, impacto, etc."></textarea>
+          </div>
+          <div class="md-helper">
+            Ejemplo: 
+            <em>“Cliente indica que no recibió la devolución acordada, asesor no realiza seguimiento…”</em>
+          </div>
+        </div>
+      </div>
     </div>
-    <button class="md-btn md-btn-text" type="button">
-      Eliminar
-    </button>
   `;
 
-  const select = w.querySelector(".item-select");
-  const meta = w.querySelector(".item-meta");
-  const detail = w.querySelector(".item-detail");
-  const removeBtn = w.querySelector("button");
+  const select    = w.querySelector(".item-select");
+  const meta      = w.querySelector(".item-meta");
+  const detail    = w.querySelector(".item-detail");
+  const toggleBtn = w.querySelector(".item-toggle");
+  const removeBtn = w.querySelector(".item-remove");
+  const body      = w.querySelector(".item-body");
+  const iconSpan  = toggleBtn.querySelector(".material-symbols-outlined");
 
+  // Cambio de ítem ⇒ actualiza meta + recalcula nota
   select.addEventListener("change", () => {
     const it = ITEMS.find((x) => x.name === select.value);
     if (it) {
@@ -263,13 +294,29 @@ function crearItemBlock() {
     recalcularNotaPreview();
   });
 
-  detail.addEventListener("input", () => {
-    // no-op, pero permite futuro uso
+  // Toggle expandir/colapsar detalle
+  toggleBtn.addEventListener("click", () => {
+    const isOpen = body.style.display !== "none";
+    if (isOpen) {
+      body.style.display = "none";
+      toggleBtn.setAttribute("aria-expanded", "false");
+      iconSpan.textContent = "expand_more";
+    } else {
+      body.style.display = "block";
+      toggleBtn.setAttribute("aria-expanded", "true");
+      iconSpan.textContent = "expand_less";
+    }
   });
 
+  // Eliminar ítem
   removeBtn.addEventListener("click", () => {
     w.remove();
     recalcularNotaPreview();
+  });
+
+  // Input en detalle (por ahora solo para posible uso futuro)
+  detail.addEventListener("input", () => {
+    // Aquí podrías disparar auto-guardado, etc.
   });
 
   return w;
@@ -283,6 +330,7 @@ function obtenerItemsFormulario() {
     const select = b.querySelector(".item-select");
     const detail = b.querySelector(".item-detail");
     if (!select || !detail) continue;
+
     const name = select.value;
     if (!name) continue;
 
@@ -298,6 +346,7 @@ function obtenerItemsFormulario() {
       detail: detail.value || "",
     });
   }
+
   return items;
 }
 

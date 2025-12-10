@@ -155,10 +155,38 @@
 
         <h3 class="md-section-title">Ítems observados</h3>
         <p class="md-helper">
-          Marca solo los ítems donde el asesor <strong>incumple</strong>. El sistema aplicará las penalizaciones
-          automáticamente.
+          Marca solo los ítems donde el asesor <strong>incumple</strong>.  
+          Haz clic en cada tarjeta para expandir la descripción.
         </p>
-
+        
+        <div id="itemsContainer" class="expand-items-list"></div>
+        
+        <!-- Template invisible para crear cada ítem -->
+        <template id="itemTemplate">
+          <div class="expand-item">
+              
+              <div class="expand-header">
+                <div class="expand-title">
+                  <span class="material-symbols-outlined expand-icon">warning</span>
+                  <span class="expand-text"></span>
+                </div>
+        
+                <button class="expand-toggle">
+                  <span class="material-symbols-outlined">expand_more</span>
+                </button>
+              </div>
+        
+              <div class="expand-meta"></div>
+        
+              <div class="expand-body">
+                <textarea class="expand-detail" placeholder="Describe el detalle del ítem observado..."></textarea>
+                <button class="md-btn md-btn-text expand-remove">
+                  <span class="material-symbols-outlined">delete</span>
+                  Eliminar
+                </button>
+              </div>
+          </div>
+        </template>
         <div class="md-chips-row">
           <span class="md-chip md-chip-error">ERROR INEXCUSABLE ⇒ nota 0</span>
           <span class="md-chip">PENCUF ⇒ resta hasta 25 pts</span>
@@ -241,4 +269,5 @@
   <script type="module" src="js/registro.js"></script>
 </body>
 </html>
+
 

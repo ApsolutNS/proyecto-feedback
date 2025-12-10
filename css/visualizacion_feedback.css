@@ -1,132 +1,276 @@
-/* MATERIAL DESIGN 3 - DARK MODE */
-body{
-  background:#0f172a;
-  color:#e2e8f0;
-  margin:0;
-  padding:24px;
-  font-family: "Roboto", Arial, sans-serif;
+/* ====== GLOBAL ====== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* CARD PRINCIPAL */
-.main-container{
-  max-width:1200px;
-  margin:auto;
-  padding:24px;
-  background:#1e293b;
-  border-radius:18px;
-  border:1px solid #334155;
+body {
+  margin: 0;
+  padding: 24px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Arial, sans-serif;
+  background: #0f172a; /* dark */
+  color: #e5e7eb;
 }
 
-/* TITLES */
-.m3-title{
-  text-align:center;
-  font-size:26px;
-  margin-bottom:20px;
-  color:white;
+/* ====== CARD PRINCIPAL (DARK M3) ====== */
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 24px 32px;
+  border-radius: 20px;
+  background: radial-gradient(circle at top left, #1d283a, #020617);
+  border: 1px solid #1f2937;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.7);
 }
 
-.m3-section{
-  margin-bottom:20px;
+.m3-title {
+  text-align: center;
+  font-size: 24px;
+  margin: 0 0 20px;
+  color: #f9fafb;
 }
 
-.m3-label{
-  font-size:14px;
-  font-weight:600;
-  margin-top:12px;
-  display:block;
+.m3-section {
+  margin-bottom: 18px;
 }
 
-.m3-select{
-  width:100%;
-  padding:12px;
-  background:#0f172a;
-  border:1px solid #475569;
-  border-radius:8px;
-  color:white;
-  font-size:14px;
+.m3-label {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5f5;
 }
 
-/* TABLE */
-.m3-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:14px;
+.m3-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    background 0.15s ease;
 }
 
-.m3-table th{
-  background:#334155;
-  color:white;
-  padding:10px;
+.m3-select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.7);
+  background: #020617;
 }
 
-.m3-table td{
-  padding:10px;
-  border-bottom:1px solid #475569;
+/* ====== TABLA ====== */
+.m3-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 14px;
 }
 
-/* DETAIL BOX (LIGHT MODE) */
-.m3-detail-card{
-  background:white;
-  color:#1e293b;
-  border-radius:18px;
-  padding:28px;
-  margin-top:20px;
-  border:1px solid #d1d5db;
+.m3-table thead {
+  background: linear-gradient(to right, #1f2937, #111827);
 }
 
-.detail-title{
-  text-align:center;
-  font-size:22px;
-  font-weight:bold;
-  margin-bottom:20px;
+.m3-table th,
+.m3-table td {
+  padding: 8px 10px;
+  text-align: left;
 }
 
-.logo{
-  max-height:55px;
+.m3-table th {
+  font-weight: 600;
+  font-size: 12px;
+  color: #e5e7eb;
+  border-bottom: 1px solid #374151;
 }
 
-/* Buttons */
-.m3-btn{
-  padding:12px 20px;
-  border-radius:8px;
-  font-weight:bold;
-  cursor:pointer;
-  border:none;
+.m3-table tbody tr:nth-child(odd) {
+  background: rgba(15, 23, 42, 0.85);
 }
 
-.m3-btn.primary{
-  background:#4f46e5;
-  color:white;
+.m3-table tbody tr:nth-child(even) {
+  background: rgba(15, 23, 42, 0.65);
 }
 
-.m3-btn.primary:hover{
-  background:#4338ca;
+.m3-table tbody tr:hover {
+  background: rgba(55, 65, 81, 0.9);
 }
 
-/* ITEMS */
-.item-block{
-  border-left:4px solid #2563eb;
-  padding-left:8px;
-  margin-bottom:10px;
+/* ====== ESTADO CHIP ====== */
+.chip-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
-/* SIGNATURE */
-.firma-box{
-  width:300px;
-  height:130px;
-  border:2px solid black;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  margin-top:10px;
+.chip-estado.pending {
+  background: rgba(248, 250, 252, 0.06);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.5);
 }
-.firma-box img{
-  max-width:280px;
-  max-height:120px;
+
+.chip-estado.done {
+  background: rgba(22, 163, 74, 0.14);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.7);
 }
-.evidence-img{
-  width:100%;
-  max-width:600px;
-  border-radius:8px;
-  margin-top:8px;
+
+/* ====== BOTONES ====== */
+.m3-btn {
+  border-radius: 999px;
+  padding: 8px 14px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.m3-btn.primary {
+  background: #6366f1;
+  color: #f9fafb;
+}
+
+.m3-btn.primary:hover {
+  background: #4f46e5;
+}
+
+.m3-btn.ghost {
+  background: transparent;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+}
+
+/* ====== EMPTY STATE ====== */
+.m3-empty-state {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px dashed #4b5563;
+  color: #9ca3af;
+}
+
+/* ====== CARD DETALLE (LIGHT M3) ====== */
+.m3-detail-card {
+  margin-top: 22px;
+  padding: 24px 24px 28px;
+  border-radius: 18px;
+  background: #f9fafb;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.detail-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.detail-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.logo {
+  max-height: 50px;
+}
+
+/* sección títulos */
+.section-title {
+  margin-top: 14px;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* caja de texto */
+.box {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+
+/* Ítems observados */
+.item-block {
+  border-left: 3px solid #2563eb;
+  padding-left: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+/* Firma */
+.firma-box {
+  width: 280px;
+  height: 120px;
+  border: 2px solid #111827;
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 6px;
+  background: #ffffff;
+}
+
+.firma-box img {
+  max-width: 260px;
+  max-height: 110px;
+  object-fit: contain;
+}
+
+/* Evidencias */
+.evidence-img {
+  width: 100%;
+  max-width: 640px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  margin-top: 6px;
+}
+
+/* Nota */
+.nota-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+  background: #e0f2fe;
+  color: #1d4ed8;
+}
+
+/* Acciones detalle */
+.detail-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
 }

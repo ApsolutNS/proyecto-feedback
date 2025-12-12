@@ -1,7 +1,4 @@
-/* ============================================================
-   ===============  ESTILOS GENERALES (GLOBAL)  ===============
-   ============================================================ */
-
+/* ====== GLOBAL ====== */
 *,
 *::before,
 *::after {
@@ -11,16 +8,13 @@
 body {
   margin: 0;
   padding: 24px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Arial, sans-serif;
   background: #0f172a; /* dark */
   color: #e5e7eb;
 }
 
-/* ============================================================
-   ===============    CARD PRINCIPAL (DARK M3)   ===============
-   ============================================================ */
-
+/* ====== CARD PRINCIPAL (DARK M3) ====== */
 .main-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -31,16 +25,16 @@ body {
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.7);
 }
 
+.m3-card {
+  /* helper, por si quieres reusar la clase */
+}
+
 .m3-title {
   text-align: center;
   font-size: 24px;
   margin: 0 0 20px;
   color: #f9fafb;
 }
-
-/* ============================================================
-   ========================  FILTROS  ==========================
-   ============================================================ */
 
 .m3-section {
   margin-bottom: 18px;
@@ -74,10 +68,7 @@ body {
   background: #020617;
 }
 
-/* ============================================================
-   ========================  TABLA  ============================
-   ============================================================ */
-
+/* ====== TABLA ====== */
 .m3-table {
   width: 100%;
   border-collapse: collapse;
@@ -116,7 +107,7 @@ body {
   background: rgba(55, 65, 81, 0.9);
 }
 
-/* Estado (chips) */
+/* ====== ESTADO CHIP ====== */
 .chip-estado {
   display: inline-flex;
   align-items: center;
@@ -139,10 +130,7 @@ body {
   border: 1px solid rgba(74, 222, 128, 0.7);
 }
 
-/* ============================================================
-   =======================  BOTONES  ===========================
-   ============================================================ */
-
+/* ====== BOTONES ====== */
 .m3-btn {
   border-radius: 999px;
   padding: 8px 14px;
@@ -153,7 +141,6 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 0.15s ease, transform 0.12s ease;
 }
 
 .m3-btn.primary {
@@ -163,7 +150,6 @@ body {
 
 .m3-btn.primary:hover {
   background: #4f46e5;
-  transform: translateY(-1px);
 }
 
 .m3-btn.ghost {
@@ -172,14 +158,7 @@ body {
   border: 1px solid #4b5563;
 }
 
-.m3-btn.ghost:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* ============================================================
-   =====================  EMPTY STATE ==========================
-   ============================================================ */
-
+/* ====== EMPTY STATE ====== */
 .m3-empty-state {
   margin-top: 10px;
   padding: 10px 12px;
@@ -190,10 +169,7 @@ body {
   color: #9ca3af;
 }
 
-/* ============================================================
-   ===================  ACCESO RESTRINGIDO  ====================
-   ============================================================ */
-
+/* ====== BANNER DE ACCESO ====== */
 .m3-access-warning {
   padding: 10px 12px;
   border-radius: 12px;
@@ -204,10 +180,7 @@ body {
   margin-bottom: 12px;
 }
 
-/* ============================================================
-   ==================  DETALLE (PDF STYLE)  ====================
-   ============================================================ */
-
+/* ====== CARD DETALLE (LIGHT M3) ====== */
 .m3-detail-card {
   margin-top: 22px;
   padding: 24px 24px 28px;
@@ -243,7 +216,7 @@ body {
   max-height: 50px;
 }
 
-/* Secciones */
+/* sección títulos */
 .section-title {
   margin-top: 14px;
   margin-bottom: 4px;
@@ -252,7 +225,7 @@ body {
   color: #111827;
 }
 
-/* Box */
+/* caja de texto */
 .box {
   padding: 10px 12px;
   border-radius: 10px;
@@ -261,7 +234,7 @@ body {
   font-size: 13px;
 }
 
-/* Ítems */
+/* Ítems observados */
 .item-block {
   border-left: 3px solid #2563eb;
   padding-left: 8px;
@@ -310,9 +283,23 @@ body {
   color: #1d4ed8;
 }
 
-/* Acciones Detalle */
+/* Acciones detalle */
 .detail-actions {
   margin-top: 18px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* Responsive pequeño */
+@media (max-width: 768px) {
+  .main-container {
+    padding: 16px;
+  }
+  .detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .logo {
+    align-self: flex-end;
+  }
 }

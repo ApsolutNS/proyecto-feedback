@@ -17,6 +17,7 @@ const firebaseConfig = {
   projectId: "feedback-app-ac30e",
   storageBucket: "feedback-app-ac30e.firebasestorage.app",
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -35,7 +36,7 @@ let currentFeedbackId = null;
 /* -------------------- UTILIDADES -------------------- */
 function toDateSafe(value) {
   if (!value) return new Date();
-  if (value.toDate) return value.toDate();
+  if (value.toDate) return value.toDate(); // Timestamp Firestore
   if (value instanceof Date) return value;
   return new Date(value);
 }
@@ -52,10 +53,39 @@ function formatearFechaLarga(date) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/**
+ * COMPLETADO cuando hay firmaUrl y compromiso.
+ * Si no, PENDIENTE.
+ */
 function calcularEstado(r) {
   const tieneFirma = !!(r.firmaUrl && String(r.firmaUrl).trim());
   const tieneCompromiso = !!(r.compromiso && String(r.compromiso).trim());
-  return (tieneFirma && tieneCompromiso) ? "COMPLETADO" : "PENDIENTE";
+  return tieneFirma && tieneCompromiso ? "COMPLETADO" : "PENDIENTE";
+}
+
+/* ---- Mapeo de cargo a frase profesional (Opción B) ---- */
+function obtenerFraseCargo(cargo = "") {
+  const key = cargo.trim().toUpperCase();
+  const mapa = {
+    "ASESOR INBOUND": "Asesor(a) de Atención Telefónica",
+    "ASESOR REDES": "Asesor(a) de Redes Sociales",
+    "ASESOR CORREOS": "Asesor(a) de Atención por Correo",
+  };
+  return mapa[key] || "Asesor(a)";
+}
+
+/* ---- Frase por canal según tipo (llamada / redes / correos) ---- */
+function obtenerFraseCanal(tipo = "") {
+  const t = String(tipo).toUpperCase();
+
+  if (t.includes("FACEBOOK") || t.includes("INSTAGRAM")) {
+    return "para el cumplimiento de los parámetros de la atención en redes sociales.";
+  }
+  if (t.includes("CORREO") || t.includes("MAIL")) {
+    return "para el cumplimiento de los parámetros de la atención por correo electrónico.";
+  }
+  // Por defecto lo consideramos llamada
+  return "para el cumplimiento de los parámetros de la llamada.";
 }
 
 /* -------------------- CARGAR REGISTROS -------------------- */
@@ -69,14 +99,12 @@ async function cargarRegistros() {
 
     const normalizado = {
       id: d.id,
-
-      // 🔹 CAMPOS NUEVOS
       idLlamada: r.idLlamada || "",
       idContacto: r.idContacto || "",
-
       asesorId: r.asesorId || "",
       asesor: r.asesor || "",
       gc: r.gc || "",
+      cargo: r.cargo || "",
 
       cliente: r.cliente || {},
       tipificacion: r.tipificacion || "",
@@ -85,12 +113,15 @@ async function cargarRegistros() {
       tipo: r.tipo || "",
 
       items: Array.isArray(r.items) ? r.items : [],
-      nota: Number(r.nota || 0),
+      nota:
+        typeof r.nota === "number"
+          ? r.nota
+          : Number(r.nota || 0),
 
       imagenes: Array.isArray(r.imagenes) ? r.imagenes : [],
 
       fechaObj: toDateSafe(fecha),
-      registradoPor: r.registradoPor || "",
+      registradoPor: r.registradoPor || r.registrado_por || "",
       firmaUrl: r.firmaUrl || "",
       compromiso: r.compromiso || "",
     };
@@ -106,6 +137,7 @@ async function cargarRegistros() {
 function cargarAsesoresFiltro() {
   const filtro = document.getElementById("filtroAsesor");
   const asesores = [...new Set(registros.map((r) => r.asesor).filter(Boolean))];
+
   asesores.sort((a, b) => a.localeCompare(b, "es"));
 
   filtro.innerHTML =
@@ -113,7 +145,7 @@ function cargarAsesoresFiltro() {
     asesores.map((a) => `<option value="${a}">${a}</option>`).join("");
 }
 
-/* -------------------- TABLA -------------------- */
+/* -------------------- TABLA (sin ID) -------------------- */
 function renderTabla() {
   const filtroAsesor = document.getElementById("filtroAsesor");
   const filtroRegistrado = document.getElementById("filtroRegistrado");
@@ -148,16 +180,20 @@ function renderTabla() {
   const rowsHtml = filtrados
     .map((r) => {
       const estado = calcularEstado(r);
-      const estadoClass = estado === "COMPLETADO" ? "chip-estado done" : "chip-estado pending";
+      const estadoClass =
+        estado === "COMPLETADO" ? "chip-estado done" : "chip-estado pending";
+
+      const notaTexto =
+        typeof r.nota === "number" ? `${r.nota.toFixed(1).replace(/\.0$/, "")}%` : `${r.nota}%`;
 
       return `
         <tr>
           <td>${r.fechaObj.toLocaleString("es-PE")}</td>
-          <td>${r.nota}%</td>
+          <td>${notaTexto}</td>
           <td><span class="${estadoClass}">${estado}</span></td>
           <td>${r.registradoPor || "-"}</td>
           <td>
-            <button class="m3-btn primary btn-ver" data-id="${r.id}">
+            <button class="m3-btn primary btn-ver" type="button" data-id="${r.id}">
               Ver
             </button>
           </td>
@@ -178,52 +214,67 @@ function verDetalle(id) {
 
   const detail = document.getElementById("detailContent");
   const titulo = document.getElementById("tituloRetro");
+  const subTituloEstado = document.getElementById("subTituloEstado");
+
   const estado = calcularEstado(r);
   const esReaf = Number(r.nota) === 100;
 
   titulo.textContent = esReaf ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
 
-  document.getElementById("subTituloEstado").innerHTML = `
-    Estado: ${estado} · Registrado por: ${r.registradoPor} · Fecha: ${r.fechaObj.toLocaleString("es-PE")}
+  subTituloEstado.innerHTML = `
+    Estado: ${estado} · Registrado por: ${r.registradoPor || "No especificado"} · 
+    Fecha: ${r.fechaObj.toLocaleString("es-PE")}
   `;
 
-  const dni = (r.gc || "").replace(/[^0-9]/g, "");
+  const dni = (r.gc || "").replace(/[^0-9]/g, "") || "—";
+  const fraseCargo = obtenerFraseCargo(r.cargo);
+  const fraseCanal = obtenerFraseCanal(r.tipo);
 
-  const itemsHtml = r.items.length
-    ? r.items
-        .map(
-          (it) => `
-        <div class="item-block">
-          <strong>${it.name}</strong> ${it.perc ? `(${it.perc}%)` : ""}
-          <div>${it.detail || ""}</div>
-        </div>`
-        )
-        .join("")
-    : "<em>No se registraron ítems observados.</em>";
+  const itemsHtml =
+    r.items && r.items.length
+      ? r.items
+          .map(
+            (it) => `
+          <div class="item-block">
+            <strong>${it.name || ""}</strong> ${
+              it.perc ? `(${it.perc}%)` : ""
+            }
+            <div>${it.detail || ""}</div>
+          </div>`
+          )
+          .join("")
+      : "<em>No se registraron ítems observados.</em>";
 
-  const evidenciasHtml = r.imagenes.length
-    ? r.imagenes
-        .map((img) => `<img class="evidence-img" src="${img.url}" />`)
-        .join("")
-    : "<em>Sin evidencias adjuntas.</em>";
+  const evidenciasHtml =
+    r.imagenes && r.imagenes.length
+      ? r.imagenes
+          .map(
+            (img) =>
+              `<img class="evidence-img" src="${img.url}" alt="Evidencia">`
+          )
+          .join("")
+      : "<em>Sin evidencias adjuntas.</em>";
 
   const firmaHtml = r.firmaUrl
-    ? `<div class="firma-box"><img src="${r.firmaUrl}"></div>`
-    : `<div class="firma-box">Sin firma</div>`;
+    ? `<div class="firma-box"><img src="${r.firmaUrl}" alt="Firma del agente"></div>`
+    : `<div class="firma-box">Sin firma registrada</div>`;
 
+  // --------- CONTENIDO PRINCIPAL DEL FEEDBACK ----------
   detail.innerHTML = `
     <p>
-      Por medio de la presente se deja constancia que el 
-      <strong>${formatearFechaLarga(r.fechaObj)}</strong> se realiza una 
+      Por medio de la presente se deja constancia que el
+      <strong>${formatearFechaLarga(r.fechaObj)}</strong> se realiza una
       <strong>${esReaf ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN"}</strong> al colaborador(a)
-      <strong>${r.asesor}</strong> con GC <strong>${r.gc}</strong> y DNI <strong>${dni}</strong>.
+      <strong>${r.asesor || ""}</strong> con GC <strong>${r.gc || "—"}</strong> y DNI
+      <strong>${dni}</strong>, quien ejerce la función de
+      <strong>${fraseCargo}</strong>, ${fraseCanal}
     </p>
 
     <div class="section-title">Datos del monitoreo</div>
     <div class="box">
       <div><strong>ID Llamada:</strong> ${r.idLlamada || "—"}</div>
       <div><strong>ID Contacto:</strong> ${r.idContacto || "—"}</div>
-      <div><strong>Tipo:</strong> ${r.tipo || "—"}</div>
+      <div><strong>Tipo detectado:</strong> ${r.tipo || "—"}</div>
     </div>
 
     <div class="section-title">Datos del cliente</div>
@@ -236,18 +287,32 @@ function verDetalle(id) {
     </div>
 
     <div class="section-title">Gestión monitoreada</div>
-    <div class="box">${r.resumen}</div>
+    <div class="box">
+      <strong>Resumen:</strong>
+      <div style="margin-top:4px;">${r.resumen || "—"}</div>
+    </div>
 
     <div class="section-title">Ítems observados</div>
     <div>${itemsHtml}</div>
 
     <div class="section-title">Nota obtenida</div>
-    <div class="box"><span class="nota-badge">${r.nota}%</span></div>
+    <div class="box">
+      <span class="nota-badge">
+        ${typeof r.nota === "number"
+          ? r.nota.toFixed(1).replace(/\.0$/, "")
+          : r.nota}%</span>
+    </div>
 
-    <div class="section-title">Compromiso</div>
-    <div class="box">${r.compromiso || "<em>Sin compromiso.</em>"}</div>
+    <div class="section-title">Compromiso del agente</div>
+    <div class="box">
+      ${
+        r.compromiso && r.compromiso.trim()
+          ? r.compromiso
+          : "<em>Sin compromiso registrado.</em>"
+      }
+    </div>
 
-    <div class="section-title">Firma</div>
+    <div class="section-title">Firma del agente</div>
     ${firmaHtml}
 
     <div class="section-title">Evidencias</div>
@@ -258,67 +323,108 @@ function verDetalle(id) {
 }
 
 /* -------------------- EXPORTAR PDF -------------------- */
-document.getElementById("pdfBtn")?.addEventListener("click", async () => {
-  const detailBox = document.getElementById("detailBox");
-  const canvas = await html2canvas(detailBox, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff",
+const pdfBtn = document.getElementById("pdfBtn");
+
+if (pdfBtn) {
+  pdfBtn.addEventListener("click", async () => {
+    const detailBox = document.getElementById("detailBox");
+    if (!detailBox) return;
+
+    const canvas = await html2canvas(detailBox, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf || {};
+
+    if (!jsPDF) {
+      console.error("jsPDF no está disponible.");
+      alert("No se pudo generar el PDF. jsPDF no está cargado.");
+      return;
+    }
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth() - 20;
+    const pageHeight = (canvas.height * pageWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 10, 10, pageWidth, pageHeight);
+
+    const filename = currentFeedbackId
+      ? `feedback_${currentFeedbackId}.pdf`
+      : "feedback.pdf";
+    pdf.save(filename);
   });
-
-  const img = canvas.toDataURL("image/png");
-  const { jsPDF } = window.jspdf;
-
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pageWidth = pdf.internal.pageSize.getWidth() - 20;
-  const height = (canvas.height * pageWidth) / canvas.width;
-
-  pdf.addImage(img, "PNG", 10, 10, pageWidth, height);
-  pdf.save(`feedback_${currentFeedbackId}.pdf`);
-});
+}
 
 /* -------------------- INICIO + AUTH -------------------- */
 async function initApp() {
+  const filtersSection = document.getElementById("filtersSection");
+  const tableSection = document.getElementById("tableSection");
+  const filtroAsesor = document.getElementById("filtroAsesor");
+  const filtroRegistrado = document.getElementById("filtroRegistrado");
+  const tbody = document.querySelector("#tablaFeedback tbody");
+
   await cargarRegistros();
   cargarAsesoresFiltro();
   renderTabla();
 
-  document.getElementById("filtersSection").style.display = "block";
-  document.getElementById("tableSection").style.display = "block";
+  filtersSection.style.display = "block";
+  tableSection.style.display = "block";
 
-  document.getElementById("filtroAsesor").addEventListener("change", () => {
+  filtroAsesor.addEventListener("change", () => {
     renderTabla();
     document.getElementById("detailBox").style.display = "none";
   });
 
-  document.getElementById("filtroRegistrado").addEventListener("change", () => {
+  filtroRegistrado.addEventListener("change", () => {
     renderTabla();
     document.getElementById("detailBox").style.display = "none";
   });
 
-  document
-    .querySelector("#tablaFeedback tbody")
-    .addEventListener("click", (e) => {
-      const btn = e.target.closest(".btn-ver");
-      if (btn) verDetalle(btn.dataset.id);
-    });
+  // Delegación de eventos para botones "Ver"
+  tbody.addEventListener("click", (e) => {
+    const btn = e.target.closest(".btn-ver");
+    if (!btn) return;
+    const id = btn.getAttribute("data-id");
+    if (id) verDetalle(id);
+  });
 }
 
+// Solo usuarios logueados y con rol de Admin/Supervisor
 onAuthStateChanged(auth, (user) => {
-  const warning = document.getElementById("accessWarning");
+  const accessWarning = document.getElementById("accessWarning");
+  const filtersSection = document.getElementById("filtersSection");
+  const tableSection = document.getElementById("tableSection");
 
   if (!user) {
-    warning.style.display = "block";
-    warning.textContent = "Inicia sesión para acceder.";
+    accessWarning.style.display = "block";
+    accessWarning.textContent =
+      "No tienes sesión activa. Inicia sesión en el portal para acceder a la visualización de feedback.";
+    filtersSection.style.display = "none";
+    tableSection.style.display = "none";
     return;
   }
 
-  if (!SUPERVISOR_EMAILS.includes(user.email)) {
-    warning.style.display = "block";
-    warning.textContent = "No tienes permisos.";
+  const email = user.email || "";
+  const isSupervisor = SUPERVISOR_EMAILS.includes(email);
+
+  if (!isSupervisor) {
+    accessWarning.style.display = "block";
+    accessWarning.textContent =
+      "No tienes permisos para visualizar los feedbacks. Solo administradores y supervisores pueden acceder.";
+    filtersSection.style.display = "none";
+    tableSection.style.display = "none";
     return;
   }
 
-  warning.style.display = "none";
-  initApp();
+  accessWarning.style.display = "none";
+
+  initApp().catch((err) => {
+    console.error("Error inicializando visualización:", err);
+    accessWarning.style.display = "block";
+    accessWarning.textContent =
+      "Error al cargar feedbacks. Revisa la consola del navegador.";
+  });
 });

@@ -8,17 +8,18 @@
   <!-- Estilos M3 -->
   <link rel="stylesheet" href="css/visualizacion_feedback.css" />
 
-  <!-- jsPDF + html2canvas (externos, sin inline) -->
+  <!-- jsPDF + html2canvas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
 </head>
+
 <body>
   <div class="m3-card main-container">
     <h1 class="m3-title">Visualización de Feedback</h1>
 
     <!-- BANNER DE ACCESO -->
     <div id="accessWarning" class="m3-access-warning" style="display:none;">
-      No tienes permisos para visualizar los feedbacks. Solo administradores y supervisores pueden acceder.
+      No tienes permisos para visualizar los feedbacks.
     </div>
 
     <!-- FILTROS -->
@@ -31,15 +32,9 @@
       <label class="m3-label" for="filtroRegistrado">Filtrar por quién registró</label>
       <select id="filtroRegistrado" class="m3-select">
         <option value="">— Todos —</option>
-        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
-          Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
-        </option>
-        <option value="César Alonso Torres Montes - Supervisor">
-          César Alonso Torres Montes - Supervisor
-        </option>
-        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
-          Karen Vanessa Vital Cordova - Líder de Operaciones
-        </option>
+        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca - Líder de Calidad y Formación</option>
+        <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres Montes - Supervisor</option>
+        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital Cordova - Líder de Operaciones</option>
       </select>
     </section>
 
@@ -48,7 +43,7 @@
       <table id="tablaFeedback" class="m3-table">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>Código</th>
             <th>Fecha</th>
             <th>Nota</th>
             <th>Estado</th>
@@ -64,34 +59,32 @@
       </div>
     </section>
 
-     <!-- DETALLE -->
-<section id="detailBox" class="m3-detail-card" style="display:none;">
-  <header class="detail-header">
-    <div>
-      <h2 id="tituloRetro" class="detail-title">RETROALIMENTACIÓN</h2>
-      <p id="subTituloEstado" class="detail-subtitle"></p>
-    </div>
+    <!-- DETALLE -->
+    <section id="detailBox" class="m3-detail-card" style="display:none;">
+      <header class="detail-header">
+        <div>
+          <h2 id="tituloRetro" class="detail-title">RETROALIMENTACIÓN</h2>
+          <p id="subTituloEstado" class="detail-subtitle"></p>
+        </div>
 
-    <!-- LOGO -->
-    <img
-      class="logo"
-      src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media"
-      alt="Logo"
-    />
-  </header>
+        <!-- LOGO -->
+        <img class="logo"
+          src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media"
+          alt="Logo" />
+      </header>
 
-  <!-- CONTENIDO GENERADO DINÁMICAMENTE -->
-  <div id="detailContent"></div>
+      <!-- CONTENIDO DINÁMICO -->
+      <div id="detailContent"></div>
 
-  <div class="detail-actions">
-    <button id="pdfBtn" class="m3-btn primary" type="button">
-      Exportar PDF
-    </button>
+      <div class="detail-actions">
+        <button id="pdfBtn" class="m3-btn primary" type="button">
+          Exportar PDF
+        </button>
+      </div>
+    </section>
   </div>
-</section>
 
-  <!-- JS principal (MÓDULO, sin inline) -->
+  <!-- JS PRINCIPAL -->
   <script type="module" src="js/visualizacion_feedback.js"></script>
 </body>
 </html>
-

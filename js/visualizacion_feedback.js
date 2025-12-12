@@ -115,24 +115,26 @@ function cargarAsesoresFiltro() {
 
 /* -------------------- TABLA -------------------- */
 function renderTabla() {
-  const filtroAsesor = document.getElementById("filtroAsesor").value;
-  const filtroReg = document.getElementById("filtroRegistrado").value;
-
+  const filtroAsesor = document.getElementById("filtroAsesor");
+  const filtroRegistrado = document.getElementById("filtroRegistrado");
   const tabla = document.getElementById("tablaFeedback");
   const tbody = tabla.querySelector("tbody");
   const vacio = document.getElementById("tablaVaciaMsg");
 
+  const asesorSel = filtroAsesor.value;
+  const registradorSel = filtroRegistrado.value;
+
   tbody.innerHTML = "";
 
-  if (!filtroAsesor) {
+  if (!asesorSel) {
     tabla.style.display = "none";
     vacio.style.display = "none";
     return;
   }
 
   const filtrados = registros
-    .filter((r) => r.asesor === filtroAsesor)
-    .filter((r) => !filtroReg || r.registradoPor === filtroReg);
+    .filter((r) => r.asesor === asesorSel)
+    .filter((r) => !registradorSel || r.registradoPor === registradorSel);
 
   if (!filtrados.length) {
     tabla.style.display = "none";
@@ -143,24 +145,28 @@ function renderTabla() {
   tabla.style.display = "table";
   vacio.style.display = "none";
 
-  tbody.innerHTML = filtrados
+  const rowsHtml = filtrados
     .map((r) => {
       const estado = calcularEstado(r);
-      const clase = estado === "COMPLETADO" ? "chip-estado done" : "chip-estado pending";
+      const estadoClass = estado === "COMPLETADO" ? "chip-estado done" : "chip-estado pending";
 
       return `
         <tr>
-          <td>${r.idLlamada || r.id}</td>
           <td>${r.fechaObj.toLocaleString("es-PE")}</td>
           <td>${r.nota}%</td>
-          <td><span class="${clase}">${estado}</span></td>
-          <td>${r.registradoPor}</td>
+          <td><span class="${estadoClass}">${estado}</span></td>
+          <td>${r.registradoPor || "-"}</td>
           <td>
-            <button class="m3-btn primary btn-ver" data-id="${r.id}">Ver</button>
+            <button class="m3-btn primary btn-ver" data-id="${r.id}">
+              Ver
+            </button>
           </td>
-        </tr>`;
+        </tr>
+      `;
     })
     .join("");
+
+  tbody.innerHTML = rowsHtml;
 }
 
 /* -------------------- VER DETALLE -------------------- */

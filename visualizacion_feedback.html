@@ -5,38 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Visualización de Feedback — M3</title>
 
+  <!-- Estilos M3 -->
   <link rel="stylesheet" href="css/visualizacion_feedback.css" />
 
-  <!-- Librerías externas -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+  <!-- jsPDF + html2canvas (externos, sin inline) -->
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+    crossorigin="anonymous">
+  </script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+    crossorigin="anonymous">
+  </script>
 </head>
 <body>
   <div class="m3-card main-container">
     <h1 class="m3-title">Visualización de Feedback</h1>
 
-    <!-- ACCESO -->
+    <!-- BANNER DE ACCESO -->
     <div id="accessWarning" class="m3-access-warning" style="display:none;">
-      No tienes permisos para visualizar los feedbacks.
+      No tienes permisos para visualizar los feedbacks. Solo administradores y supervisores pueden acceder.
     </div>
 
     <!-- FILTROS -->
     <section class="m3-section" id="filtersSection" style="display:none;">
-      <label class="m3-label">Filtrar por asesor</label>
+      <label class="m3-label" for="filtroAsesor">Filtrar por asesor</label>
       <select id="filtroAsesor" class="m3-select">
         <option value="">— Selecciona un asesor —</option>
       </select>
 
-      <label class="m3-label">Filtrar por quién registró</label>
+      <label class="m3-label" for="filtroRegistrado">Filtrar por quién registró</label>
       <select id="filtroRegistrado" class="m3-select">
         <option value="">— Todos —</option>
-        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">Alex Paolo Nuñez Sulca</option>
-        <option value="César Alonso Torres Montes - Supervisor">César Alonso Torres</option>
-        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">Karen Vanessa Vital</option>
+        <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
+          Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
+        </option>
+        <option value="César Alonso Torres Montes - Supervisor">
+          César Alonso Torres Montes - Supervisor
+        </option>
+        <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
+          Karen Vanessa Vital Cordova - Líder de Operaciones
+        </option>
       </select>
     </section>
 
-    <!-- TABLA (SIN ID) -->
+    <!-- TABLA (SIN COLUMNA ID) -->
     <section class="m3-section" id="tableSection" style="display:none;">
       <table id="tablaFeedback" class="m3-table">
         <thead>
@@ -50,7 +63,6 @@
         </thead>
         <tbody></tbody>
       </table>
-
       <div id="tablaVaciaMsg" class="m3-empty-state" style="display:none">
         No hay registros para este filtro.
       </div>
@@ -63,12 +75,15 @@
           <h2 id="tituloRetro" class="detail-title">RETROALIMENTACIÓN</h2>
           <p id="subTituloEstado" class="detail-subtitle"></p>
         </div>
-
-        <img class="logo"
+        <!-- LOGO -->
+        <img
+          class="logo"
           src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media"
-          alt="Logo" />
+          alt="Logo"
+        />
       </header>
 
+      <!-- CONTENIDO GENERADO DINÁMICAMENTE -->
       <div id="detailContent"></div>
 
       <div class="detail-actions">
@@ -79,6 +94,7 @@
     </section>
   </div>
 
+  <!-- JS principal (MÓDULO) -->
   <script type="module" src="js/visualizacion_feedback.js"></script>
 </body>
 </html>

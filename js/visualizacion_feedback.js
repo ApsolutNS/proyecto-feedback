@@ -214,16 +214,17 @@ function verDetalle(id) {
 
   const esReafirmacion = Number(r.nota) === 100;
   const palabraRetro = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
+
   tituloRetro.textContent = palabraRetro;
 
   const estadoCalculado = calcularEstado(r);
+
   subTituloEstado.innerHTML = `
     Estado: ${estadoCalculado} ·
     Registrado por: ${r.registradoPor || "No especificado"} ·
     Fecha: ${r.fechaObj.toLocaleString("es-PE")}
   `;
 
-  // DNI desde GC (si GC tiene números)
   const dniDesdeGC = (r.gc || "").replace(/[^0-9]/g, "");
 
   const itemsHtml =
@@ -231,12 +232,10 @@ function verDetalle(id) {
       ? r.items
           .map(
             (it) => `
-        <div class="item-block">
-          <strong>${it.name || ""}</strong> ${
-              it.perc ? `(${it.perc}%)` : ""
-            }
-          <div>${it.detail || ""}</div>
-        </div>
+      <div class="item-block">
+        <strong>${it.name || ""}</strong> ${it.perc ? `(${it.perc}%)` : ""}
+        <div>${it.detail || ""}</div>
+      </div>
       `
           )
           .join("")
@@ -256,22 +255,20 @@ function verDetalle(id) {
     ? `<div class="firma-box"><img src="${r.firmaUrl}" alt="Firma del agente"></div>`
     : `<div class="firma-box">Sin firma registrada</div>`;
 
-  // 🔹 AQUÍ AGREGAMOS: ID LLAMADA, ID CONTACTO y GC
+  /* ------------------ CONTENIDO DEL DETALLE ------------------ */
   detailContent.innerHTML = `
     <p>
-      Por medio de la presente se deja constancia que el
-      <strong>${formatearFechaLarga(r.fechaObj)}</strong> se realiza una
-      <strong>${palabraRetro}</strong> al/la colaborador(a)
-      <strong>${r.asesor || ""}</strong> con DNI
-      <strong>${dniDesdeGC || "—"}</strong>, quien ejerce la función de Asesor(a)
-      Financiero(a), para el cumplimiento de los parámetros de la llamada.
+      El <strong>${formatearFechaLarga(r.fechaObj)}</strong> se realiza una 
+      <strong>${palabraRetro}</strong> al colaborador(a)
+      <strong>${r.asesor}</strong> (GC <strong>${r.gc || "—"}</strong>) 
+      con DNI <strong>${dniDesdeGC || "—"}</strong>.
     </p>
 
-    <div class="section-title">Datos de la gestión</div>
+    <div class="section-title">Datos del monitoreo</div>
     <div class="box">
-      <div><strong>ID llamada:</strong> ${r.idLlamada || "—"}</div>
-      <div><strong>ID contacto:</strong> ${r.idContacto || "—"}</div>
-      <div><strong>GC:</strong> ${r.gc || "—"}</div>
+      <div><strong>ID Llamada:</strong> ${r.idLlamada || "—"}</div>
+      <div><strong>ID Contacto:</strong> ${r.idContacto || "—"}</div>
+      <div><strong>Tipo detectado:</strong> ${r.tipo || "—"}</div>
     </div>
 
     <div class="section-title">Datos del cliente</div>
@@ -285,19 +282,12 @@ function verDetalle(id) {
 
     <div class="section-title">Gestión monitoreada</div>
     <div class="box">
-      <div><strong>Tipo:</strong> ${r.tipo || "—"}</div>
-      <div style="margin-top:4px">
-        <strong>Resumen:</strong>
-        <div style="margin-top:4px;">
-          ${r.resumen || "—"}
-        </div>
-      </div>
+      <strong>Resumen:</strong>
+      <div style="margin-top:4px">${r.resumen || "—"}</div>
     </div>
 
     <div class="section-title">Ítems observados</div>
-    <div>
-      ${itemsHtml}
-    </div>
+    <div>${itemsHtml}</div>
 
     <div class="section-title">Nota obtenida</div>
     <div class="box">
@@ -307,7 +297,7 @@ function verDetalle(id) {
     <div class="section-title">Compromiso del agente</div>
     <div class="box">
       ${
-        r.compromiso && r.compromiso.trim()
+        r.compromiso?.trim()
           ? r.compromiso
           : "<em>Sin compromiso registrado.</em>"
       }
@@ -317,13 +307,12 @@ function verDetalle(id) {
     ${firmaHtml}
 
     <div class="section-title">Evidencias</div>
-    <div>
-      ${evidenciasHtml}
-    </div>
+    <div>${evidenciasHtml}</div>
   `;
 
   detailBox.style.display = "block";
 }
+
 
 /* -------------------- EXPORTAR PDF -------------------- */
 const pdfBtn = document.getElementById("pdfBtn");

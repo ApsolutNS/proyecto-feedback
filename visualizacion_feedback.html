@@ -64,31 +64,34 @@
       </div>
     </section>
 
-    <!-- DETALLE -->
-    <section id="detailBox" class="m3-detail-card" style="display:none;">
-      <header class="detail-header">
-        <div>
-          <h2 id="tituloRetro" class="detail-title">RETROALIMENTACIÓN</h2>
-          <p id="subTituloEstado" class="detail-subtitle"></p>
-        </div>
-        <img
-          class="logo"
-          src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media"
-          alt="Logo"
-        />
-      </header>
+     <!-- DETALLE -->
+<section id="detailBox" class="m3-detail-card" style="display:none;">
+  <header class="detail-header">
+    <div>
+      <h2 id="tituloRetro" class="detail-title">RETROALIMENTACIÓN</h2>
+      <p id="subTituloEstado" class="detail-subtitle"></p>
+    </div>
 
-      <div id="detailContent"></div>
+    <!-- LOGO -->
+    <img
+      class="logo"
+      src="https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2FImagen1.png?alt=media"
+      alt="Logo"
+    />
+  </header>
 
-      <div class="detail-actions">
-        <button id="pdfBtn" class="m3-btn primary" type="button">
-          Exportar PDF
-        </button>
-      </div>
-    </section>
+  <!-- CONTENIDO GENERADO DINÁMICAMENTE -->
+  <div id="detailContent"></div>
+
+  <div class="detail-actions">
+    <button id="pdfBtn" class="m3-btn primary" type="button">
+      Exportar PDF
+    </button>
   </div>
+</section>
 
   <!-- JS principal (MÓDULO, sin inline) -->
   <script type="module" src="js/visualizacion_feedback.js"></script>
 </body>
 </html>
+

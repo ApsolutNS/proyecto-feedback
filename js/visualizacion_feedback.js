@@ -10,6 +10,7 @@ import {
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
+/* -------------------- FIREBASE CONFIG -------------------- */
 const firebaseConfig = {
   apiKey: "AIzaSyD4cFHDbSfJNAhTuuP01N5JZQd-FOYB2LM",
   authDomain: "feedback-app-ac30e.firebaseapp.com",
@@ -21,20 +22,21 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// ======== CONFIG ROLES (Admin + Supervisores) ========
+/* -------------------- ROLES PERMITIDOS -------------------- */
 const SUPERVISOR_EMAILS = [
   "anunez@gefectiva.com",
   "ctorres@gefectiva.com",
   "kvital@gefectiva.com",
 ];
 
+/* -------------------- ESTADO -------------------- */
 let registros = [];
 let currentFeedbackId = null;
 
-/* -------------------- UTILES -------------------- */
+/* -------------------- UTILIDADES -------------------- */
 function toDateSafe(value) {
   if (!value) return new Date();
-  if (value.toDate) return value.toDate(); // Timestamp
+  if (value.toDate) return value.toDate(); // Timestamp de Firestore
   if (value instanceof Date) return value;
   return new Date(value);
 }
@@ -52,7 +54,6 @@ function formatearFechaLarga(date) {
 }
 
 /**
- * Opción A (tu elección):
  * COMPLETADO cuando hay firmaUrl y compromiso.
  * Si no, PENDIENTE.
  */
@@ -73,30 +74,50 @@ async function cargarRegistros() {
     const fecha = r.fecha || r.fechaObj || new Date().toISOString();
 
     const normalizado = {
+      // 🔹 ID del documento en Firestore
       id: d.id,
+      // 🔹 Nuevos campos: id de llamada y contacto
+      idLlamada: r.idLlamada || "",
+      idContacto: r.idContacto || "",
+      // 🔹 Info del asesor
       asesorId: r.asesorId || null, // UID del asesor si existe
       asesor: r.asesor || "",
       gc: r.gc || "",
+
+      // 🔹 Datos de cliente y gestión
       cliente: r.cliente || {},
       tipificacion: r.tipificacion || "",
       observacionCliente: r.observacionCliente || "",
       resumen: r.resumen || "",
+      tipo: r.tipo || "",
+
+      // 🔹 Ítems y nota
       items: Array.isArray(r.items) ? r.items : [],
-      nota: typeof r.nota === "number" ? r.nota : Number(r.nota || 0),
+      nota:
+        typeof r.nota === "number"
+          ? r.nota
+          : Number(r.nota || 0),
+
+      // 🔹 Evidencias
       imagenes: Array.isArray(r.imagenes) ? r.imagenes : [],
+
+      // 🔹 Fechas
       fechaRaw: fecha,
       fechaObj: toDateSafe(fecha),
+
+      // 🔹 Otros campos
       registradoPor: r.registradoPor || r.registrado_por || "",
       firmaUrl: r.firmaUrl || "",
       compromiso: r.compromiso || "",
-      tipo: r.tipo || "",
     };
 
+    // Estado calculado si no existe
     normalizado.estado = r.estado || calcularEstado(normalizado);
 
     registros.push(normalizado);
   });
 
+  // Ordenar de más reciente a más antiguo
   registros.sort((a, b) => b.fechaObj - a.fechaObj);
 }
 
@@ -124,6 +145,7 @@ function renderTabla() {
 
   tbody.innerHTML = "";
 
+  // Si no se ha elegido asesor, no mostramos nada
   if (!asesorSel) {
     tabla.style.display = "none";
     vacio.style.display = "none";
@@ -151,9 +173,12 @@ function renderTabla() {
           ? "chip-estado done"
           : "chip-estado pending";
 
+      // 🔹 Mostramos ID de llamada si existe, si no, el ID del doc
+      const idMostrar = r.idLlamada || r.id;
+
       return `
         <tr>
-          <td>${r.id}</td>
+          <td>${idMostrar}</td>
           <td>${r.fechaObj.toLocaleString("es-PE")}</td>
           <td>${r.nota}%</td>
           <td>
@@ -189,7 +214,6 @@ function verDetalle(id) {
 
   const esReafirmacion = Number(r.nota) === 100;
   const palabraRetro = esReafirmacion ? "REAFIRMACIÓN" : "RETROALIMENTACIÓN";
-
   tituloRetro.textContent = palabraRetro;
 
   const estadoCalculado = calcularEstado(r);
@@ -199,6 +223,7 @@ function verDetalle(id) {
     Fecha: ${r.fechaObj.toLocaleString("es-PE")}
   `;
 
+  // DNI desde GC (si GC tiene números)
   const dniDesdeGC = (r.gc || "").replace(/[^0-9]/g, "");
 
   const itemsHtml =
@@ -231,6 +256,7 @@ function verDetalle(id) {
     ? `<div class="firma-box"><img src="${r.firmaUrl}" alt="Firma del agente"></div>`
     : `<div class="firma-box">Sin firma registrada</div>`;
 
+  // 🔹 AQUÍ AGREGAMOS: ID LLAMADA, ID CONTACTO y GC
   detailContent.innerHTML = `
     <p>
       Por medio de la presente se deja constancia que el
@@ -240,6 +266,13 @@ function verDetalle(id) {
       <strong>${dniDesdeGC || "—"}</strong>, quien ejerce la función de Asesor(a)
       Financiero(a), para el cumplimiento de los parámetros de la llamada.
     </p>
+
+    <div class="section-title">Datos de la gestión</div>
+    <div class="box">
+      <div><strong>ID llamada:</strong> ${r.idLlamada || "—"}</div>
+      <div><strong>ID contacto:</strong> ${r.idContacto || "—"}</div>
+      <div><strong>GC:</strong> ${r.gc || "—"}</div>
+    </div>
 
     <div class="section-title">Datos del cliente</div>
     <div class="box">
@@ -294,6 +327,7 @@ function verDetalle(id) {
 
 /* -------------------- EXPORTAR PDF -------------------- */
 const pdfBtn = document.getElementById("pdfBtn");
+
 if (pdfBtn) {
   pdfBtn.addEventListener("click", async () => {
     const detailBox = document.getElementById("detailBox");
@@ -304,8 +338,8 @@ if (pdfBtn) {
       useCORS: true,
       backgroundColor: "#ffffff",
     });
-
     const imgData = canvas.toDataURL("image/png");
+
     const { jsPDF } = window.jspdf || {};
     if (!jsPDF) {
       console.error("jsPDF no está disponible.");
@@ -314,14 +348,15 @@ if (pdfBtn) {
     }
 
     const pdf = new jsPDF("p", "mm", "a4");
-
     const pageWidth = pdf.internal.pageSize.getWidth() - 20;
     const pageHeight = (canvas.height * pageWidth) / canvas.width;
 
     pdf.addImage(imgData, "PNG", 10, 10, pageWidth, pageHeight);
+
     const filename = currentFeedbackId
       ? `feedback_${currentFeedbackId}.pdf`
       : "feedback.pdf";
+
     pdf.save(filename);
   });
 }
@@ -380,6 +415,8 @@ onAuthStateChanged(auth, (user) => {
 
   if (!isSupervisor) {
     accessWarning.style.display = "block";
+    accessWarning.textContent =
+      "No tienes permisos para visualizar los feedbacks. Solo administradores y supervisores pueden acceder.";
     filtersSection.style.display = "none";
     tableSection.style.display = "none";
     return;
@@ -387,6 +424,7 @@ onAuthStateChanged(auth, (user) => {
 
   // Tiene permisos
   accessWarning.style.display = "none";
+
   initApp().catch((err) => {
     console.error("Error inicializando visualización:", err);
     accessWarning.style.display = "block";

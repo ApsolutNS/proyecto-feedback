@@ -8,9 +8,14 @@
   <!-- Estilos -->
   <link rel="stylesheet" href="css/refuerzos.css" />
 
-  <!-- html2pdf (para exportar PDF, permitido por tu CSP) -->
+  <!-- Quill Editor (WYSIWYG básico) -->
+  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet" />
+  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js" defer></script>
+
+  <!-- html2pdf (para exportar PDF) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js" defer></script>
 </head>
+
 <body>
   <!-- HEADER -->
   <header>
@@ -19,9 +24,11 @@
         <span class="logo">FE</span>
         Refuerzos & Capacitaciones
       </div>
+
       <div class="header-sub">
         Registro oficial de acciones de Calidad & Formación – Financiera Efectiva.
       </div>
+
       <div class="header-meta">
         <div class="pill">
           <span class="pill-dot"></span>
@@ -32,6 +39,7 @@
         </div>
       </div>
     </div>
+
     <div class="header-right">
       <button id="btnIrBuscador" class="btn-sm">🔎 Ir al Dashboard</button>
       <button id="themeToggle" class="btn-toggle">🌙 Modo oscuro</button>
@@ -41,6 +49,7 @@
   <!-- CONTENEDOR PRINCIPAL -->
   <div class="container">
     <div class="layout-grid">
+
       <!-- FORMULARIO -->
       <section class="card" id="cardFormulario">
         <div class="card-header">
@@ -115,13 +124,23 @@
           ></textarea>
         </div>
 
+        <!-- ✅ EDITOR RICO (Quill) para Detalle / acuerdos clave -->
         <div style="margin-top: 10px">
-          <label for="detalle">Detalle / acuerdos clave</label>
-          <textarea
-            id="detalle"
-            rows="3"
-            placeholder="Puntos específicos tratados, compromisos, indicadores a monitorear, etc."
-          ></textarea>
+          <label for="detalleEditor">Detalle / acuerdos clave</label>
+
+          <!-- Editor visual -->
+          <div id="detalleEditor" class="editor-box"></div>
+
+          <!-- IMPORTANTÍSIMO:
+               Para NO romper tu JS actual (si hoy lee textarea#detalle),
+               mantenemos un textarea oculto con el MISMO id="detalle".
+               El editor se sincroniza aquí automáticamente. -->
+          <textarea id="detalle" hidden></textarea>
+
+          <!-- (Opcional) ayuda visual -->
+          <div class="hint" style="margin-top:6px">
+            Tip: Puedes usar <b>negrita</b>, <i>cursiva</i>, listas y enlaces.
+          </div>
         </div>
 
         <div class="form-footer">
@@ -129,6 +148,7 @@
             <div>✔ Luego el agente podrá firmar este refuerzo desde <b>portal_agente.html</b>.</div>
             <div>✔ El PDF se genera desde aquí con las firmas de Alex + agentes.</div>
           </div>
+
           <div style="display: flex; gap: 8px; flex-wrap: wrap">
             <button class="btn-secondary" type="button" id="btnLimpiar">Limpiar</button>
             <button class="btn" type="button" id="btnGuardar">💾 Guardar refuerzo</button>
@@ -238,6 +258,51 @@
       </div>
     </div>
   </div>
+
+  <!-- ✅ INIT QUILL + SYNC con textarea#detalle (para mantener tu JS funcionando) -->
+  <script>
+    // Espera a que Quill cargue (porque viene con defer)
+    window.addEventListener("DOMContentLoaded", () => {
+      const editorEl = document.getElementById("detalleEditor");
+      const hiddenTextarea = document.getElementById("detalle");
+      if (!editorEl || !hiddenTextarea) return;
+
+      // Si tu JS ya guardaba texto plano en #detalle, lo cargamos como HTML simple
+      const initial = (hiddenTextarea.value || "").trim();
+
+      // Toolbar básica: negrita, cursiva, subrayado, listas, link, limpiar formato
+      const toolbarOptions = [
+        ["bold", "italic", "underline"],
+        [{ "list": "ordered" }, { "list": "bullet" }],
+        ["link"],
+        ["clean"]
+      ];
+
+      const quill = new Quill(editorEl, {
+        theme: "snow",
+        modules: { toolbar: toolbarOptions },
+        placeholder: "Escribe aquí el detalle / acuerdos clave…"
+      });
+
+      // Si había contenido previo, intentar cargarlo:
+      if (initial) {
+        // Si te llega texto plano, esto lo pone como un párrafo.
+        quill.clipboard.dangerouslyPasteHTML(initial);
+      }
+
+      // Sincroniza a textarea oculto para que tu refuerzos.js lo lea igual que antes
+      const syncToTextarea = () => {
+        const html = editorEl.querySelector(".ql-editor")?.innerHTML ?? "";
+        hiddenTextarea.value = html;
+      };
+
+      quill.on("text-change", syncToTextarea);
+      syncToTextarea();
+
+      // Exponer por si tu JS lo quiere usar después (opcional)
+      window.detalleQuill = quill;
+    });
+  </script>
 
   <!-- LÓGICA -->
   <script type="module" src="js/refuerzos.js"></script>

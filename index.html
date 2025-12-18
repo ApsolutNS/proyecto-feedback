@@ -176,21 +176,23 @@
   </div>
 </div>
 
-<!-- ================= MODAL DETALLE ÍTEM ================= -->
-<div id="itemDetailModal" class="modal-backdrop">
+<!-- ================= MODAL DETALLE ITEM (POPUP NUEVO) ================= -->
+<div id="detailModal" class="modal-backdrop" style="display:none;">
   <div class="modal-content">
     <div class="modal-header">
-      <h3 id="itemDetailTitle">Detalle del ítem</h3>
-      <button id="btnCloseItemDetail" class="modal-close">✕</button>
+      <div>
+        <h3 id="detailModalTitle">Detalle del ítem</h3>
+        <p id="detailModalSubtitle" class="small"></p>
+      </div>
+      <button id="btnCloseDetail" class="modal-close">← Volver</button>
     </div>
-    <div class="modal-body">
-      <ul id="itemDetailList"></ul>
-      <button class="btn secondary" id="btnBackToRanking">← Volver</button>
-    </div>
+    <div class="modal-body" id="detailModalBody"></div>
   </div>
 </div>
+
 
 <!-- ================= JS ================= -->
 <script type="module" src="js/index.js"></script>
 </body>
 </html>
+

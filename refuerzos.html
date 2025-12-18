@@ -126,16 +126,20 @@
 
         <!-- ✅ EDITOR RICO (Quill) para Detalle / acuerdos clave -->
         <div style="margin-top: 10px">
-          <label for="detalleEditor">Detalle / acuerdos clave</label>
-
-          <!-- Editor visual -->
-          <div id="detalleEditor" class="editor-box"></div>
-
-          <!-- IMPORTANTÍSIMO:
-               Para NO romper tu JS actual (si hoy lee textarea#detalle),
-               mantenemos un textarea oculto con el MISMO id="detalle".
-               El editor se sincroniza aquí automáticamente. -->
-          <textarea id="detalle" hidden></textarea>
+          <label>Detalle / acuerdos clave</label>
+          <div class="editor-toolbar">
+            <button type="button" data-cmd="bold"><b>B</b></button>
+            <button type="button" data-cmd="italic"><i>I</i></button>
+            <button type="button" data-cmd="underline"><u>U</u></button>
+            <button type="button" data-cmd="insertUnorderedList">• Lista</button>
+          </div>
+          <div
+            id="detalleEditor"
+            class="editor-box"
+            contenteditable="true"
+            placeholder="Escribe el detalle del refuerzo, acuerdos, compromisos..."
+          ></div>
+          <input type="hidden" id="detalle" />
 
           <!-- (Opcional) ayuda visual -->
           <div class="hint" style="margin-top:6px">

@@ -961,6 +961,52 @@ body.dark .ql-toolbar.ql-snow button.ql-active{
   border-color: var(--accent-soft);
   background: var(--card);
 }
+/* ===== EDITOR TEXTO BÁSICO ===== */
+.editor-box {
+  min-height: 130px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  outline: none;
+}
+
+/* 👇 ESTO ES LO QUE TE FALTABA */
+.editor-box ul {
+  list-style-type: disc;
+  padding-left: 22px;
+  margin: 6px 0;
+}
+.editor-box ol {
+  list-style-type: decimal;
+  padding-left: 22px;
+  margin: 6px 0;
+}
+.editor-box li {
+  margin-bottom: 4px;
+}
+
+.editor-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.editor-toolbar button {
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.editor-toolbar button:hover {
+  background: var(--accent-soft);
+  color: #fff;
+}
 
 /* =========================================================
    FIN

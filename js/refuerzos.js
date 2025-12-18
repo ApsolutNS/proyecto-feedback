@@ -3,14 +3,12 @@
 
 /* ---------------- FIREBASE IMPORTS ---------------- */
 import { db } from "./firebase.js";
-
 import {
   collection,
   getDocs,
   addDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
 import {
   getAuth,
   onAuthStateChanged
@@ -39,6 +37,60 @@ let asesoresMap = {};
 let pdfActualId = null;
 
 const auth = getAuth();
+
+/* ---------------- QUILL (EDITOR DETALLE) ---------------- */
+let quillDetalle = null;
+
+function initQuill() {
+  // Si no existe el contenedor o Quill no está cargado, salimos sin romper nada
+  const editorEl = document.getElementById("detalleEditor");
+  if (!editorEl) return;
+  // Quill viene por CDN (window.Quill)
+  if (typeof window.Quill === "undefined") {
+    console.warn("Quill no está disponible. Revisa el script CDN y defer.");
+    return;
+  }
+  // Evita reinicializar si se llama 2 veces
+  if (quillDetalle) return;
+
+  quillDetalle = new window.Quill("#detalleEditor", {
+    theme: "snow",
+    placeholder: "Escribe el detalle con listas, negrita, etc…",
+    modules: {
+      toolbar: [
+        ["bold", "italic", "underline"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        [{ align: [] }],
+        ["link"],
+        ["clean"]
+      ]
+    }
+  });
+}
+
+function getDetalleFromEditor() {
+  // Preferimos Quill si está activo
+  if (quillDetalle) {
+    const html = quillDetalle.root.innerHTML || "";
+    // Si está vacío (Quill suele dejar <p><br></p>)
+    const limpio = html.replace(/\s/g, "").toLowerCase();
+    if (limpio === "<p><br></p>" || limpio === "<p></p>") return "";
+    return html;
+  }
+
+  // Fallback: si existe textarea antiguo
+  const ta = document.getElementById("detalle");
+  return ta ? (ta.value || "").trim() : "";
+}
+
+function clearDetalleEditor() {
+  if (quillDetalle) {
+    quillDetalle.setText("");
+    return;
+  }
+  const ta = document.getElementById("detalle");
+  if (ta) ta.value = "";
+}
 
 /* ---------------- UTILIDADES DOM ---------------- */
 function setLoading(show, text = "Procesando…") {
@@ -89,13 +141,17 @@ async function cargarAsesores() {
     const snap = await getDocs(colAsesores);
     const lista = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     lista.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+
     asesoresMap = {};
     cont.innerHTML = "";
+
     lista.forEach(a => {
       const id = a.id;
       const nombre = a.nombre || "(sin nombre)";
       const gc = a.GC || a.gc || "";
+
       asesoresMap[id] = { nombre, gc };
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "asesor-chip";
@@ -104,9 +160,11 @@ async function cargarAsesores() {
         <span class="asesor-chip-name">${nombre}</span>
         <span class="asesor-chip-gc">${gc ? gc : "Sin GC"}</span>
       `;
+
       btn.addEventListener("click", () => {
         btn.classList.toggle("selected");
       });
+
       cont.appendChild(btn);
     });
   } catch (e) {
@@ -124,11 +182,13 @@ async function cargarRefuerzos() {
   try {
     const snap = await getDocs(colRefuerzos);
     refuerzosCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
     refuerzosCache.sort((a, b) => {
       const fa = a.fechaRefuerzo ? new Date(a.fechaRefuerzo) : 0;
       const fb = b.fechaRefuerzo ? new Date(b.fechaRefuerzo) : 0;
       return fb - fa;
     });
+
     renderTabla();
   } catch (e) {
     console.error(e);
@@ -160,6 +220,7 @@ function filtrarLista() {
       ]
         .join(" ")
         .toLowerCase();
+
       return join.includes(q);
     });
   }
@@ -168,12 +229,15 @@ function filtrarLista() {
     lista = lista.filter(r => {
       const incompleto = esIncompleto(r);
       const firmado = !!r.firmado;
+
       if (filtroEstado === "incompleto") return incompleto;
       if (filtroEstado === "firmado") return firmado && !incompleto;
       if (filtroEstado === "pendiente") return !firmado && !incompleto;
+
       return true;
     });
   }
+
   return lista;
 }
 
@@ -185,10 +249,12 @@ function actualizarMetricas() {
   const pendientes = refuerzosCache.filter(
     r => !r.firmado && !esIncompleto(r)
   ).length;
+
   const totalEl = document.getElementById("metricTotal");
   const firmadosEl = document.getElementById("metricFirmados");
   const pendientesEl = document.getElementById("metricPendientes");
   if (!totalEl || !firmadosEl || !pendientesEl) return;
+
   totalEl.textContent = total;
   firmadosEl.textContent = firmados;
   pendientesEl.textContent = pendientes;
@@ -197,6 +263,7 @@ function actualizarMetricas() {
 function renderTabla() {
   const tbody = document.getElementById("tablaRefuerzos");
   if (!tbody) return;
+
   const lista = filtrarLista();
   actualizarMetricas();
 
@@ -211,11 +278,13 @@ function renderTabla() {
       const fechaStr = r.fechaRefuerzo
         ? new Date(r.fechaRefuerzo).toLocaleDateString("es-PE")
         : "-";
+
       const incompleto = esIncompleto(r);
       const firmado = !!r.firmado;
 
       let estadoClase = "estado-pend";
       let estadoTexto = "Pendiente de firma";
+
       if (incompleto) {
         estadoClase = "estado-incomp";
         estadoTexto = "Datos incompletos";
@@ -226,6 +295,7 @@ function renderTabla() {
 
       const asesoresArr = Array.isArray(r.asesores) ? r.asesores : [];
       const firmasArr = Array.isArray(r.firmas) ? r.firmas : [];
+
       const totalA = asesoresArr.length;
       const firmadas = firmasArr.filter(f => f && f.url).length;
 
@@ -292,11 +362,14 @@ async function guardarRefuerzo() {
   const canal = document.getElementById("canal")?.value;
   const responsable = document.getElementById("responsable")?.value;
   const objetivo = document.getElementById("objetivo")?.value.trim();
-  const detalle = document.getElementById("detalle")?.value.trim();
+
+  // ✅ AHORA DETALLE SALE DE QUILL (HTML)
+  const detalle = getDetalleFromEditor().trim();
 
   const chipsSeleccionados = Array.from(
     document.querySelectorAll(".asesor-chip.selected")
   );
+
   const asesoresSeleccionados = chipsSeleccionados
     .map(chip => {
       const id = chip.dataset.id;
@@ -318,6 +391,7 @@ async function guardarRefuerzo() {
   }
 
   const fechaRefuerzo = new Date(fechaInput + "T00:00:00");
+
   const firmasIniciales = asesoresSeleccionados.map(a => ({
     asesorId: a.asesorId,
     nombre: a.nombre,
@@ -361,17 +435,20 @@ async function guardarRefuerzo() {
 
 function limpiarFormulario() {
   setToday();
+
   const tipo = document.getElementById("tipo");
   const tema = document.getElementById("tema");
   const canal = document.getElementById("canal");
   const objetivo = document.getElementById("objetivo");
-  const detalle = document.getElementById("detalle");
 
   if (tipo) tipo.value = "";
   if (tema) tema.value = "";
   if (canal) canal.value = "";
   if (objetivo) objetivo.value = "";
-  if (detalle) detalle.value = "";
+
+  // ✅ Limpiar Quill / fallback textarea
+  clearDetalleEditor();
+
   document
     .querySelectorAll(".asesor-chip.selected")
     .forEach(ch => ch.classList.remove("selected"));
@@ -386,11 +463,12 @@ function construirTarjetasFirmas(ref) {
     .map(a => {
       const f = firmas.find(x => x.asesorId === a.asesorId) || {};
       const tieneFirma = !!f.url;
+
       const fechaFirmaTxt = f.fechaFirma
         ? formatearFechaHora(f.fechaFirma)
         : "Pendiente";
-      const compromiso =
-        f.compromiso || "<em>Sin compromiso registrado</em>";
+
+      const compromiso = f.compromiso || "<em>Sin compromiso registrado</em>";
 
       return `
         <div class="pdf-sign-card">
@@ -434,6 +512,7 @@ function renderPdfContent(ref) {
 
   const fechaLarga = formatearFechaLarga(ref.fechaRefuerzo);
   const fechaCorta = formatearFechaCorta(ref.fechaRefuerzo);
+
   const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
   const listadoAsesores = asesores.length
     ? asesores
@@ -463,6 +542,7 @@ function renderPdfContent(ref) {
           <b>Fecha corta:</b> ${fechaCorta}
         </div>
       </div>
+
       <div class="pdf-field-row">
         <div class="pdf-field">
           <b>Tipo de acción:</b> ${ref.tipo || "—"}
@@ -471,11 +551,13 @@ function renderPdfContent(ref) {
           <b>Canal:</b> ${ref.canal || "—"}
         </div>
       </div>
+
       <div class="pdf-field-row">
         <div class="pdf-field">
           <b>Tema / título:</b> ${ref.tema || "—"}
         </div>
       </div>
+
       <div class="pdf-field-row" style="margin-top:4px;">
         <div class="pdf-field">
           <b>Responsable:</b> ${ref.responsable || "—"}
@@ -516,6 +598,7 @@ function renderPdfContent(ref) {
           <div><strong>Alex Paolo Nuñez Sulca</strong></div>
           <div class="pdf-sign-resp-role">Líder de Calidad y Formación</div>
         </div>
+
         <div class="pdf-sign-grid">
           ${construirTarjetasFirmas(ref)}
         </div>
@@ -540,6 +623,7 @@ function abrirModalPdf(id) {
     const cont = document.getElementById("pdfContentRefuerzo");
     if (cont) cont.innerHTML = "<p>No se encontró información del refuerzo.</p>";
   }
+
   modal.style.display = "flex";
 }
 
@@ -554,6 +638,7 @@ async function descargarPdfActual() {
     alert("No hay refuerzo seleccionado");
     return;
   }
+
   const element = document.getElementById("pdfContentRefuerzo");
   if (!element) return;
 
@@ -603,9 +688,11 @@ async function copiarLinkFirma(id) {
   try {
     const base =
       window.location.origin === "null" ? "" : window.location.origin;
+
     const url = base
       ? `${base}/portal_agente.html?id=${id}`
       : `portal_agente.html?id=${id}`;
+
     await navigator.clipboard.writeText(url);
     alert("Link de firma copiado:\n" + url);
   } catch (e) {
@@ -632,6 +719,9 @@ function applyTheme(theme) {
 
 /* ---------------- INICIALIZACIÓN CON AUTH ---------------- */
 function initUIEvents() {
+  // ✅ Iniciar Quill aquí (ya existe el DOM)
+  initQuill();
+
   // Ir al dashboard
   const btnIrBuscador = document.getElementById("btnIrBuscador");
   if (btnIrBuscador) {
@@ -649,12 +739,14 @@ function initUIEvents() {
   // Búsqueda y filtros
   const searchTabla = document.getElementById("searchTabla");
   const filtroEstadoSel = document.getElementById("filtroEstado");
+
   if (searchTabla) {
     searchTabla.addEventListener("input", e => {
       filtroTexto = e.target.value || "";
       renderTabla();
     });
   }
+
   if (filtroEstadoSel) {
     filtroEstadoSel.addEventListener("change", e => {
       filtroEstado = e.target.value;
@@ -671,6 +763,7 @@ function initUIEvents() {
   if (pdfCloseBtn) pdfCloseBtn.addEventListener("click", cerrarModalPdf);
   if (pdfCloseBtnFooter) pdfCloseBtnFooter.addEventListener("click", cerrarModalPdf);
   if (pdfDownloadBtn) pdfDownloadBtn.addEventListener("click", descargarPdfActual);
+
   if (pdfModal) {
     pdfModal.addEventListener("click", e => {
       if (e.target === pdfModal) cerrarModalPdf();
@@ -683,9 +776,11 @@ function initUIEvents() {
     tablaRefuerzos.addEventListener("click", e => {
       const btn = e.target.closest("button[data-action]");
       if (!btn) return;
+
       const action = btn.dataset.action;
       const id = btn.dataset.id;
       if (!id) return;
+
       if (action === "verPdf") {
         abrirModalPdf(id);
       } else if (action === "copiarLink") {
@@ -698,6 +793,7 @@ function initUIEvents() {
   const themeBtn = document.getElementById("themeToggle");
   const savedTheme = localStorage.getItem(THEME_KEY) || "light";
   applyTheme(savedTheme);
+
   if (themeBtn) {
     themeBtn.addEventListener("click", () => {
       const next = document.body.classList.contains("dark")

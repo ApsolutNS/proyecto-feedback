@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard - Redes & Correos</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- CSS reutilizado -->
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+<body>
+<header>
+  <div>
+    <h1>Panel Calidad – Redes & Correos</h1>
+    <small>Vista separada para canales digitales</small>
+  </div>
+  <div class="header-right">
+    <span class="header-user">
+      Usuario: <strong id="userRoleName">Cargando…</strong>
+    </span>
+    <button id="btnTheme" class="btn btn-toggle">☀️ Modo claro</button>
+    <button id="btnLogout" class="btn btn-logout">Cerrar sesión</button>
+  </div>
+</header>
+
+<div class="container">
+  <aside class="left">
+    <div class="card">
+      <h3>Navegación</h3>
+      <button class="btn secondary" data-nav="index.html">⬅ Volver a INBOUND</button>
+    </div>
+
+    <div class="card">
+      <h3>Canales</h3>
+      <p class="small">REDES + CORREOS</p>
+    </div>
+  </aside>
+
+  <main>
+    <!-- FILTROS -->
+    <div class="card">
+      <h3>Filtros</h3>
+      <div class="filters-row">
+        <label>Mes</label>
+        <select id="filterMes">
+          <option value="">Todos</option>
+          <option value="0">Enero</option>
+          <option value="1">Febrero</option>
+          <option value="2">Marzo</option>
+          <option value="3">Abril</option>
+          <option value="4">Mayo</option>
+          <option value="5">Junio</option>
+          <option value="6">Julio</option>
+          <option value="7">Agosto</option>
+          <option value="8">Septiembre</option>
+          <option value="9">Octubre</option>
+          <option value="10">Noviembre</option>
+          <option value="11">Diciembre</option>
+        </select>
+
+        <label>Año</label>
+        <select id="filterAnio"></select>
+
+        <label>Semana</label>
+        <select id="filterSemana">
+          <option value="">Todas</option>
+        </select>
+
+        <span class="small" id="filterSummary"></span>
+      </div>
+    </div>
+
+    <!-- VISTA EJECUTIVA -->
+    <div class="card">
+      <h3>Vista ejecutiva – Digital</h3>
+      <div id="execGrid" class="exec-grid"></div>
+    </div>
+
+    <!-- RANKING ITEMS -->
+    <div class="card">
+      <h3>Ranking de ítems debitados</h3>
+      <button id="btnOpenItemsModal" class="btn secondary">
+        📊 Ver ranking
+      </button>
+    </div>
+
+    <!-- GRÁFICO -->
+    <div class="card">
+      <h3>Promedio semanal</h3>
+      <canvas id="chartMonth"></canvas>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL ÍTEMS -->
+<div id="itemsModal" class="modal-backdrop">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div>
+        <h3 id="itemsModalTitle">Ítems debitados</h3>
+        <p id="itemsModalSubtitle" class="small"></p>
+      </div>
+      <button id="btnCloseItemsModal" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <table class="modal-table">
+        <thead>
+          <tr>
+            <th>Ítem</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>Detalle (motivos)</th>
+          </tr>
+        </thead>
+        <tbody id="itemsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/redes_correos.js"></script>
+</body>
+</html>

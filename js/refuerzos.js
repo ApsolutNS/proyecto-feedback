@@ -457,8 +457,10 @@ function initEditorBasico() {
 
 
 function limpiarFormulario() {
+  // Fecha
   setToday();
 
+  // Inputs normales
   const tipo = document.getElementById("tipo");
   const tema = document.getElementById("tema");
   const canal = document.getElementById("canal");
@@ -469,13 +471,26 @@ function limpiarFormulario() {
   if (canal) canal.value = "";
   if (objetivo) objetivo.value = "";
 
-  // ✅ Limpiar Quill / fallback textarea
-  clearDetalleEditor();
+  // 🔹 LIMPIAR DETALLE (QUILL o fallback)
+  const hidden = document.getElementById("detalle");
 
+  // Caso 1: Quill activo
+  if (typeof quillDetalle !== "undefined" && quillDetalle) {
+    quillDetalle.setContents([]); // limpia visual
+    if (hidden) hidden.value = ""; // limpia hidden
+  } else {
+    // Caso 2: editor básico
+    const editor = document.getElementById("detalleEditor");
+    if (editor) editor.innerHTML = "";
+    if (hidden) hidden.value = "";
+  }
+
+  // Chips asesores
   document
     .querySelectorAll(".asesor-chip.selected")
     .forEach(ch => ch.classList.remove("selected"));
 }
+
 
 /* ---------------- PDF: TARJETAS DE FIRMAS ---------------- */
 function construirTarjetasFirmas(ref) {

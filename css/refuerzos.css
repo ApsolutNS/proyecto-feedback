@@ -926,6 +926,41 @@ body.dark .ql-toolbar.ql-snow button.ql-active{
   header, .modal-backdrop, #loadingOverlay{ display:none !important; }
   .card{ box-shadow:none !important; border:1px solid #e5e7eb !important; }
 }
+.editor-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.editor-toolbar button {
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.editor-toolbar button:hover {
+  background: var(--chip-bg);
+}
+
+.editor-box {
+  min-height: 90px;
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.editor-box:focus {
+  outline: none;
+  border-color: var(--accent-soft);
+  background: var(--card);
+}
 
 /* =========================================================
    FIN

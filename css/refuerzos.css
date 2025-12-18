@@ -1007,6 +1007,103 @@ body.dark .ql-toolbar.ql-snow button.ql-active{
   background: var(--accent-soft);
   color: #fff;
 }
+/* ============================
+   DARK MODE – MEJORAS FINALES
+============================ */
+body.dark {
+  background:
+    radial-gradient(circle at top, rgba(56,189,248,0.14), transparent 55%),
+    var(--bg);
+}
+
+/* Cards más contrastadas */
+body.dark .card {
+  background: #0b1220;
+  border-color: #334155;
+}
+
+/* Texto secundario MÁS claro */
+body.dark .card-sub,
+body.dark label,
+body.dark .hint,
+body.dark .header-sub {
+  color: #cbd5e1;
+}
+
+/* Inputs y selects legibles */
+body.dark input,
+body.dark select,
+body.dark textarea {
+  background: #020617;
+  color: #e5e7eb;
+  border-color: #334155;
+}
+
+/* ============================
+   CHIPS DE ASESORES – DARK FIX
+============================ */
+body.dark .asesor-chip {
+  background: linear-gradient(
+    135deg,
+    #0b1220,
+    #020617
+  );
+  border-color: #475569;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+}
+
+body.dark .asesor-chip-name {
+  color: #f8fafc; /* BLANCO real */
+  font-weight: 700;
+}
+
+body.dark .asesor-chip-gc {
+  color: #94a3b8;
+}
+
+/* Chip seleccionado */
+body.dark .asesor-chip.selected {
+  background: linear-gradient(
+    135deg,
+    rgba(56,189,248,0.22),
+    rgba(14,165,233,0.18)
+  );
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 1px rgba(56,189,248,.4),
+              0 16px 42px rgba(14,165,233,.35);
+}
+/* ============================
+   BOTÓN LIMPIAR
+============================ */
+#btnLimpiar {
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  box-shadow: none;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+#btnLimpiar:hover {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+/* Dark mode */
+body.dark #btnLimpiar {
+  color: #cbd5e1;
+  border-color: #475569;
+}
+
+body.dark #btnLimpiar:hover {
+  background: rgba(248,113,113,.12);
+  color: #fecaca;
+  border-color: #f87171;
+}
 
 /* =========================================================
    FIN

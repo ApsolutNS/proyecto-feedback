@@ -5,59 +5,93 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Portal del Agente — Calidad</title>
 
-  <!-- Material Symbols (asegúrate que tu CSP permita fonts.googleapis.com + fonts.gstatic.com) -->
+  <!-- Material Symbols -->
   <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
   <!-- CSS -->
   <link rel="stylesheet" href="css/portal_agente.css">
 </head>
-<body class="theme-light">
-  <header class="topbar">
-    <div class="topbar-left">
-      <span class="material-symbols-outlined topbar-logo">shield_person</span>
-      <div>
-        <div class="topbar-title">Portal del Agente</div>
-        <div class="topbar-subtitle">Feedback &amp; Refuerzos · Calidad</div>
-      </div>
-    </div>
-    <div class="topbar-right">
-      <button id="themeToggle" class="icon-button" type="button" title="Cambiar tema">
-        <span id="themeIcon" class="material-symbols-outlined">dark_mode</span>
-      </button>
-      <div class="agent-pill">
-        <span class="material-symbols-outlined">person</span>
-        <span id="agentNameSpan">Agente</span>
-      </div>
-      <button id="btnLogout" class="outlined-button" type="button">
-        <span class="material-symbols-outlined">logout</span>
-        <span>Cerrar sesión</span>
-      </button>
-    </div>
-  </header>
 
-  <main class="page-shell">
-    <!-- ROW 1: DASHBOARD -->
+<body class="theme-light">
+
+<!-- ================= TOPBAR ================= -->
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="material-symbols-outlined topbar-logo">shield_person</span>
+    <div>
+      <div class="topbar-title">Portal del Agente</div>
+      <div class="topbar-subtitle">Feedback & Refuerzos · Calidad</div>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <button id="themeToggle" class="icon-button" title="Cambiar tema">
+      <span id="themeIcon" class="material-symbols-outlined">dark_mode</span>
+    </button>
+
+    <div class="agent-pill">
+      <span class="material-symbols-outlined">person</span>
+      <span id="agentNameSpan">Agente</span>
+    </div>
+
+    <button id="btnLogout" class="outlined-button">
+      <span class="material-symbols-outlined">logout</span>
+      <span>Cerrar sesión</span>
+    </button>
+  </div>
+</header>
+
+<!-- ================= LAYOUT ================= -->
+<main class="page-shell with-aside">
+
+  <!-- ========== ASIDE IZQUIERDO ========== -->
+  <aside class="aside-panel">
+
+    <!-- === CARD: ÍTEMS CON MAYOR OPORTUNIDAD === -->
     <section class="card">
       <div class="card-header">
-        <div>
-          <h2>Resumen de desempeño</h2>
-          <p class="card-subtitle">Promedio y conteos basados en tus feedbacks de calidad</p>
-        </div>
+        <h3>Ítems con mayor oportunidad</h3>
+        <p class="card-subtitle">
+          Ítems que más impactan tu nota promedio
+        </p>
       </div>
+
+      <div id="agentItemsRisk" class="risk-list">
+        <div class="small">Cargando análisis…</div>
+      </div>
+    </section>
+
+  </aside>
+
+  <!-- ========== CONTENIDO PRINCIPAL ========== -->
+  <section class="main-panel">
+
+    <!-- ===== RESUMEN ===== -->
+    <section class="card">
+      <div class="card-header">
+        <h2>Resumen de desempeño</h2>
+        <p class="card-subtitle">
+          Promedio y conteos basados en tus feedbacks
+        </p>
+      </div>
+
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">Promedio general</div>
           <div class="kpi-value" id="avgScore">–</div>
         </div>
+
         <div class="kpi-card">
           <div class="kpi-label">Total feedbacks</div>
           <div class="kpi-value" id="totalFb">–</div>
         </div>
+
         <div class="kpi-card kpi-ok">
           <div class="kpi-label">Aprobados (≥85%)</div>
           <div class="kpi-value" id="okCount">–</div>
         </div>
+
         <div class="kpi-card kpi-bad">
           <div class="kpi-label">No aprobados (&lt;85%)</div>
           <div class="kpi-value" id="badCount">–</div>
@@ -65,47 +99,30 @@
       </div>
     </section>
 
-    <!-- ROW 2: LISTA -->
+    <!-- ===== FILTROS ===== -->
     <section class="card">
-      <div class="card-header">
-        <div>
-          <h2>Tus documentos</h2>
-          <p class="card-subtitle">Filtra y revisa tus feedbacks y refuerzos pendientes o completados</p>
-        </div>
-        <p id="pendingBadge" class="pending-badge"></p>
-      </div>
-
       <div class="filters-row">
         <div class="field">
-          <label for="selTipoDoc">Tipo de documento</label>
-          <div class="field-input">
-            <span class="material-symbols-outlined field-leading-icon">description</span>
-            <select id="selTipoDoc">
-              <option value="registros">Feedback de calidad</option>
-              <option value="refuerzos_calidad">Refuerzos / Capacitaciones</option>
-            </select>
-          </div>
+          <label>Tipo de documento</label>
+          <select id="selTipoDoc">
+            <option value="registros">Feedback de calidad</option>
+            <option value="refuerzos_calidad">Refuerzos / Capacitaciones</option>
+          </select>
         </div>
-        <div class="field">
-          <label for="selRegistrador">Registrado por</label>
-          <div class="field-input">
-            <span class="material-symbols-outlined field-leading-icon">badge</span>
-            <select id="selRegistrador">
-              <option value="">Todos</option>
-              <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
-                Alex Paolo Nuñez Sulca - Líder de Calidad y Formación
-              </option>
-              <option value="César Alonso Torres Montes - Supervisor">
-                César Alonso Torres Montes - Supervisor
-              </option>
-              <option value="Karen Vanessa Vital Cordova - Líder de Operaciones">
-                Karen Vanessa Vital Cordova - Líder de Operaciones
-              </option>
-            </select>
-          </div>
-        </div>
-      </div>
 
+        <div class="field">
+          <label>Registrado por</label>
+          <select id="selRegistrador">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div id="pendingBadge"></div>
+      </div>
+    </section>
+
+    <!-- ===== TABLA ===== -->
+    <section class="card">
       <div class="table-wrapper">
         <table id="agentTable">
           <thead>
@@ -118,91 +135,93 @@
             </tr>
           </thead>
           <tbody>
-            <!-- filas dinámicas -->
+            <!-- dinámico -->
           </tbody>
         </table>
       </div>
     </section>
-  </main>
 
-  <!-- MODAL DETALLE -->
-  <div id="detailOverlay" class="dialog-backdrop" aria-hidden="true">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-      <div class="dialog-header">
-        <div>
-          <h2 id="detailTitle">Detalle</h2>
-          <p class="dialog-subtitle" id="detailSubtitle"></p>
-        </div>
-        <button id="detailClose" class="icon-button" type="button">
-          <span class="material-symbols-outlined">close</span>
-        </button>
+  </section>
+</main>
+
+<!-- ================= MODAL DETALLE ================= -->
+<div id="detailOverlay" class="dialog-backdrop" aria-hidden="true">
+  <div class="dialog" role="dialog" aria-modal="true">
+    <div class="dialog-header">
+      <div>
+        <h2 id="detailTitle">Detalle</h2>
+        <p id="detailSubtitle" class="dialog-subtitle"></p>
       </div>
-      <div id="detailScroll" class="dialog-body">
-        <div id="feedbackInfo"></div>
+      <button id="detailClose" class="icon-button">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
 
-        <div id="editableZone" class="editable-zone">
-          <h3>Completar compromiso y firma</h3>
-          <label for="compromiso">Compromiso del agente</label>
-          <textarea id="compromiso" rows="3"
-            placeholder="Ejemplo: Me comprometo a reforzar el uso correcto de las herramientas y el lenguaje con el cliente."></textarea>
+    <div id="detailScroll" class="dialog-body">
+      <div id="feedbackInfo"></div>
 
-          <label>Firma del agente</label>
-          <div class="signature-actions">
-            <button id="btnDraw" class="filled-button" type="button">
-              <span class="material-symbols-outlined">gesture</span>
-              <span>Dibujar firma</span>
-            </button>
-            <button id="btnUpload" class="outlined-button" type="button">
-              <span class="material-symbols-outlined">upload</span>
-              <span>Subir imagen</span>
-            </button>
-            <input id="fileSignature" type="file" accept="image/*" hidden>
-          </div>
+      <div id="editableZone" class="editable-zone">
+        <h3>Compromiso del agente</h3>
 
-          <div id="signaturePreview" class="signature-preview-empty">
-            Sin firma seleccionada
-          </div>
+        <textarea id="compromiso" rows="3"
+          placeholder="Describe tu compromiso..."></textarea>
 
-          <button id="btnSaveCommit" class="filled-button full" type="button">
-            <span class="material-symbols-outlined">check_circle</span>
-            <span>Enviar compromiso y firma</span>
+        <div class="signature-actions">
+          <button id="btnDraw" class="filled-button">
+            <span class="material-symbols-outlined">gesture</span>
+            Dibujar firma
           </button>
 
-          <p id="agentMsg" class="helper-text"></p>
+          <button id="btnUpload" class="outlined-button">
+            <span class="material-symbols-outlined">upload</span>
+            Subir imagen
+          </button>
+
+          <input id="fileSignature" type="file" accept="image/*" hidden>
         </div>
+
+        <div id="signaturePreview" class="signature-preview-empty">
+          Sin firma seleccionada
+        </div>
+
+        <button id="btnSaveCommit" class="filled-button full">
+          <span class="material-symbols-outlined">check_circle</span>
+          Enviar compromiso y firma
+        </button>
+
+        <p id="agentMsg" class="helper-text"></p>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- MODAL CANVAS FIRMA -->
-  <div id="signatureModal" class="dialog-backdrop" aria-hidden="true">
-    <div class="dialog dialog-signature" role="dialog" aria-modal="true">
-      <div class="dialog-header">
-        <div>
-          <h2>Dibujar firma</h2>
-          <p class="dialog-subtitle">Firma con el mouse o tu dedo (en móvil)</p>
-        </div>
-        <button id="btnCancel" class="icon-button" type="button">
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-      <div class="dialog-body">
-        <canvas id="sigCanvas" width="700" height="160"></canvas>
-      </div>
-      <div class="dialog-footer">
-        <button id="btnClear" class="outlined-button" type="button">
-          <span class="material-symbols-outlined">ink_eraser</span>
-          <span>Limpiar</span>
-        </button>
-        <button id="btnUse" class="filled-button" type="button">
-          <span class="material-symbols-outlined">done</span>
-          <span>Usar esta firma</span>
-        </button>
-      </div>
+<!-- ================= MODAL FIRMA ================= -->
+<div id="signatureModal" class="dialog-backdrop" aria-hidden="true">
+  <div class="dialog dialog-signature">
+    <div class="dialog-header">
+      <h2>Dibujar firma</h2>
+      <button id="btnCancel" class="icon-button">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="dialog-body">
+      <canvas id="sigCanvas" width="700" height="160"></canvas>
+    </div>
+
+    <div class="dialog-footer">
+      <button id="btnClear" class="outlined-button">
+        Limpiar
+      </button>
+      <button id="btnUse" class="filled-button">
+        Usar firma
+      </button>
     </div>
   </div>
+</div>
 
-  <!-- JS -->
-  <script type="module" src="js/portal_agente.js"></script>
+<!-- ================= JS ================= -->
+<script type="module" src="js/portal_agente.js"></script>
+
 </body>
 </html>

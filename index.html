@@ -11,8 +11,8 @@
   <!-- CSS -->
   <link rel="stylesheet" href="css/index.css" />
 </head>
-<body>
 
+<body>
 <!-- ================= HEADER ================= -->
 <header>
   <div>
@@ -31,35 +31,42 @@
 <!-- ================= CONTENEDOR ================= -->
 <div class="container">
 
-  <!-- ============ ASIDE ============ -->
+  <!-- ============ ASIDE IZQUIERDO ============ -->
   <aside class="left">
     <div class="card">
       <h3>Accesos rápidos</h3>
 
       <!-- Internos -->
       <button class="btn primary" data-nav="registro.html">1 · Registro</button>
-      <button class="btn secondary" data-nav="portal_agente.html">2 · Portal Agente</button>
-      <button class="btn secondary" data-nav="visualizacion_feedback.html">3 · Feedback</button>
-      <button class="btn secondary" data-nav="refuerzos.html">4 · Refuerzos</button>
+      <button class="btn secondary" data-nav="portal_agente.html">2 · Portal del Agente</button>
+      <button class="btn secondary" data-nav="visualizacion_feedback.html">3 · Visualización Feedback</button>
+      <button class="btn secondary" data-nav="refuerzos.html">4 · Refuerzos Calidad</button>
 
       <!-- Externos -->
       <button class="btn secondary" data-external="https://monumental-caramel-7369de.netlify.app/">
-        5 · Observaciones
+        5 · Registro de Observaciones
+      </button>
+      <button class="btn secondary" data-external="https://efectivasa.sharepoint.com/:x:/r/sites/GrupoEFE-EfeCinco/_layouts/15/Doc.aspx">
+        6 · Reporte de monitoreos
       </button>
       <button class="btn secondary" data-external="https://docs.google.com/forms/d/e/1FAIpQLSc8s049gfvA-O5nWzlDhIlymceNUnIK-rndWV5aSvhwuDf4TA/viewform">
-        6 · Ficha de errores
+        7 · Ficha de errores
+      </button>
+      <button class="btn secondary" data-external="https://efectivasa.sharepoint.com/sites/GrupoEFE-EfeCinco/Documentos%20compartidos">
+        8 · Manual de calidad
       </button>
       <button class="btn secondary" data-external="https://forms.office.com/pages/responsepage.aspx?id=oDcMYc1HMUWfNe-1_TKkEHpWkDIqnlRLmHYcuGRm7NFUM0wxTzg4R0FSMTBSWDlZUzNBUlNQUUIwUi4u">
-        7 · Registro Feedback
+        9 · Registro de feedback
       </button>
     </div>
 
     <div class="card">
-      <h3>Tipo monitoreo</h3>
+      <h3>Tipo de monitoreo</h3>
       <p class="small"><b>EFECTIVA:</b> <span id="cntEfectiva">0</span></p>
       <p class="small"><b>EFECTIVANK:</b> <span id="cntEfectivank">0</span></p>
       <p class="small"><b>XPERTO:</b> <span id="cntXperto">0</span></p>
-      <p class="small"><b>REDES:</b> <span id="cntFb">0</span></p>
+      <p class="small"><b>FACEBOOK:</b> <span id="cntFb">0</span></p>
+      <p class="small"><b>INSTAGRAM:</b> <span id="cntIg">0</span></p>
       <p class="small"><b>CORREO:</b> <span id="cntMail">0</span></p>
     </div>
   </aside>
@@ -71,18 +78,32 @@
     <div class="card">
       <h3>Canal de atención</h3>
       <div class="filters-row">
-        <button class="btn secondary btn-canal" data-cargo="ASESOR INBOUND">Inbound</button>
-        <button class="btn secondary btn-canal" data-cargo="ASESOR REDES">Redes</button>
-        <button class="btn secondary btn-canal" data-cargo="ASESOR CORREOS">Correos</button>
+        <button class="btn secondary" data-nav="index.html?view=inbound">Inbound</button>
+        <button class="btn secondary" data-nav="index.html?view=redes">Redes</button>
+        <button class="btn secondary" data-nav="index.html?view=correos">Correos</button>
       </div>
     </div>
 
-    <!-- ===== FILTROS ===== -->
+    <!-- ===== FILTROS GLOBALES ===== -->
     <div class="card">
       <h3>Filtros globales</h3>
       <div class="filters-row">
         <label>Mes:</label>
-        <select id="filterMes"></select>
+        <select id="filterMes">
+          <option value="">Todos</option>
+          <option value="0">Enero</option>
+          <option value="1">Febrero</option>
+          <option value="2">Marzo</option>
+          <option value="3">Abril</option>
+          <option value="4">Mayo</option>
+          <option value="5">Junio</option>
+          <option value="6">Julio</option>
+          <option value="7">Agosto</option>
+          <option value="8">Septiembre</option>
+          <option value="9">Octubre</option>
+          <option value="10">Noviembre</option>
+          <option value="11">Diciembre</option>
+        </select>
 
         <label>Año:</label>
         <select id="filterAnio"></select>
@@ -103,7 +124,7 @@
       <div id="execGrid" class="exec-grid"></div>
     </div>
 
-    <!-- ===== RANKING ===== -->
+    <!-- ===== RANKING ÍTEMS ===== -->
     <div class="card">
       <h3>Ranking de ítems debitados</h3>
       <button id="btnOpenItemsModal" class="btn secondary">
@@ -128,7 +149,7 @@
       </div>
     </div>
 
-    <!-- ===== ÚLTIMOS ===== -->
+    <!-- ===== ÚLTIMOS REGISTROS ===== -->
     <div class="card">
       <h3>Últimos registros</h3>
       <table id="recentTable">
@@ -144,7 +165,6 @@
         <tbody></tbody>
       </table>
     </div>
-
   </main>
 </div>
 
@@ -158,7 +178,6 @@
       </div>
       <button id="btnCloseItemsModal" class="modal-close">✕</button>
     </div>
-
     <div class="modal-body">
       <table class="modal-table">
         <thead>
@@ -176,8 +195,8 @@
   </div>
 </div>
 
-<!-- ================= MODAL DETALLE ITEM (POPUP NUEVO) ================= -->
-<div id="detailModal" class="modal-backdrop" style="display:none;">
+<!-- ================= MODAL DETALLE (POPUP) ================= -->
+<div id="detailModal" class="modal-backdrop">
   <div class="modal-content">
     <div class="modal-header">
       <div>
@@ -190,9 +209,7 @@
   </div>
 </div>
 
-
 <!-- ================= JS ================= -->
 <script type="module" src="js/index.js"></script>
 </body>
 </html>
-

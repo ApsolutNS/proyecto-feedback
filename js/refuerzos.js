@@ -433,6 +433,29 @@ async function guardarRefuerzo() {
   }
 }
 
+/* ---------------- EDITOR TEXTO BÁSICO (CSP SAFE) ---------------- */
+function initEditorBasico() {
+  const editor = document.getElementById("detalleEditor");
+  const hidden = document.getElementById("detalle");
+  const toolbar = document.querySelector(".editor-toolbar");
+
+  if (!editor || !hidden || !toolbar) return;
+
+  toolbar.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+
+    const cmd = btn.dataset.cmd;
+    editor.focus();
+    document.execCommand(cmd, false, null);
+  });
+
+  editor.addEventListener("input", () => {
+    hidden.value = editor.innerHTML;
+  });
+}
+
+
 function limpiarFormulario() {
   setToday();
 
@@ -809,7 +832,9 @@ async function initRefuerzos() {
   setToday();
   await cargarAsesores();
   await cargarRefuerzos();
+  initEditorBasico();
 }
+
 
 /* Protección con Auth + rol (coincide con tus reglas de Firestore) */
 onAuthStateChanged(auth, async user => {

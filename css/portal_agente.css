@@ -2,10 +2,8 @@
   --m3-radius-lg: 18px;
   --m3-radius-md: 12px;
   --m3-radius-pill: 999px;
-
   --m3-elev-card: 0 10px 30px rgba(15, 23, 42, 0.18);
   --m3-elev-dialog: 0 24px 60px rgba(15, 23, 42, 0.45);
-
   --color-primary: #0b57d0;
   --color-primary-container: #d2e3ff;
   --color-on-primary: #ffffff;
@@ -42,7 +40,6 @@ body.theme-dark {
 *::after {
   box-sizing: border-box;
 }
-
 html,
 body {
   margin: 0;
@@ -65,13 +62,11 @@ body {
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-outline-variant);
 }
-
 .topbar-left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-
 .topbar-logo {
   font-size: 30px;
   padding: 6px;
@@ -79,17 +74,14 @@ body {
   background: var(--color-primary-container);
   color: #0b1220;
 }
-
 .topbar-title {
   font-weight: 600;
   font-size: 15px;
 }
-
 .topbar-subtitle {
   font-size: 12px;
   color: var(--color-on-surface-variant);
 }
-
 .topbar-right {
   display: flex;
   align-items: center;
@@ -112,40 +104,32 @@ body {
   color: var(--color-on-surface);
   transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
 }
-
 .icon-button {
   padding: 6px;
 }
-
 .icon-button .material-symbols-outlined {
   font-size: 20px;
 }
-
 .icon-button:hover,
 .outlined-button:hover,
 .filled-button:hover {
   transform: translateY(-1px);
 }
-
 .filled-button {
   background: var(--color-primary);
   color: var(--color-on-primary);
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
 }
-
 .filled-button:hover {
   background: color-mix(in srgb, var(--color-primary) 90%, white);
 }
-
 .outlined-button {
   border: 1px solid var(--color-outline);
   background: transparent;
 }
-
 .outlined-button:hover {
   background: color-mix(in srgb, var(--color-outline-variant) 50%, transparent);
 }
-
 .filled-button.full {
   width: 100%;
   justify-content: center;
@@ -181,7 +165,6 @@ body {
   padding: 14px 16px 16px;
   border: 1px solid var(--color-outline-variant);
 }
-
 .card-header {
   display: flex;
   align-items: flex-start;
@@ -189,12 +172,10 @@ body {
   gap: 12px;
   margin-bottom: 10px;
 }
-
 .card-header h2 {
   margin: 0;
   font-size: 15px;
 }
-
 .card-subtitle {
   margin: 2px 0 0;
   font-size: 12px;
@@ -207,7 +188,6 @@ body {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
-
 @media (max-width: 900px) {
   .kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -218,28 +198,23 @@ body {
     grid-template-columns: 1fr;
   }
 }
-
 .kpi-card {
   border-radius: var(--m3-radius-md);
   padding: 10px 12px;
   background: var(--color-surface-variant);
 }
-
 .kpi-label {
   font-size: 12px;
   color: var(--color-on-surface-variant);
 }
-
 .kpi-value {
   margin-top: 4px;
   font-size: 20px;
   font-weight: 700;
 }
-
 .kpi-ok .kpi-value {
   color: var(--color-success);
 }
-
 .kpi-bad .kpi-value {
   color: var(--color-error);
 }
@@ -251,17 +226,14 @@ body {
   gap: 10px;
   margin-bottom: 10px;
 }
-
 .field {
   flex: 1 1 220px;
 }
-
 .field label {
   display: block;
   font-size: 12px;
   margin-bottom: 4px;
 }
-
 .field-input {
   display: flex;
   align-items: center;
@@ -271,7 +243,6 @@ body {
   border: 1px solid var(--color-outline);
   background: var(--color-surface);
 }
-
 .field-input select {
   border: none;
   background: transparent;
@@ -280,7 +251,6 @@ body {
   outline: none;
   color: var(--color-on-surface);
 }
-
 .field-leading-icon {
   font-size: 18px;
   color: var(--color-on-surface-variant);
@@ -292,7 +262,6 @@ body {
   font-size: 12px;
   color: var(--color-on-surface-variant);
 }
-
 .badgePending {
   display: inline-flex;
   align-items: center;
@@ -311,41 +280,33 @@ body {
   border: 1px solid var(--color-outline-variant);
   overflow: hidden;
 }
-
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
-
 thead {
   background: var(--color-primary-container);
 }
-
 th,
 td {
   padding: 8px 10px;
   text-align: left;
 }
-
 th {
   font-weight: 600;
   font-size: 12px;
   color: #111827;
 }
-
 tbody tr:nth-child(even) {
   background: color-mix(in srgb, var(--color-surface) 70%, #0000);
 }
-
 tbody tr:hover {
   background: color-mix(in srgb, var(--color-primary-container) 35%, var(--color-surface));
 }
-
 .col-actions {
   width: 70px;
 }
-
 .table-id {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 11px;
@@ -354,7 +315,6 @@ tbody tr:hover {
   text-overflow: ellipsis;
   overflow: hidden;
 }
-
 .tag-doc {
   display: inline-flex;
   align-items: center;
@@ -366,7 +326,6 @@ tbody tr:hover {
   color: var(--color-on-surface-variant);
   margin-left: 4px;
 }
-
 .badgeEstado {
   display: inline-flex;
   align-items: center;
@@ -396,11 +355,9 @@ tbody tr:hover {
   backdrop-filter: blur(10px);
   z-index: 40;
 }
-
 .dialog-backdrop.open {
   display: flex;
 }
-
 .dialog {
   max-width: 880px;
   width: 100%;
@@ -413,11 +370,9 @@ tbody tr:hover {
   flex-direction: column;
   animation: dialogIn 0.18s ease-out;
 }
-
 .dialog-signature {
   max-width: 780px;
 }
-
 @keyframes dialogIn {
   from {
     opacity: 0;
@@ -428,7 +383,6 @@ tbody tr:hover {
     transform: translateY(0) scale(1);
   }
 }
-
 .dialog-header {
   padding: 12px 16px 8px;
   display: flex;
@@ -437,23 +391,19 @@ tbody tr:hover {
   gap: 10px;
   border-bottom: 1px solid var(--color-outline-variant);
 }
-
 .dialog-header h2 {
   margin: 0;
   font-size: 16px;
 }
-
 .dialog-subtitle {
   margin: 2px 0 0;
   font-size: 12px;
   color: var(--color-on-surface-variant);
 }
-
 .dialog-body {
   padding: 10px 16px 14px;
   overflow-y: auto;
 }
-
 .dialog-footer {
   padding: 8px 16px 12px;
   display: flex;
@@ -470,23 +420,19 @@ tbody tr:hover {
   gap: 10px;
   margin-bottom: 10px;
 }
-
 .letter-title {
   font-size: 15px;
   font-weight: 700;
 }
-
 .section-title {
   font-weight: 600;
   margin-top: 10px;
   font-size: 13px;
 }
-
 .section-content {
   margin-left: 8px;
   font-size: 13px;
 }
-
 .resumen-box {
   margin-top: 4px;
   padding: 6px 8px;
@@ -495,7 +441,6 @@ tbody tr:hover {
   border: 1px solid var(--color-outline-variant);
   font-size: 12px;
 }
-
 .pill {
   display: inline-flex;
   align-items: center;
@@ -505,13 +450,11 @@ tbody tr:hover {
   padding: 2px 8px;
   border: 1px solid var(--color-outline);
 }
-
 .nota-box {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-
 .nota-pill {
   display: inline-flex;
   align-items: center;
@@ -530,19 +473,16 @@ tbody tr:hover {
   padding-top: 12px;
   border-top: 1px dashed var(--color-outline-variant);
 }
-
 .editable-zone h3 {
   margin: 0 0 8px;
   font-size: 14px;
 }
-
 .editable-zone label {
   display: block;
   font-size: 12px;
   margin-top: 8px;
   margin-bottom: 4px;
 }
-
 .editable-zone textarea {
   width: 100%;
   border-radius: 12px;
@@ -554,14 +494,12 @@ tbody tr:hover {
   background: var(--color-background);
   color: var(--color-on-surface);
 }
-
 .signature-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
 }
-
 .signature-preview-empty,
 .signature-preview {
   margin-top: 2px;
@@ -573,12 +511,10 @@ tbody tr:hover {
   background: var(--color-background);
   min-height: 80px;
 }
-
 .signature-preview img {
   max-width: 260px;
   max-height: 120px;
 }
-
 .helper-text {
   margin-top: 6px;
   font-size: 12px;
@@ -600,4 +536,211 @@ tbody tr:hover {
     "wght" 400,
     "GRAD" 0,
     "opsz" 24;
+}
+
+/* =========================================================
+   ✅ NUEVO: LAYOUT CON ASIDE IZQUIERDO (tu HTML "with-aside")
+========================================================= */
+.page-shell.with-aside {
+  max-width: 1180px;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.aside-panel {
+  position: sticky;
+  top: 74px; /* debajo del topbar */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.main-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+@media (max-width: 980px) {
+  .page-shell.with-aside {
+    grid-template-columns: 1fr;
+  }
+  .aside-panel {
+    position: static;
+  }
+}
+
+/* =========================================================
+   ✅ NUEVO: RISK LIST (Ítems con mayor oportunidad)
+========================================================= */
+.risk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.risk-item {
+  border-radius: var(--m3-radius-md);
+  border: 1px solid var(--color-outline-variant);
+  background: color-mix(in srgb, var(--color-surface) 70%, var(--color-surface-variant));
+  padding: 10px 10px 10px;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.risk-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+  background: color-mix(in srgb, var(--color-primary-container) 28%, var(--color-surface));
+}
+.risk-item:active {
+  transform: translateY(0px);
+}
+
+.risk-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.risk-name {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.risk-meta {
+  font-size: 11px;
+  color: var(--color-on-surface-variant);
+  margin-top: 2px;
+}
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  border: 1px solid var(--color-outline);
+  background: var(--color-surface);
+  white-space: nowrap;
+}
+.risk-badge.bad {
+  border-color: color-mix(in srgb, var(--color-error) 45%, var(--color-outline));
+  background: color-mix(in srgb, var(--color-error) 12%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-error) 80%, var(--color-on-surface));
+}
+.risk-badge.ok {
+  border-color: color-mix(in srgb, var(--color-success) 45%, var(--color-outline));
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-success) 80%, var(--color-on-surface));
+}
+
+.risk-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-outline-variant) 60%, transparent);
+  overflow: hidden;
+  border: 1px solid var(--color-outline-variant);
+}
+.risk-bar > span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: var(--color-primary);
+  transition: width 0.25s ease;
+}
+
+.risk-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  gap: 10px;
+}
+.risk-stats {
+  font-size: 11px;
+  color: var(--color-on-surface-variant);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.risk-stats b {
+  color: var(--color-on-surface);
+  font-weight: 700;
+}
+
+/* Texto "Cargando..." y vacío */
+.risk-empty {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  padding: 8px 6px;
+}
+
+/* =========================================================
+   ✅ NUEVO: MODAL / POPUP DETALLE DEL ÍTEM (look del dashboard)
+   (El JS lo abrirá poniendo .open al backdrop)
+========================================================= */
+.dialog.item-modal .dialog {
+  max-width: 920px;
+}
+.item-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .item-modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.item-kpi {
+  border-radius: var(--m3-radius-md);
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-surface-variant);
+  padding: 10px 12px;
+}
+.item-kpi .label {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+}
+.item-kpi .value {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.item-kpi .value.bad {
+  color: var(--color-error);
+}
+.item-kpi .value.ok {
+  color: var(--color-success);
+}
+
+.item-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.item-detail-card {
+  border-radius: var(--m3-radius-md);
+  border: 1px solid var(--color-outline-variant);
+  background: var(--color-surface);
+  padding: 10px 12px;
+}
+.item-detail-card .title {
+  font-weight: 800;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.item-detail-card .small {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+}
+.item-detail-card .evidence img {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--color-outline-variant);
+  margin-top: 8px;
 }

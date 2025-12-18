@@ -9,18 +9,16 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- CSS principal -->
-  <link rel="stylesheet" href="css/index.css">
+  <link rel="stylesheet" href="css/index.css" />
 </head>
 
 <body>
-
   <!-- ================= HEADER ================= -->
   <header>
     <div>
       <h1>Panel Principal - Calidad & Monitoreo</h1>
-      <small>Vista ejecutiva · Ranking de ítems · Detalle por asesor</small>
+      <small>Vista ejecutiva · Inbound</small>
     </div>
-
     <div class="header-right">
       <span class="header-user">
         Usuario: <strong id="userRoleName">Cargando...</strong>
@@ -33,44 +31,37 @@
   <!-- ================= CONTENEDOR ================= -->
   <div class="container">
 
-    <!-- ========== ASIDE IZQUIERDO ========== -->
+    <!-- ============ ASIDE IZQUIERDO ============ -->
     <aside class="left">
-
-      <!-- Accesos -->
       <div class="card">
         <h3>Accesos rápidos</h3>
-
         <button class="btn primary" data-nav="registro.html">1 · Registro</button>
-        <button class="btn secondary" data-nav="portal_agente.html">2 · Portal Agente</button>
+        <button class="btn secondary" data-nav="portal_agente.html">2 · Portal del Agente</button>
         <button class="btn secondary" data-nav="visualizacion_feedback.html">3 · Feedback</button>
         <button class="btn secondary" data-nav="refuerzos.html">4 · Refuerzos</button>
-
-        <button class="btn secondary" data-external="https://docs.google.com/forms/d/e/1FAIpQLSc8s049gfvA-O5nWzlDhIlymceNUnIK-rndWV5aSvhwuDf4TA/viewform">
-          5 · Ficha de errores
-        </button>
       </div>
 
-      <!-- KPIs -->
       <div class="card">
         <h3>Tipo de monitoreo</h3>
         <p class="small"><b>EFECTIVA:</b> <span id="cntEfectiva">0</span></p>
+        <p class="small"><b>EFECTIVANK:</b> <span id="cntEfectivank">0</span></p>
         <p class="small"><b>XPERTO:</b> <span id="cntXperto">0</span></p>
         <p class="small"><b>FACEBOOK:</b> <span id="cntFb">0</span></p>
         <p class="small"><b>INSTAGRAM:</b> <span id="cntIg">0</span></p>
         <p class="small"><b>CORREO:</b> <span id="cntMail">0</span></p>
       </div>
-
     </aside>
 
-    <!-- ========== MAIN ========== -->
+    <!-- ================= MAIN ================= -->
     <main>
 
-      <!-- ===== FILTROS ===== -->
+      <!-- ============ FILTROS GLOBALES ============ -->
       <div class="card">
-        <h3>Filtros</h3>
-        <div class="filters-row">
+        <h3>Filtros globales</h3>
 
-          <label>Mes:</label>
+        <div class="filters-row">
+          <!-- MES -->
+          <label for="filterMes">Mes:</label>
           <select id="filterMes">
             <option value="">Todos</option>
             <option value="0">Enero</option>
@@ -87,10 +78,23 @@
             <option value="11">Diciembre</option>
           </select>
 
-          <label>Año:</label>
+          <!-- AÑO -->
+          <label for="filterAnio">Año:</label>
           <select id="filterAnio"></select>
 
-          <label>Registrado por:</label>
+          <!-- SEMANA (GLOBAL) -->
+          <label for="filterSemana">Semana:</label>
+          <select id="filterSemana">
+            <option value="">Todas</option>
+            <option value="0">Semana 1</option>
+            <option value="1">Semana 2</option>
+            <option value="2">Semana 3</option>
+            <option value="3">Semana 4</option>
+            <option value="4">Semana 5</option>
+          </select>
+
+          <!-- REGISTRADO POR -->
+          <label for="filterRegistrado">Registrado por:</label>
           <select id="filterRegistrado">
             <option value="">Todos</option>
             <option value="Alex Paolo Nuñez Sulca - Líder de Calidad y Formación">
@@ -104,21 +108,22 @@
             </option>
           </select>
 
-          <span id="filterSummary" class="small"></span>
+          <span class="small" id="filterSummary">
+            Mostrando todos los registros.
+          </span>
         </div>
       </div>
 
-      <!-- ===== VISTA EJECUTIVA ===== -->
+      <!-- ============ VISTA EJECUTIVA ============ -->
       <div class="card">
         <h3>Vista ejecutiva por asesor</h3>
         <div class="small">
-          Promedio, aprobados, desaprobados.  
-          Haz clic para ver ítems debitados.
+          Promedios · Semáforo 85% · Haz clic para ver ítems debitados
         </div>
         <div id="execGrid" class="exec-grid"></div>
       </div>
 
-      <!-- ===== RANKING ÍTEMS ===== -->
+      <!-- ============ RANKING ÍTEMS ============ -->
       <div class="card">
         <h3>Ranking de ítems debitados</h3>
         <button id="btnOpenItemsModal" class="btn secondary">
@@ -126,13 +131,24 @@
         </button>
       </div>
 
-      <!-- ===== GRÁFICO ===== -->
+      <!-- ============ GRÁFICO ============ -->
       <div class="card">
         <h3>Promedio semanal</h3>
         <canvas id="chartMonth"></canvas>
       </div>
 
-      <!-- ===== ÚLTIMOS REGISTROS ===== -->
+      <!-- ============ TABLA SEMANAL ============ -->
+      <div class="card">
+        <h3>Tabla semanal</h3>
+        <div class="weekly">
+          <table>
+            <thead id="weeklyHead"></thead>
+            <tbody id="weeklyBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ ÚLTIMOS REGISTROS ============ -->
       <div class="card">
         <h3>Últimos registros</h3>
         <table id="recentTable">
@@ -155,7 +171,6 @@
   <!-- ================= MODAL ÍTEMS ================= -->
   <div id="itemsModal" class="modal-backdrop">
     <div class="modal-content">
-
       <div class="modal-header">
         <div>
           <h3 id="itemsModalTitle">Ítems debitados</h3>
@@ -165,7 +180,7 @@
       </div>
 
       <div class="modal-toolbar">
-        <label>Semana:</label>
+        <label>Periodo:</label>
         <select id="itemsPeriodSelect"></select>
       </div>
 
@@ -176,19 +191,17 @@
               <th>Ítem</th>
               <th>Tipo</th>
               <th>Cantidad</th>
-              <th>% Prom.</th>
-              <th>Detalle del motivo</th>
+              <th>% Promedio</th>
+              <th>Motivo / Detalle</th>
             </tr>
           </thead>
           <tbody id="itemsTableBody"></tbody>
         </table>
       </div>
-
     </div>
   </div>
 
   <!-- ================= JS ================= -->
   <script type="module" src="js/index.js"></script>
-
 </body>
 </html>

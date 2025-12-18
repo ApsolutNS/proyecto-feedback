@@ -1232,8 +1232,12 @@ function buildItemsAnalysis(registrosFiltrados) {
     };
   });
 
-  // Orden: mayor impactoProm, luego errorPct
-  arr.sort((a, b) => (b.impactoProm - a.impactoProm) || (b.errorPct - a.errorPct) || (b.count - a.count));
+// ORDEN NUEVO: mayor reincidencia → mayor % error → mayor impacto
+arr.sort((a, b) =>
+  (b.count - a.count) ||           // 🔥 MÁS reincidencia primero
+  (b.errorPct - a.errorPct) ||     // luego % de error
+  (b.impactoProm - a.impactoProm) // luego impacto promedio
+);
 
   return arr;
 }

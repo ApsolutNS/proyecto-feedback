@@ -1,35 +1,49 @@
-/* index.js - Dashboard Supervisión (INBOUND) + FILTRO SEMANAL GLOBAL + Ranking ítems con detalle completo
+/* =========================================================
+   index.js – Dashboard Supervisión (INBOUND/REDES/CORREOS)
+   ✔ Filtro semanal GLOBAL (dependiente de Año/Mes)
+   ✔ Vista ejecutiva (tarjetas clic)
+   ✔ Modal ranking ítems + filtro semanal dentro del modal
+   ✔ NUEVO: Modal limpio para "Motivo/Detalle" (popup + volver)
+   ✔ Tema claro/oscuro + Logout + Accesos rápidos
    Requiere:
    - js/firebase.js exportando { db }
    - Chart.js cargado en index.html
-   - login.html usando Firebase Auth
-*/
+========================================================= */
 "use strict";
 
 /* ------------------------------
-   IMPORTS FIREBASE
+   FIREBASE IMPORTS
 ------------------------------ */
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
+import { getAuth, onAuthStateChanged, signOut } from
+  "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 import { db } from "./firebase.js";
-
-import {
-  collection,
-  getDocs,
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { collection, getDocs } from
+  "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 /* ------------------------------
-   CONFIG: Este dashboard SOLO INBOUND
-   (Luego clonamos para REDES y CORREOS)
+   CONFIG: vista por cargo
+   - Por defecto INBOUND
+   - Puedes reutilizar el mismo index.html con:
+     index.html?view=inbound
+     index.html?view=redes
+     index.html?view=correos
 ------------------------------ */
-const DASHBOARD_CARGO = "ASESOR INBOUND"; // <-- este dashboard
+const CARGO_MAP = {
+  inbound: "ASESOR INBOUND",
+  redes: "ASESOR REDES",
+  correos: "ASESOR CORREOS",
+};
+
+function getDashboardCargo() {
+  const params = new URLSearchParams(location.search);
+  const view = (params.get("view") || "inbound").toLowerCase();
+  return CARGO_MAP[view] || CARGO_MAP.inbound;
+}
+
+const DASHBOARD_CARGO = getDashboardCargo();
 
 /* ------------------------------
-   AUTH: PROTEGER EL DASHBOARD
+   AUTH
 ------------------------------ */
 const auth = getAuth();
 
@@ -67,18 +81,17 @@ function normalize(str) {
 
 function parseFecha(fecha) {
   if (!fecha) return new Date();
-  if (fecha.toDate) return fecha.toDate(); // Timestamp Firestore
+  if (fecha.toDate) return fecha.toDate(); // Firestore Timestamp
   if (fecha instanceof Date) return fecha;
 
   if (typeof fecha === "string") {
     // ISO
     if (fecha.includes("T")) return new Date(fecha);
 
-    // "dd/mm/yyyy hh:mm"
+    // dd/mm/yyyy hh:mm(:ss)
     if (fecha.includes("/")) {
       const [d, m, yRest] = fecha.split("/");
       const [y, hhmm = "00:00"] = (yRest || "").split(" ");
-      // hhmm puede venir "11:22" o "11:22:33"
       return new Date(`${y}-${m}-${d}T${hhmm}`);
     }
     return new Date(fecha);
@@ -87,7 +100,6 @@ function parseFecha(fecha) {
 }
 
 function getWeeksOfMonth(year, monthIndex) {
-  // monthIndex: 0-11
   const lastDay = new Date(year, monthIndex + 1, 0).getDate();
   const weeks = [];
   let d = 1;
@@ -124,22 +136,26 @@ async function getMergedData() {
     ...r,
     gc: asesores[r.asesor?.trim()] || r.gc || "SIN GC",
     registradoPor: r.registradoPor || r.registrado_por || "",
-    cargo: (r.cargo || "").toString(), // para separar INBOUND/REDES/CORREOS
+    cargo: (r.cargo || "").toString(),
   }));
 }
 
 /* ------------------------------
-   ESTADO GLOBAL
+   STATE
 ------------------------------ */
 let rawData = [];
 let filteredData = [];
 let allYears = [];
 let currentWeeks = [];
-let itemsModalAsesor = null;   // si está seteado, ranking por asesor
+let itemsModalAsesor = null; // null=ranking general, string=ranking por asesor
 let chart = null;
 
+// cache del último agregado del modal para abrir detalle por ítem
+let lastItemsAgg = [];
+let lastItemsAggMap = new Map();
+
 /* ------------------------------
-   CHART (crear cuando el DOM está listo)
+   CHART
 ------------------------------ */
 function ensureChart() {
   if (chart) return chart;
@@ -150,24 +166,23 @@ function ensureChart() {
     type: "bar",
     data: {
       labels: [],
-      datasets: [
-        {
-          label: "Promedio %",
-          data: [],
-          backgroundColor: "#0f4c81",
-        },
-      ],
+      datasets: [{
+        label: "Promedio %",
+        data: [],
+        backgroundColor: "#0f4c81",
+      }],
     },
     options: {
       plugins: { legend: { display: false } },
       scales: { y: { beginAtZero: true, max: 100 } },
     },
   });
+
   return chart;
 }
 
 /* ------------------------------
-   FILTRO AÑOS
+   UI: YEAR FILTER
 ------------------------------ */
 function setupYearFilter() {
   const sel = document.getElementById("filterAnio");
@@ -183,7 +198,8 @@ function setupYearFilter() {
 }
 
 /* ------------------------------
-   FILTRO SEMANAL GLOBAL (dependiente de año/mes)
+   UI: WEEK FILTER OPTIONS (GLOBAL)
+   depende de Año/Mes seleccionados
 ------------------------------ */
 function setupWeekFilterOptions() {
   const selMes = document.getElementById("filterMes");
@@ -191,31 +207,27 @@ function setupWeekFilterOptions() {
   const selSemana = document.getElementById("filterSemana");
   if (!selSemana) return;
 
-  // Si no hay mes seleccionado, no forzamos semanas (se queda "Todas")
   const mesVal = selMes?.value ?? "";
   const anioVal = selAnio?.value ?? "";
 
-  // Base: mes actual si no se eligió
   const now = new Date();
   const year = anioVal !== "" ? Number(anioVal) : now.getFullYear();
   const month = mesVal !== "" ? Number(mesVal) : now.getMonth();
 
   currentWeeks = getWeeksOfMonth(year, month);
 
-  const prev = selSemana.value; // conservar si se puede
-  selSemana.innerHTML = `<option value="">Todas</option>` +
+  const prev = selSemana.value;
+  selSemana.innerHTML =
+    `<option value="">Todas</option>` +
     currentWeeks
-      .map(
-        (w, i) => `<option value="${i}">Semana ${i + 1} (${w.startDay}-${w.endDay})</option>`
-      )
+      .map((w, i) => `<option value="${i}">Semana ${i + 1} (${w.startDay}-${w.endDay})</option>`)
       .join("");
 
-  // Restaurar si existe
   if (prev !== "" && currentWeeks[Number(prev)]) selSemana.value = prev;
 }
 
 /* ------------------------------
-   APLICAR FILTROS (INBOUND + Año/Mes/Semana/Registrado)
+   APPLY FILTERS
 ------------------------------ */
 function applyFilters() {
   const selReg = document.getElementById("filterRegistrado");
@@ -230,20 +242,14 @@ function applyFilters() {
 
   let data = rawData.slice();
 
-  // ✅ SOLO CARGO DEL DASHBOARD (INBOUND)
-  data = data.filter((r) => normalize(r.cargo).toUpperCase() === DASHBOARD_CARGO);
+  // ✅ separar vista por cargo (INBOUND/REDES/CORREOS)
+  data = data.filter((r) => (r.cargo || "").toString().toUpperCase() === DASHBOARD_CARGO);
 
-  if (anio !== "") {
-    data = data.filter((r) => parseFecha(r.fecha).getFullYear() == anio);
-  }
-  if (mes !== "") {
-    data = data.filter((r) => parseFecha(r.fecha).getMonth() == mes);
-  }
-  if (reg) {
-    data = data.filter((r) => normalize(r.registradoPor) === reg);
-  }
+  if (anio !== "") data = data.filter((r) => parseFecha(r.fecha).getFullYear() == anio);
+  if (mes !== "") data = data.filter((r) => parseFecha(r.fecha).getMonth() == mes);
+  if (reg) data = data.filter((r) => normalize(r.registradoPor) === reg);
 
-  // ✅ Semana (usa currentWeeks calculado por setupWeekFilterOptions)
+  // ✅ semana global
   if (semana !== "") {
     const w = currentWeeks[Number(semana)];
     if (w) {
@@ -259,7 +265,7 @@ function applyFilters() {
 }
 
 /* ------------------------------
-   VISTA EJECUTIVA POR ASESOR (tarjetas clickeables)
+   EXEC VIEW (tarjetas)
 ------------------------------ */
 function renderExecView(data) {
   const porAsesor = {};
@@ -308,6 +314,7 @@ function renderExecView(data) {
       const prom = Math.round(a.promedio * 10) / 10;
       const pillClass = prom >= 85 ? "green" : "red";
       const label = prom >= 85 ? "🟢 85–100" : "🔴 0–84";
+
       return `
         <div class="exec-card" data-asesor="${escapeHTML(a.asesor)}">
           <div class="exec-header">
@@ -341,7 +348,7 @@ function renderExecView(data) {
 }
 
 /* ------------------------------
-   CONTADORES POR TIPO
+   COUNTERS
 ------------------------------ */
 function renderCounters(data) {
   const counts = {
@@ -374,7 +381,7 @@ function renderCounters(data) {
 }
 
 /* ------------------------------
-   ÚLTIMOS REGISTROS
+   RECENT
 ------------------------------ */
 function renderRecent(data) {
   const tbody = document.querySelector("#recentTable tbody");
@@ -387,37 +394,30 @@ function renderRecent(data) {
 
   tbody.innerHTML = recent.length
     ? recent
-        .map(
-          (r) => `
-          <tr>
-            <td>${escapeHTML(parseFecha(r.fecha).toLocaleString("es-PE"))}</td>
-            <td>${escapeHTML(r.asesor)} — ${escapeHTML(r.gc)}</td>
-            <td>${Number(r.nota || 0)}%</td>
-            <td>${escapeHTML(r.tipo || "—")}</td>
-            <td>${escapeHTML(r.registradoPor || "—")}</td>
-          </tr>
-        `
-        )
-        .join("")
+      .map((r) => `
+        <tr>
+          <td>${escapeHTML(parseFecha(r.fecha).toLocaleString("es-PE"))}</td>
+          <td>${escapeHTML(r.asesor)} — ${escapeHTML(r.gc)}</td>
+          <td>${Number(r.nota || 0)}%</td>
+          <td>${escapeHTML(r.tipo || "—")}</td>
+          <td>${escapeHTML(r.registradoPor || "—")}</td>
+        </tr>
+      `)
+      .join("")
     : `<tr><td colspan="5">Sin registros</td></tr>`;
 }
 
 /* ------------------------------
-   TABLA SEMANAL + GRÁFICO
+   WEEKLY TABLE + CHART
 ------------------------------ */
 function renderWeeklyAndChart(data) {
   const head = document.getElementById("weeklyHead");
   const body = document.getElementById("weeklyBody");
-  const ch = ensureChart();
-
   if (!head || !body) return;
 
-  // Las semanas ya están en currentWeeks (dependen de año/mes seleccionados)
   head.innerHTML =
     `<tr><th>ASESOR</th>` +
-    currentWeeks
-      .map((_, i) => `<th>S${i + 1} C1</th><th>S${i + 1} C2</th>`)
-      .join("") +
+    currentWeeks.map((_, i) => `<th>S${i + 1} C1</th><th>S${i + 1} C2</th>`).join("") +
     `</tr>`;
 
   const asesoresUnicos = [...new Set(data.map((r) => r.asesor))].filter(Boolean);
@@ -433,8 +433,7 @@ function renderWeeklyAndChart(data) {
               const d = parseFecha(r.fecha).getDate();
               return r.asesor === asesor && d >= startDay && d <= endDay;
             })
-            .slice(0, 2); // C1 y C2
-
+            .slice(0, 2);
           row += `<td>${escapeHTML(recs[0]?.tipo || "-")}</td>`;
           row += `<td>${escapeHTML(recs[1]?.tipo || "-")}</td>`;
         }
@@ -442,7 +441,7 @@ function renderWeeklyAndChart(data) {
       })
       .join("") || `<tr><td colspan="20">Sin datos</td></tr>`;
 
-  // Gráfico promedio semanal (según data filtrada)
+  const ch = ensureChart();
   if (ch) {
     const values = currentWeeks.map((w) => {
       const recs = data.filter((r) => {
@@ -461,12 +460,11 @@ function renderWeeklyAndChart(data) {
 }
 
 /* ------------------------------
-   RANKING ÍTEMS (Modal)
-   - filtro por semana dentro del modal sigue funcionando
-   - ahora al hacer CLICK en un ítem: muestra TODOS los detalles
+   ITEMS RANKING (MODAL) + NUEVO POPUP DETALLE
 ------------------------------ */
 function aggregateItems(records) {
   const mapa = {};
+
   records.forEach((reg) => {
     (reg.items || []).forEach((it) => {
       const key = (it?.name || "Sin nombre").toString();
@@ -476,10 +474,10 @@ function aggregateItems(records) {
           tipo: it?.tipo || "—",
           count: 0,
           sumPerc: 0,
-          // guardamos TODOS los detalles con contexto
-          details: [],
+          details: [], // todo el historial
         };
       }
+
       mapa[key].count++;
       mapa[key].sumPerc += Number(it?.perc || 0);
 
@@ -496,40 +494,26 @@ function aggregateItems(records) {
     });
   });
 
-  return Object.values(mapa)
+  const list = Object.values(mapa)
     .map((o) => ({
       ...o,
       avgPerc: o.count ? Math.round((o.sumPerc / o.count) * 10) / 10 : 0,
     }))
     .sort((a, b) => b.count - a.count);
-}
 
-function ensureItemDetailPanel() {
-  const modalBody = document.querySelector("#itemsModal .modal-body");
-  if (!modalBody) return null;
+  // cache para abrir detalle rápido
+  lastItemsAgg = list;
+  lastItemsAggMap = new Map(list.map((x) => [x.name, x]));
 
-  let panel = document.getElementById("itemDetailPanel");
-  if (!panel) {
-    panel = document.createElement("div");
-    panel.id = "itemDetailPanel";
-    panel.style.marginTop = "12px";
-    panel.innerHTML = `
-      <div class="card" style="background:transparent;border:1px solid rgba(148,163,184,.25)">
-        <h3 style="margin:0 0 6px;font-size:14px">Detalle del ítem</h3>
-        <div class="small" id="itemDetailSubtitle">Haz clic en un ítem para ver todos los motivos.</div>
-        <div id="itemDetailList" style="margin-top:10px"></div>
-      </div>
-    `;
-    modalBody.appendChild(panel);
-  }
-  return panel;
+  return list;
 }
 
 function fillItemsPeriodSelect() {
   const sel = document.getElementById("itemsPeriodSelect");
   if (!sel) return;
 
-  sel.innerHTML = `<option value="mes">Mes completo</option>` +
+  sel.innerHTML =
+    `<option value="mes">Mes completo</option>` +
     currentWeeks
       .map((w, i) => `<option value="week-${i}">Semana S${i + 1} (${w.startDay}-${w.endDay})</option>`)
       .join("");
@@ -537,14 +521,13 @@ function fillItemsPeriodSelect() {
 
 function renderItemsModalTable() {
   const selVal = document.getElementById("itemsPeriodSelect")?.value || "mes";
+
   let data = filteredData.slice();
 
-  // Si abrimos modal desde tarjeta asesor, filtramos por asesor
   if (itemsModalAsesor) {
     data = data.filter((r) => r.asesor === itemsModalAsesor);
   }
 
-  // Filtro semanal dentro del modal
   if (selVal.startsWith("week-")) {
     const index = Number(selVal.split("-")[1]);
     const w = currentWeeks[index];
@@ -562,70 +545,64 @@ function renderItemsModalTable() {
 
   tbody.innerHTML = agg.length
     ? agg
-        .map(
-          (it) => `
-          <tr class="item-row" data-item="${escapeHTML(it.name)}">
-            <td><b>${escapeHTML(it.name)}</b></td>
-            <td>${escapeHTML(it.tipo)}</td>
-            <td>${it.count}</td>
-            <td>${it.avgPerc}%</td>
-            <td class="small">Clic para ver todos los motivos</td>
-          </tr>
-        `
-        )
-        .join("")
+      .map((it) => `
+        <tr class="item-row" data-item="${escapeHTML(it.name)}">
+          <td><b>${escapeHTML(it.name)}</b></td>
+          <td>${escapeHTML(it.tipo)}</td>
+          <td>${it.count}</td>
+          <td>${it.avgPerc}%</td>
+          <td class="small link">Ver detalles</td>
+        </tr>
+      `)
+      .join("")
     : `<tr><td colspan="5">Sin ítems debitados.</td></tr>`;
 
-  // Panel de detalle
-  ensureItemDetailPanel();
-  const sub = document.getElementById("itemDetailSubtitle");
-  const list = document.getElementById("itemDetailList");
-  if (sub) sub.textContent = "Haz clic en un ítem para ver todos los motivos.";
-  if (list) list.innerHTML = "";
-
-  // Click por fila -> lista completa de detalles
+  // Click en fila -> abrir POPUP de detalle
   tbody.querySelectorAll(".item-row").forEach((row) => {
     row.addEventListener("click", () => {
-      const itemName = row.dataset.item || "";
-      const found = agg.find((x) => x.name === itemName);
-      if (!found) return;
-
-      const subtitle = document.getElementById("itemDetailSubtitle");
-      const detailList = document.getElementById("itemDetailList");
-
-      if (subtitle) {
-        subtitle.textContent = `${found.name} · ${found.count} ocurrencias · Promedio débito: ${found.avgPerc}%`;
-      }
-      if (detailList) {
-        const detalles = (found.details || [])
-          .slice()
-          .sort((a, b) => b.fecha - a.fecha);
-
-        detailList.innerHTML = detalles.length
-          ? `
-            <div style="display:grid;gap:8px">
-              ${detalles
-                .map(
-                  (d) => `
-                  <div class="box" style="background:rgba(148,163,184,.10);border-color:rgba(148,163,184,.20)">
-                    <div style="font-size:12px;margin-bottom:6px">
-                      <b>${escapeHTML(d.asesor)}</b> · GC ${escapeHTML(d.gc)} ·
-                      ${escapeHTML(d.fecha.toLocaleString("es-PE"))} ·
-                      Nota ${d.nota}% · Tipo ${escapeHTML(d.tipo)}
-                    </div>
-                    <div>${escapeHTML(d.detail)}</div>
-                  </div>
-                `
-                )
-                .join("")}
-            </div>
-          `
-          : `<div class="small">No hay detalles registrados para este ítem.</div>`;
-      }
+      const name = row.dataset.item || "";
+      const item = lastItemsAggMap.get(name);
+      if (item) openDetailModal(item);
     });
   });
 }
 
+/* -------- POPUP DETALLE (NUEVO) -------- */
+function openDetailModal(item) {
+  const modal = document.getElementById("detailModal");
+  const title = document.getElementById("detailModalTitle");
+  const body = document.getElementById("detailModalBody");
+  const sub = document.getElementById("detailModalSubtitle");
+
+  if (!modal || !title || !body) return;
+
+  title.textContent = `Detalle del ítem — ${item.name}`;
+  if (sub) sub.textContent = `${item.count} ocurrencias · Promedio débito: ${item.avgPerc}%`;
+
+  const detalles = (item.details || []).slice().sort((a, b) => b.fecha - a.fecha);
+
+  body.innerHTML = detalles.length
+    ? detalles.map((d) => `
+      <div class="detail-card">
+        <div class="detail-meta">
+          <b>${escapeHTML(d.asesor)}</b> · GC ${escapeHTML(d.gc)} ·
+          ${escapeHTML(d.fecha.toLocaleString("es-PE"))} ·
+          Nota ${d.nota}% · Tipo ${escapeHTML(d.tipo)}
+        </div>
+        <div class="detail-text">${escapeHTML(d.detail)}</div>
+      </div>
+    `).join("")
+    : `<div class="small">No hay detalles registrados para este ítem.</div>`;
+
+  modal.style.display = "flex";
+}
+
+function closeDetailModal() {
+  const modal = document.getElementById("detailModal");
+  if (modal) modal.style.display = "none";
+}
+
+/* -------- modal ranking -------- */
 function openItemsModal(asesor = null) {
   itemsModalAsesor = asesor;
 
@@ -652,7 +629,7 @@ function closeItemsModal() {
 function renderFromFilteredData() {
   const data = filteredData;
 
-  // Resumen
+  // resumen
   const selReg = document.getElementById("filterRegistrado");
   const selMes = document.getElementById("filterMes");
   const selAnio = document.getElementById("filterAnio");
@@ -660,31 +637,23 @@ function renderFromFilteredData() {
   const summary = document.getElementById("filterSummary");
 
   let resumen = `Mostrando ${data.length} registros`;
-  if (selMes?.value !== "") resumen += ` del mes ${selMes.options[selMes.selectedIndex].text}`;
-  if (selAnio?.value !== "") resumen += ` del año ${selAnio.value}`;
+  if (selMes?.value !== "") resumen += ` · Mes ${selMes.options[selMes.selectedIndex].text}`;
+  if (selAnio?.value !== "") resumen += ` · Año ${selAnio.value}`;
   if (selSemana?.value !== "") {
     const w = currentWeeks[Number(selSemana.value)];
     if (w) resumen += ` · Semana ${Number(selSemana.value) + 1} (${w.startDay}-${w.endDay})`;
   }
-  if (selReg?.value) resumen += ` · registrados por ${selReg.value}`;
-
+  if (selReg?.value) resumen += ` · Registrado por ${selReg.value}`;
   if (summary) summary.textContent = resumen;
 
-  // Vista ejecutiva
   renderExecView(data);
-
-  // Contadores
   renderCounters(data);
-
-  // Últimos registros
   renderRecent(data);
-
-  // Tabla semanal + Gráfico
   renderWeeklyAndChart(data);
 }
 
 /* ------------------------------
-   TEMA CLARO / OSCURO
+   THEME
 ------------------------------ */
 const THEME_KEY = "dash_theme";
 
@@ -702,48 +671,21 @@ function applyTheme(theme) {
 }
 
 /* ------------------------------
-   INIT
+   EVENTS
 ------------------------------ */
-async function refreshDashboard() {
-  const data = await getMergedData();
-
-  // Orden base por fecha
-  rawData = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
-
-  // Años disponibles (ya filtrados por cargo? -> NO, se calcula global, ok)
-  allYears = [...new Set(rawData.map((r) => parseFecha(r.fecha).getFullYear()))];
-  setupYearFilter();
-
-  // Default mes actual si no está seteado
-  const selMes = document.getElementById("filterMes");
-  if (selMes && selMes.value === "") {
-    selMes.value = new Date().getMonth().toString();
-  }
-
-  // Semanas dependientes de Año/Mes
-  setupWeekFilterOptions();
-
-  // Render con filtros
-  applyFilters();
-}
-
 function wireEvents() {
-  // Filtros
-  const ids = ["filterRegistrado", "filterMes", "filterAnio", "filterSemana"];
-  ids.forEach((id) => {
+  // filtros
+  ["filterRegistrado", "filterMes", "filterAnio", "filterSemana"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
 
     el.addEventListener("change", () => {
-      // si cambian año/mes, recalculamos semanas
-      if (id === "filterMes" || id === "filterAnio") {
-        setupWeekFilterOptions();
-      }
+      if (id === "filterMes" || id === "filterAnio") setupWeekFilterOptions();
       applyFilters();
     });
   });
 
-  // Modal ítems
+  // modal ranking items
   document.getElementById("btnOpenItemsModal")?.addEventListener("click", () => openItemsModal());
   document.getElementById("btnCloseItemsModal")?.addEventListener("click", closeItemsModal);
   document.getElementById("itemsModal")?.addEventListener("click", (e) => {
@@ -751,17 +693,22 @@ function wireEvents() {
   });
   document.getElementById("itemsPeriodSelect")?.addEventListener("change", renderItemsModalTable);
 
-  // Tema
+  // modal detalle (popup nuevo)
+  document.getElementById("btnCloseDetail")?.addEventListener("click", closeDetailModal);
+  document.getElementById("detailModal")?.addEventListener("click", (e) => {
+    if (e.target?.id === "detailModal") closeDetailModal();
+  });
+
+  // theme
   const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
   applyTheme(savedTheme);
-
   document.getElementById("btnTheme")?.addEventListener("click", () => {
     const next = document.body.classList.contains("light") ? "dark" : "light";
     localStorage.setItem(THEME_KEY, next);
     applyTheme(next);
   });
 
-  // Accesos rápidos
+  // accesos rápidos (no rompe modales porque usa dataset)
   document.addEventListener("click", (e) => {
     const btn = e.target.closest("button");
     if (!btn) return;
@@ -775,10 +722,11 @@ function wireEvents() {
     }
     if (ext) {
       window.open(ext, "_blank");
+      return;
     }
   });
 
-  // Logout
+  // logout
   document.getElementById("btnLogout")?.addEventListener("click", async () => {
     try {
       await signOut(auth);
@@ -790,10 +738,25 @@ function wireEvents() {
 }
 
 /* ------------------------------
+   INIT
+------------------------------ */
+async function refreshDashboard() {
+  const data = await getMergedData();
+
+  rawData = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
+  allYears = [...new Set(rawData.map((r) => parseFecha(r.fecha).getFullYear()))];
+
+  setupYearFilter();
+
+  const selMes = document.getElementById("filterMes");
+  if (selMes && selMes.value === "") selMes.value = new Date().getMonth().toString();
+
+  setupWeekFilterOptions();
+  applyFilters();
+}
+
+/* ------------------------------
    START
 ------------------------------ */
 wireEvents();
-
-refreshDashboard().catch((err) => {
-  console.error("Error cargando dashboard:", err);
-});
+refreshDashboard().catch((err) => console.error("Error cargando dashboard:", err));

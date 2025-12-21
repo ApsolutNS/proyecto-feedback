@@ -462,10 +462,9 @@ function renderWeeklyAndChart(data) {
 /* ------------------------------
    ITEMS RANKING (MODAL) + NUEVO POPUP DETALLE
 ------------------------------ */
-function aggregateItems(records) {
+function aggregateItems(records, totalAuditorias) {
   const mapa = {};
-  let totalGral = 0; // <--- Variable para el total absoluto de ítems
-
+   
   records.forEach((reg) => {
     (reg.items || []).forEach((it) => {
       const key = (it?.name || "Sin nombre").toString();
@@ -500,8 +499,10 @@ function aggregateItems(records) {
     .map((o) => ({
       ...o,
       avgPerc: o.count ? Math.round((o.sumPerc / o.count) * 10) / 10 : 0,
-       // NUEVO: Peso relativo sobre el total de débitos
-      sharePorcentaje: totalGral > 0 ? ((o.count / totalGral) * 100).toFixed(1) : 0
+// NUEVO CÁLCULO: Cantidad de incidencias / Total de auditorías (ej. 35 / 86)
+      sharePorcentaje: totalAuditorias > 0 
+        ? ((o.count / totalAuditorias) * 100).toFixed(1) 
+        : 0
     }))
     .sort((a, b) => b.count - a.count);
 
@@ -542,8 +543,11 @@ function renderItemsModalTable() {
       });
     }
   }
+// 1. Guardamos el total de registros (auditorías) para el cálculo
+  const totalRegistrosActuales = data.length; 
 
-  const agg = aggregateItems(data);
+// 2. Pasamos ese total a la función de agrupamiento
+  const agg = aggregateItems(data, totalRegistrosActuales);
   const tbody = document.getElementById("itemsTableBody");
   if (!tbody) return;
 

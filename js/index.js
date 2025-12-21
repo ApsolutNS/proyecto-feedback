@@ -479,7 +479,6 @@ function aggregateItems(records, totalAuditorias) {
       }
 
       mapa[key].count++;
-      totalGral++; // <--- Sumamos cada ocurrencia
       mapa[key].sumPerc += Number(it?.perc || 0);
 
       if (it?.detail) {

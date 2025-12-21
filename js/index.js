@@ -464,6 +464,7 @@ function renderWeeklyAndChart(data) {
 ------------------------------ */
 function aggregateItems(records) {
   const mapa = {};
+  let totalGral = 0; // <--- Variable para el total absoluto de ítems
 
   records.forEach((reg) => {
     (reg.items || []).forEach((it) => {
@@ -479,6 +480,7 @@ function aggregateItems(records) {
       }
 
       mapa[key].count++;
+      totalGral++; // <--- Sumamos cada ocurrencia
       mapa[key].sumPerc += Number(it?.perc || 0);
 
       if (it?.detail) {
@@ -498,6 +500,8 @@ function aggregateItems(records) {
     .map((o) => ({
       ...o,
       avgPerc: o.count ? Math.round((o.sumPerc / o.count) * 10) / 10 : 0,
+       // NUEVO: Peso relativo sobre el total de débitos
+      sharePorcentaje: totalGral > 0 ? ((o.count / totalGral) * 100).toFixed(1) : 0
     }))
     .sort((a, b) => b.count - a.count);
 
@@ -551,11 +555,12 @@ function renderItemsModalTable() {
           <td>${escapeHTML(it.tipo)}</td>
           <td>${it.count}</td>
           <td>${it.avgPerc}%</td>
+          <td>${it.sharePorcentaje}%</td>
           <td class="small link">Ver detalles</td>
         </tr>
       `)
       .join("")
-    : `<tr><td colspan="5">Sin ítems debitados.</td></tr>`;
+    : `<tr><td colspan="6">Sin ítems debitados.</td></tr>`;
 
   // Click en fila -> abrir POPUP de detalle
   tbody.querySelectorAll(".item-row").forEach((row) => {

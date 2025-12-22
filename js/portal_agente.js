@@ -787,8 +787,10 @@ function renderDetailRefuerzo(r) {
     <div class="section-title">Objetivo del refuerzo</div>
     <div class="section-content">${escapeHTML(r.objetivo || "—")}</div>
 
-    <div class="section-title">Detalle / acuerdos clave</div>
-    <div class="section-content">${escapeHTML(r.detalle || "—")}</div>
+   <div class="section-title">Detalle / acuerdos clave</div>
+   <div class="section-content detalle-html">
+     ${r.detalle || "—"}
+   </div>
 
     <div class="section-title">Compromiso del agente</div>
     <div class="section-content">

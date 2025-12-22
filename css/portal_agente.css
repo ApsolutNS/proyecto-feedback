@@ -933,3 +933,26 @@ body.theme-dark ::-webkit-scrollbar-thumb {
 body.theme-dark ::-webkit-scrollbar-track {
   background: color-mix(in srgb, var(--color-outline-variant) 40%, transparent);
 }
+.detalle-html ul {
+  list-style: disc;
+  padding-left: 22px;
+  margin: 8px 0;
+}
+
+.detalle-html ol {
+  list-style: decimal;
+  padding-left: 22px;
+  margin: 8px 0;
+}
+
+.detalle-html li {
+  margin-bottom: 6px;
+}
+
+.detalle-html strong {
+  font-weight: 700;
+}
+
+.detalle-html p {
+  margin: 4px 0;
+}

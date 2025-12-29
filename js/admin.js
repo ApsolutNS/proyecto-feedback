@@ -29,6 +29,18 @@ import {
 // ----------------------------
 // HELPERS UI
 // ----------------------------
+const CARGOS_AGENTES = [
+  "ASESOR INBOUND",
+  "ASESOR REDES",
+  "ASESOR CORREOS",
+];
+
+const CARGOS_REGISTRADORES = [
+  "Líder de Calidad y Formación",
+  "Líder de Operaciones",
+  "Supervisor",
+];
+
 const $ = (id) => document.getElementById(id);
 
 function setMsg(text, type = "") {
@@ -106,10 +118,14 @@ $("btnCrear")?.addEventListener("click", async () => {
     return setMsg("Completa email, contraseña y rol.", "error");
   }
   if (rol === "agente") {
-    if (!nombreAsesor || !cargo) {
-      return setMsg("Para rol 'agente' completa nombre del asesor y cargo.", "error");
+    if (!nombreAsesor) {
+      return setMsg("El nombre del asesor es obligatorio.", "error");
+    }
+    if (!CARGOS_AGENTES.includes(cargo)) {
+      return setMsg("Selecciona un cargo válido para el agente.", "error");
     }
   }
+
 
   setMsg("Procesando...", "");
   try {
@@ -157,7 +173,13 @@ $("btnCrearRegistrador")?.addEventListener("click", async () => {
   const nombre = ($("regNombre")?.value || "").trim();
   const cargo = ($("regCargo")?.value || "").trim();
 
-  if (!nombre || !cargo) return setRegMsg("Completa nombre y cargo.", "error");
+  if (!nombre) {
+  return setRegMsg("El nombre es obligatorio.", "error");
+  }
+  if (!CARGOS_REGISTRADORES.includes(cargo)) {
+    return setRegMsg("Selecciona un cargo válido para el registrador.", "error");
+  }
+
 
   setRegMsg("Agregando...", "");
   try {
@@ -281,7 +303,10 @@ async function loadRegistradores() {
         const cargo = (box.querySelector(`input[data-field="cargo"]`)?.value || "").trim();
 
         if (!nombre || !cargo) return setRegMsg("Nombre y cargo son obligatorios.", "error");
-
+        
+        if (!CARGOS_REGISTRADORES.includes(cargo)) {
+          return setRegMsg("Cargo no permitido.", "error");
+        }
         try {
           await updateDoc(doc(db, "registradores", id), {
             registradoPorNombre: nombre,

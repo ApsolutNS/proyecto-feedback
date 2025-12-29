@@ -359,6 +359,104 @@ input:focus, select:focus{
   justify-content: center;
   gap: 10px;
 }
+/* =========================
+   POPUP CONFIRMACIÓN
+========================= */
+
+/* Overlay */
+.modal-confirm {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: none; /* JS lo activa */
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* Caja del popup */
+.modal-confirm .modal-box {
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px 18px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--outline-2);
+  animation: popIn 0.18s ease-out;
+}
+
+/* Animación */
+@keyframes popIn {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Título */
+.modal-confirm h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Texto */
+.modal-confirm p {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Acciones */
+.modal-confirm .modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Botones */
+.modal-confirm button {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--outline);
+  background: var(--surface-2);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* Cancelar */
+.modal-confirm .btn-cancel {
+  color: var(--text);
+}
+.modal-confirm .btn-cancel:hover {
+  background: var(--outline-2);
+}
+
+/* Confirmar */
+.modal-confirm .btn-confirm {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+}
+.modal-confirm .btn-confirm:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 10px 26px rgba(220, 38, 38, 0.35);
+}
+
+/* Mostrar modal */
+.modal-confirm.show {
+  display: flex;
+}
 
 /* =========================
    RESPONSIVE

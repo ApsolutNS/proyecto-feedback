@@ -1,5 +1,3 @@
-"use strict";
-
 import { db } from "./firebase.js";
 import {
   collection,
@@ -8,17 +6,10 @@ import {
   doc
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-/* ==============================
-   MIGRACIÓN REFUERZOS ANTIGUOS
-   ============================== */
-
 async function migrarRefuerzosAntiguos() {
-  console.log("🚀 Iniciando migración de refuerzos antiguos...");
-
-  /* 1️⃣ Obtener Líder de Calidad activo */
-  const snapRegs = await getDocs(collection(db, "registradores"));
-
-  const lider = snapRegs.docs
+  // 1. Obtener líder actual
+  const regSnap = await getDocs(collection(db, "registradores"));
+  const lider = regSnap.docs
     .map(d => ({ id: d.id, ...d.data() }))
     .find(r =>
       r.activo === true &&
@@ -27,45 +18,31 @@ async function migrarRefuerzosAntiguos() {
     );
 
   if (!lider) {
-    console.error("❌ No existe Líder de Calidad activo con firma");
+    alert("No hay líder con firma");
     return;
   }
 
-  console.log("✅ Líder detectado:", lider.registradoPorNombre);
+  // 2. Refuerzos
+  const refSnap = await getDocs(collection(db, "refuerzos_calidad"));
 
-  /* 2️⃣ Obtener refuerzos */
-  const snapRef = await getDocs(collection(db, "refuerzos_calidad"));
+  let count = 0;
 
-  let migrados = 0;
-
-  for (const d of snapRef.docs) {
+  for (const d of refSnap.docs) {
     const data = d.data();
 
-    // ⛔ Saltar si ya tiene firma
-    if (data.responsableFirmaUrl) continue;
-
-    // ⛔ Saltar si es un refuerzo incompleto muy antiguo (opcional)
-    if (!data.fechaRefuerzo) continue;
-
-    const ref = doc(db, "refuerzos_calidad", d.id);
-
-    await updateDoc(ref, {
-      responsable: `${lider.registradoPorNombre} - ${lider.cargo}`,
-      responsableId: lider.registradorId || lider.id,
-      responsableNombre: lider.registradoPorNombre,
-      responsableCargo: lider.cargo,
-      responsableFirmaUrl: lider.firmaUrl,
-      migradoResponsable: true
-    });
-
-    migrados++;
-    console.log(`✔ Migrado refuerzo ${d.id}`);
+    // solo refuerzos viejos
+    if (!data.responsableFirmaUrl) {
+      await updateDoc(doc(db, "refuerzos_calidad", d.id), {
+        responsableFirmaUrl: lider.firmaUrl,
+        responsableNombre: lider.registradoPorNombre,
+        responsableCargo: lider.cargo,
+        responsableId: lider.id
+      });
+      count++;
+    }
   }
 
-  console.log(`🎉 Migración finalizada. Refuerzos actualizados: ${migrados}`);
+  alert(`✅ Migración completada: ${count} refuerzos actualizados`);
 }
 
-/* EJECUTAR */
-migrarRefuerzosAntiguos()
-  .then(() => console.log("✅ Script terminado"))
-  .catch(err => console.error("❌ Error en migración:", err));
+migrarRefuerzosAntiguos();

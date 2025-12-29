@@ -7,103 +7,100 @@
   <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
-
-<!-- 🔵 NAVBAR -->
-<nav class="navbar">
-  <div class="nav-left">
-    <span class="logo">⚙️ Admin</span>
-  </div>
-  <div class="nav-right">
-    <a href="index.html" class="nav-btn">🏠 Ir al Dashboard</a>
-    <button class="nav-btn red" id="btnLogout">Cerrar sesión</button>
-  </div>
-</nav>
-
-<div class="container">
-  <h1>Panel Administrador</h1>
-  <p>Gestión de usuarios y registradores</p>
-
-  <!-- =========================
-       CREAR USUARIO
-  ========================== -->
-  <div class="card">
-    <h3>Crear nuevo usuario</h3>
-
-    <label>Email</label>
-    <input id="email" type="email">
-
-    <label>Contraseña</label>
-    <input id="password" type="password">
-
-    <label>Rol</label>
-    <select id="rol">
-      <option value="admin">Administrador</option>
-      <option value="supervisor">Supervisor</option>
-      <option value="agente">Agente</option>
-    </select>
-
-    <label>Nombre del asesor</label>
-    <input id="nombreAsesor" placeholder="Nombre completo del agente">
-
-    <label>Cargo del agente</label>
-    <select id="cargo">
-      <option value="">Selecciona cargo</option>
-      <option value="ASESOR INBOUND">ASESOR INBOUND</option>
-      <option value="ASESOR REDES">ASESOR REDES</option>
-      <option value="ASESOR CORREOS">ASESOR CORREOS</option>
-    </select>
-
-
-    <label>GC</label>
-    <input id="gc" placeholder="GC########">
-
-    <button id="btnCrear">Crear usuario</button>
-    <p id="msg"></p>
-  </div>
-
-  <!-- =========================
-       REGISTRADORES
-  ========================== -->
-  <div class="card">
-    <h3>Registradores (registradoPor)</h3>
-
-    <label>Nombre</label>
-    <input id="regNombre">
-
-    <label>Cargo</label>
-    <select id="regCargo">
-      <option value="">Selecciona cargo</option>
-      <option value="Líder de Calidad y Formación">Líder de Calidad y Formación</option>
-      <option value="Líder de Operaciones">Líder de Operaciones</option>
-      <option value="Supervisor">Supervisor</option>
-    </select>
-
-
-    <button id="btnCrearRegistrador">Agregar registrador</button>
-
-    <ul id="listaRegistradores"></ul>
-  </div>
-</div>
-<div class="card">
-  <h3>Usuarios del sistema</h3>
-  <p class="muted">Administrar usuarios existentes</p>
-
-  <ul id="listaUsuarios" class="user-list">
-    <li class="small">Cargando usuarios…</li>
-  </ul>
-</div>
-
-<!-- Modal confirmación -->
-<div id="confirmModal" class="confirm-overlay">
-  <div class="confirm-box">
-    <p id="confirmText">¿Estás seguro?</p>
-    <div class="confirm-actions">
-      <button id="btnConfirmYes" class="btn-mini danger">Sí</button>
-      <button id="btnConfirmNo" class="btn-mini">Cancelar</button>
+  <!-- 🔵 NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <span class="logo">⚙️ Admin</span>
     </div>
-  </div>
-</div>
+    <div class="nav-right">
+      <a href="index.html" class="nav-btn">🏠 Ir al Dashboard</a>
+      <button class="nav-btn red" id="btnLogout">Cerrar sesión</button>
+    </div>
+  </nav>
 
-<script type="module" src="js/admin.js"></script>
+  <div class="container">
+    <h1>Panel Administrador</h1>
+    <p>Crear usuarios, registradores y administrar accesos</p>
+
+    <div class="grid-2">
+      <!-- =======================
+           CARD: CREAR USUARIO
+      ======================== -->
+      <div class="card">
+        <h3>Crear nuevo usuario</h3>
+
+        <label>Email:</label>
+        <input id="email" type="email" placeholder="correo@dominio.com">
+
+        <label>Contraseña:</label>
+        <input id="password" type="password" placeholder="********">
+
+        <label>Rol:</label>
+        <select id="rol">
+          <option value="admin">Administrador</option>
+          <option value="supervisor">Supervisor</option>
+          <option value="agente">Agente</option>
+        </select>
+
+        <!-- SOLO AGENTE -->
+        <div data-only-agent="1">
+          <label>nombreAsesor:</label>
+          <input id="nombreAsesor" type="text" placeholder="Nombre Apellido">
+
+          <label>Cargo (Agente):</label>
+          <select id="cargo"></select>
+
+          <label>GC (opcional):</label>
+          <input id="GC" type="text" placeholder="GC o DNI">
+        </div>
+
+        <button id="btnCrear">Crear usuario</button>
+        <p id="msg"></p>
+      </div>
+
+      <!-- =======================
+           CARD: USUARIOS EXISTENTES
+      ======================== -->
+      <div class="card">
+        <h3>Usuarios existentes</h3>
+
+        <div class="row">
+          <input id="userSearch" type="text" placeholder="Buscar por email / nombre / rol...">
+          <button class="btn-mini" id="btnRefreshUsers" type="button">Actualizar</button>
+        </div>
+
+        <div id="usersInfo" class="small" style="margin-top:10px;"></div>
+        <div id="usersList" class="users-list">
+          <div class="small">Cargando usuarios...</div>
+        </div>
+
+        <p class="small" style="margin-top:10px;color:var(--muted)">
+          Nota: “Eliminar” aquí borra el perfil en Firestore (colección <b>usuarios</b>).
+          El usuario de Authentication solo se elimina con Admin SDK/Cloud Function.
+        </p>
+      </div>
+    </div>
+
+    <!-- =======================
+         CARD: REGISTRADORES
+    ======================== -->
+    <div class="card">
+      <h3>Registradores</h3>
+
+      <label>Nombre:</label>
+      <input id="regNombre" placeholder="Ej: Alex Paolo Nuñez Sulca">
+
+      <label>Cargo:</label>
+      <select id="regCargo"></select>
+
+      <button id="btnCrearRegistrador" type="button">Agregar registrador</button>
+      <p id="regMsg"></p>
+
+      <ul id="listaRegistradores" class="reg-list"></ul>
+    </div>
+
+  </div>
+
+  <script type="module" src="js/admin.js"></script>
 </body>
 </html>

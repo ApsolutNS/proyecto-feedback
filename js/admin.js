@@ -61,22 +61,15 @@ const CARGOS_REGISTRADORES = [
 
 async function existeLiderCalidadActivo(excludeId = null) {
   const snap = await getDocs(
-    query(
-      collection(db, "registradores"),
-      orderBy("cargo", "asc")
-    )
+    query(collection(db, "registradores"), orderBy("cargo", "asc"))
   );
-
   return snap.docs.some(d => {
     const data = d.data();
     if (excludeId && d.id === excludeId) return false;
-    return (
-      data.activo !== false &&
-      data.cargo === "Líder de Calidad y Formación"
-    );
+    return data.activo !== false &&
+           data.cargo === "Líder de Calidad y Formación";
   });
 }
-
 
 // ----------------------------
 // HELPERS DOM / UI

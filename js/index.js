@@ -47,14 +47,22 @@ const DASHBOARD_CARGO = getDashboardCargo();
 ------------------------------ */
 const auth = getAuth();
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     location.href = "login.html";
     return;
   }
+
   const el = document.getElementById("userRoleName");
   if (el) el.textContent = user.displayName || user.email || "Usuario";
+
+  // Ocultar admin si no corresponde
+  const btnAdmin = document.getElementById("btnAdmin");
+  if (btnAdmin && !user.email?.includes("@efectiva.com")) {
+    btnAdmin.style.display = "none";
+  }
 });
+
 
 /* ------------------------------
    HELPERS
@@ -712,6 +720,11 @@ function wireEvents() {
       applyFilters();
     });
   });
+   
+// botón admin
+document.getElementById("btnAdmin")?.addEventListener("click", () => {
+  location.href = "admin.html";
+});
 
   // modal ranking items
   document.getElementById("btnOpenItemsModal")?.addEventListener("click", () => openItemsModal());
@@ -768,16 +781,27 @@ function wireEvents() {
 /* ------------------------------
    INIT
 ------------------------------ */
+
 async function refreshDashboard() {
   const data = await getMergedData();
 
-  rawData = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
-  allYears = [...new Set(rawData.map((r) => parseFecha(r.fecha).getFullYear()))];
+  rawData = data.sort((a, b) =>
+    parseFecha(a.fecha) - parseFecha(b.fecha)
+  );
+
+  // ✅ NUEVO
+  setupRegistradoPorFilter(rawData);
+
+  allYears = [...new Set(rawData.map(r =>
+    parseFecha(r.fecha).getFullYear()
+  ))];
 
   setupYearFilter();
 
   const selMes = document.getElementById("filterMes");
-  if (selMes && selMes.value === "") selMes.value = new Date().getMonth().toString();
+  if (selMes && selMes.value === "") {
+    selMes.value = new Date().getMonth().toString();
+  }
 
   setupWeekFilterOptions();
   applyFilters();

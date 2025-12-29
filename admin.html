@@ -84,6 +84,25 @@
     <ul id="listaRegistradores"></ul>
   </div>
 </div>
+<div class="card">
+  <h3>Usuarios del sistema</h3>
+  <p class="muted">Administrar usuarios existentes</p>
+
+  <ul id="listaUsuarios" class="user-list">
+    <li class="small">Cargando usuarios…</li>
+  </ul>
+</div>
+
+<!-- Modal confirmación -->
+<div id="confirmModal" class="confirm-overlay">
+  <div class="confirm-box">
+    <p id="confirmText">¿Estás seguro?</p>
+    <div class="confirm-actions">
+      <button id="btnConfirmYes" class="btn-mini danger">Sí</button>
+      <button id="btnConfirmNo" class="btn-mini">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <script type="module" src="js/admin.js"></script>
 </body>

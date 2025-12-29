@@ -130,40 +130,46 @@ function formatearFechaHora(fechaISO) {
 async function cargarResponsableActivo() {
   try {
     const snap = await getDocs(colRegistradores);
+
     const lider = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .find(r => r.activo === true && r.cargo === "Líder de Calidad y Formación");
+      .map(d => ({ id: d.id, ...d.data() })) // ✅ CONSERVA ID
+      .find(r =>
+        r.activo === true &&
+        r.cargo === "Líder de Calidad y Formación"
+      );
 
     if (!lider) {
-      alert("No hay un Líder de Calidad activo en registradores.");
-      return null;
+      alert("No hay un Líder de Calidad activo en registradores");
+      return;
     }
+
     if (!lider.firmaUrl) {
       alert(
         "El Líder de Calidad activo no tiene firma registrada.\n" +
         "Debes subir una firma en Admin."
       );
-      return null;
+      return;
     }
 
-    // Normaliza registradorId
-    const registradorId = lider.registradorId || lider.id;
-
     responsableActivo = {
-      ...lider,
-      registradorId
+      registradorId: lider.id,                 // ahora existe
+      registradoPorNombre: lider.registradoPorNombre,
+      cargo: lider.cargo,
+      firmaUrl: lider.firmaUrl
     };
 
+    // Input visible
     const inputResp = document.getElementById("responsable");
-    if (inputResp) inputResp.value = `${lider.registradoPorNombre} - ${lider.cargo}`;
+    if (inputResp) {
+      inputResp.value =
+        `${lider.registradoPorNombre} - ${lider.cargo}`;
+    }
 
-    return responsableActivo;
   } catch (e) {
     console.error("Error cargando responsable:", e);
-    alert("Error cargando responsable: " + (e?.message || e));
-    return null;
   }
 }
+
 
 /* ---------------- CARGAR ASESORES (DESDE usuarios) ---------------- */
 async function cargarAsesores() {

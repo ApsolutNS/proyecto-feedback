@@ -1,10 +1,10 @@
 /* =========================================================
    index.js – Dashboard Supervisión (INBOUND/REDES/CORREOS)
-   ✔ Filtro semanal GLOBAL (dependiente de Año/Mes)
-   ✔ Vista ejecutiva (tarjetas clic)
-   ✔ Modal ranking ítems + filtro semanal dentro del modal
-   ✔ NUEVO: Modal limpio para "Motivo/Detalle" (popup + volver)
-   ✔ Tema claro/oscuro + Logout + Accesos rápidos
+   Filtro semanal GLOBAL (dependiente de Año/Mes)
+   Vista ejecutiva (tarjetas clic)
+   Modal ranking ítems + filtro semanal dentro del modal
+   Modal limpio para "Motivo/Detalle" (popup + volver)
+   Tema claro/oscuro + Logout + Accesos rápidos
    Requiere:
    - js/firebase.js exportando { db }
    - Chart.js cargado en index.html
@@ -120,24 +120,44 @@ async function loadRegistros() {
   return arr;
 }
 
-async function loadAsesores() {
-  const snap = await getDocs(collection(db, "asesores"));
+async function loadUsuariosAgentes() {
+  const snap = await getDocs(collection(db, "usuarios"));
   const mapa = {};
-  snap.forEach((doc) => {
+
+  snap.forEach(doc => {
     const d = doc.data();
-    if (d?.nombre) mapa[d.nombre.trim()] = d.GC || "SIN GC";
+    if (
+      d.rol === "agente" &&
+      d.activo !== false &&
+      d.nombreAsesor
+    ) {
+      mapa[d.nombreAsesor.trim()] = {
+        gc: d.GC || "SIN GC",
+        cargo: d.cargo || ""
+      };
+    }
   });
+
   return mapa;
 }
 
 async function getMergedData() {
-  const [registros, asesores] = await Promise.all([loadRegistros(), loadAsesores()]);
-  return registros.map((r) => ({
-    ...r,
-    gc: asesores[r.asesor?.trim()] || r.gc || "SIN GC",
-    registradoPor: r.registradoPor || r.registrado_por || "",
-    cargo: (r.cargo || "").toString(),
-  }));
+  const [registros, usuarios] = await Promise.all([
+    loadRegistros(),
+    loadUsuariosAgentes()
+  ]);
+
+  return registros.map((r) => {
+    const asesorKey = r.asesor?.trim();
+    const u = usuarios[asesorKey] || {};
+
+    return {
+      ...r,
+      gc: u.gc || r.gc || "SIN GC",
+      cargo: u.cargo || r.cargo || "",
+      registradoPor: r.registradoPor || r.registrado_por || ""
+    };
+  });
 }
 
 /* ------------------------------

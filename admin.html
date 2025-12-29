@@ -22,10 +22,11 @@
     <h1>Panel Administrador</h1>
     <p>Crear usuarios, registradores y administrar accesos</p>
 
-    <div class="grid-2">
+    <div class="admin-grid">
       <!-- =======================
            CARD: CREAR USUARIO
       ======================== -->
+      <div class="admin-col">
       <div class="card">
         <h3>Crear nuevo usuario</h3>
 
@@ -57,7 +58,6 @@
         <button id="btnCrear">Crear usuario</button>
         <p id="msg"></p>
       </div>
-
       <!-- =======================
            CARD: USUARIOS EXISTENTES
       ======================== -->
@@ -80,10 +80,12 @@
         </p>
       </div>
     </div>
+      </div>
 
     <!-- =======================
          CARD: REGISTRADORES
     ======================== -->
+    <div class="admin-col">
     <div class="card">
       <h3>Registradores</h3>
 
@@ -98,8 +100,14 @@
 
       <ul id="listaRegistradores" class="reg-list"></ul>
     </div>
-
   </div>
+  </div>
+   <!-- FULL WIDTH -->
+  <div class="card users-section">
+    <!-- Usuarios existentes -->
+  </div>
+
+</div>
 <!-- Modal Confirmación -->
 <div id="confirmModal" class="modal-confirm">
   <div class="modal-box">

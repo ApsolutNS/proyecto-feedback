@@ -1,6 +1,14 @@
 // js/registro.js
 "use strict";
 
+/* =========================================================
+   REGISTRO.JS (M3)
+   - RegistradoPor: colección "registradores" (solo activos)
+   - Asesor monitoreado: colección "usuarios" (rol=agente, activo=true)
+   - GC y Cargo: FIJOS desde "usuarios" (campos: GC y cargo)
+   - NO usa colección "asesores"
+========================================================= */
+
 /* ---------------- FIREBASE IMPORTS ---------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
@@ -8,6 +16,8 @@ import {
   collection,
   addDoc,
   getDocs,
+  query,
+  where,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 import {
   getStorage,
@@ -15,10 +25,7 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
 /* ---------------- CONFIG ---------------- */
 const firebaseConfig = {
@@ -54,7 +61,11 @@ const cliTipifInput = document.getElementById("cliTipif");
 const cliObsInput = document.getElementById("cliObs");
 const resumenInput = document.getElementById("resumen");
 
-const itemsContainer = document.getElementById("itemsContainer"); // OJO: en tu HTML hay 2 con el mismo id
+// ⚠️ OJO: en tu HTML hay 2 con el mismo id. Tomamos el primero.
+const itemsContainer =
+  document.querySelectorAll("#itemsContainer")?.[0] ||
+  document.getElementById("itemsContainer");
+
 const imgsInput = document.getElementById("imgs");
 const imgPreviewContainer = document.getElementById("imgPreview");
 
@@ -143,9 +154,13 @@ function escapeHTML(str) {
     }[c] || c));
 }
 
-/* =========================
+function safeStr(x) {
+  return (x ?? "").toString().trim();
+}
+
+/* =========================================================
    AUTH & INIT
-========================= */
+========================================================= */
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     alert("Debes iniciar sesión para registrar monitoreos.");
@@ -159,28 +174,28 @@ onAuthStateChanged(auth, async (user) => {
     userEmailLabel.textContent = user.email || "Usuario autenticado";
   }
 
-  // 1) Cargar combos dinámicos (registradores + asesores)
-  await cargarRegistradores(); // NUEVO: desde colección registradores
-  await cargarAsesores();      // NUEVO: trae gc + cargo desde colección asesores
-
-  // 2) Eventos / UI
+  // 1) Cargar combos dinámicos
+  await cargarRegistradores();     // colección registradores (activos)
+  await cargarUsuariosAgentes();   // colección usuarios (rol=agente, activo)
+  // 2) Enlazar eventos
   inicializarEventos();
+  // 3) Calcular nota inicial
   recalcularNotaPreview();
 });
 
-/* =========================
-   CARGAR REGISTRADORES (desde colección registradores)
-   - Usa: registradoPorNombre + cargo
-   - Value final: "Nombre - Cargo"
-========================= */
+/* =========================================================
+   CARGAR REGISTRADORES (colección: registradores)
+   - Usa: registradoPorNombre + cargo, solo activo=true
+   - value final: "Nombre - Cargo"
+========================================================= */
 async function cargarRegistradores() {
   if (!registradoPorSel) return;
 
-  // Reemplaza lo hardcodeado del HTML (sin modificar el HTML)
   registradoPorSel.innerHTML = `<option value="">Cargando registradores...</option>`;
 
   try {
     const snap = await getDocs(collection(db, "registradores"));
+
     if (snap.empty) {
       registradoPorSel.innerHTML = `<option value="">(No hay registradores)</option>`;
       return;
@@ -189,20 +204,19 @@ async function cargarRegistradores() {
     const lista = snap.docs
       .map((d) => {
         const data = d.data() || {};
-        const nombre = (data.registradoPorNombre || "").trim();
-        const cargo = (data.cargo || "").trim();
+        const nombre = safeStr(data.registradoPorNombre);
+        const cargo = safeStr(data.cargo);
         const activo = data.activo !== false;
         const label = [nombre, cargo].filter(Boolean).join(" - ").trim();
         return { id: d.id, nombre, cargo, activo, label };
       })
-      .filter((x) => x.label && x.activo); // solo activos
+      .filter((x) => x.activo && x.label);
 
     lista.sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
 
     registradoPorSel.innerHTML =
       `<option value="">Selecciona...</option>` +
       lista.map((r) => `<option value="${escapeHTML(r.label)}">${escapeHTML(r.label)}</option>`).join("");
-
   } catch (err) {
     console.error("Error cargando registradores:", err);
     registradoPorSel.innerHTML = `<option value="">❌ Error al cargar registradores</option>`;
@@ -210,72 +224,97 @@ async function cargarRegistradores() {
   }
 }
 
-/* =========================
-   CARGAR ASESORES (desde colección asesores)
-   - Cada option guarda:
-     data-uid, data-gc, data-cargo
-   - Y al seleccionar asesor:
-     GC y Cargo quedan "fijos" (no editable)
-========================= */
-async function cargarAsesores() {
+/* =========================================================
+   CARGAR ASESORES (desde colección: usuarios)
+   - Filtra: rol == "agente" && activo != false
+   - Usa campos:
+       nombreAsesor (texto)
+       cargo (texto)
+       GC (texto)  <-- se guarda en option.dataset.gc
+   - Fija el cargo al seleccionar asesor (select cargo queda bloqueado)
+========================================================= */
+async function cargarUsuariosAgentes() {
   if (!asesorSel) return;
 
   asesorSel.innerHTML = `<option value="">Cargando asesores...</option>`;
 
   try {
-    const snap = await getDocs(collection(db, "asesores"));
-    if (snap.empty) {
-      asesorSel.innerHTML = `<option value="">(No hay asesores registrados)</option>`;
+    // Si prefieres sin índices, puedes traer todo y filtrar (como hacías antes).
+    // Esto usa where() para traer solo agentes (mejor si tienes índices):
+    let snap;
+    try {
+      const qy = query(collection(db, "usuarios"), where("rol", "==", "agente"));
+      snap = await getDocs(qy);
+    } catch (e) {
+      // fallback si no hay índice o falla:
+      snap = await getDocs(collection(db, "usuarios"));
+    }
+
+    const agentes = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((u) => safeStr(u.rol).toLowerCase() === "agente")
+      .filter((u) => u.activo !== false)
+      .filter((u) => safeStr(u.nombreAsesor)) // obligatorio para mostrar
+      .map((u) => ({
+        uid: safeStr(u.uid) || safeStr(u.id),      // id del doc = uid
+        nombreAsesor: safeStr(u.nombreAsesor),
+        cargo: safeStr(u.cargo),                    // 👈 campo cargo
+        GC: safeStr(u.GC),                          // 👈 campo GC
+      }))
+      .filter((u) => u.uid); // uid requerido
+
+    if (!agentes.length) {
+      asesorSel.innerHTML = `<option value="">(No hay agentes disponibles)</option>`;
+      // cargo libre (por si quieres usarlo manual), pero no recomendado
+      resetCargoSelect();
       return;
     }
 
-    const lista = snap.docs.map((d) => {
-      const data = d.data() || {};
-
-      // En tu BD puede estar como "gc" o "GC"
-      const gc = (data.gc || data.GC || "").trim();
-
-      // Cargo en asesores (ideal): "ASESOR INBOUND|REDES|CORREOS"
-      // Si no existe, queda vacío y lo verás como "SIN CARGO"
-      const cargo = (data.cargo || data.Cargo || "").trim();
-
-      return {
-        uid: d.id, // UID REAL
-        nombre: (data.nombre || "SIN NOMBRE").trim(),
-        gc,
-        cargo,
-      };
-    });
-
-    lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }));
+    agentes.sort((a, b) => a.nombreAsesor.localeCompare(b.nombreAsesor, "es", { sensitivity: "base" }));
 
     asesorSel.innerHTML =
       `<option value="">Selecciona asesor...</option>` +
-      lista.map((a) => {
-        const right = `${a.gc || "SIN GC"}${a.cargo ? " · " + a.cargo : ""}`;
-        return `
-          <option value="${escapeHTML(a.nombre)}"
-                  data-uid="${escapeHTML(a.uid)}"
-                  data-gc="${escapeHTML(a.gc || "")}"
-                  data-cargo="${escapeHTML(a.cargo || "")}">
-            ${escapeHTML(a.nombre)} — ${escapeHTML(right)}
-          </option>
-        `;
-      }).join("");
+      agentes
+        .map((a) => {
+          const label = `${a.nombreAsesor} — ${a.cargo || "SIN CARGO"} — ${a.GC || "SIN GC"}`;
+          return `
+            <option
+              value="${escapeHTML(a.nombreAsesor)}"
+              data-uid="${escapeHTML(a.uid)}"
+              data-gc="${escapeHTML(a.GC || "")}"
+              data-cargo="${escapeHTML(a.cargo || "")}"
+            >
+              ${escapeHTML(label)}
+            </option>`;
+        })
+        .join("");
 
-    // fuerza comportamiento “fijo” de cargo según asesor
-    if (cargoSel) {
-      cargoSel.disabled = true; // ✅ fijo (no editable)
-    }
-
-    asesorSel.addEventListener("change", aplicarGCyCargoDesdeAsesor);
-    // si ya viene con selección por defecto, aplica
-    aplicarGCyCargoDesdeAsesor();
-
+    // al cargar, deja cargo “normal” hasta que elijan asesor
+    resetCargoSelect();
   } catch (err) {
-    console.error("Error cargando asesores:", err);
-    asesorSel.innerHTML = `<option value="">❌ Error al cargar asesores</option>`;
-    setMsg("Error al cargar asesores. Verifica reglas/permisos.", false);
+    console.error("Error cargando usuarios/agentes:", err);
+    asesorSel.innerHTML = `<option value="">❌ Error al cargar agentes</option>`;
+    resetCargoSelect();
+    setMsg("Error al cargar asesores desde usuarios. Revisa permisos/rules.", false);
+  }
+}
+
+function resetCargoSelect() {
+  if (!cargoSel) return;
+
+  // En tu HTML tienes 3 opciones; si quieres conservarlas:
+  // (si ya vienen en el HTML, no toco innerHTML; solo habilito)
+  cargoSel.disabled = false;
+
+  // Si por algún motivo quedó con 1 opción fija, lo reseteamos a lo del HTML “original”
+  // (Esto te evita quedarte con cargo fijo al deseleccionar asesor)
+  const hasOnlyOne = cargoSel.querySelectorAll("option").length === 1;
+  if (hasOnlyOne) {
+    cargoSel.innerHTML = `
+      <option>ASESOR INBOUND</option>
+      <option>ASESOR CORREOS</option>
+      <option>ASESOR REDES</option>
+    `;
   }
 }
 
@@ -283,19 +322,31 @@ function aplicarGCyCargoDesdeAsesor() {
   if (!asesorSel || !cargoSel) return;
 
   const opt = asesorSel.options[asesorSel.selectedIndex];
-  if (!opt || !opt.dataset) return;
+  if (!opt) return;
 
-  const cargo = (opt.dataset.cargo || "").trim();
+  const uid = safeStr(opt.dataset.uid);
+  const gc = safeStr(opt.dataset.gc);
+  const cargo = safeStr(opt.dataset.cargo);
 
-  // Cargo “fijo”: dejamos el select con 1 sola opción (la del asesor)
-  // Si en la colección asesores no hay cargo, mostrará “SIN CARGO”.
-  const fixed = cargo || "SIN CARGO";
-  cargoSel.innerHTML = `<option value="${escapeHTML(fixed)}">${escapeHTML(fixed)}</option>`;
-  cargoSel.value = fixed;
+  // Si no hay asesor seleccionado, libera cargo.
+  if (!uid) {
+    resetCargoSelect();
+    return;
+  }
+
+  // Cargo fijo (solo 1 opción) + bloqueado
+  const fixedCargo = cargo || "SIN CARGO";
+  cargoSel.innerHTML = `<option value="${escapeHTML(fixedCargo)}">${escapeHTML(fixedCargo)}</option>`;
+  cargoSel.value = fixedCargo;
   cargoSel.disabled = true;
+
+  // GC no tiene input en tu HTML, pero queda guardado en dataset y se envía en el submit.
+  // Si luego quieres mostrarlo en pantalla, me dices y lo pintamos en un helper/label.
 }
 
-/* ---------------- DETECTAR TIPO ---------------- */
+/* =========================================================
+   DETECTAR TIPO
+========================================================= */
 function detectarTipoTexto(text) {
   if (!text) return "NO IDENTIFICADO";
   const lower = text.toLowerCase();
@@ -313,7 +364,9 @@ function actualizarTipoDetectado() {
   if (tipoDetectadoInput) tipoDetectadoInput.value = detectarTipoTexto(val);
 }
 
-/* ---------------- UI: ÍTEMS ---------------- */
+/* =========================================================
+   UI: ÍTEMS (bloques dinámicos)
+========================================================= */
 function crearItemBlock() {
   const w = document.createElement("div");
   w.className = "item-block";
@@ -349,31 +402,28 @@ function crearItemBlock() {
 
   const select = w.querySelector(".item-select");
   const meta = w.querySelector(".item-meta");
-  const detail = w.querySelector(".item-detail");
   const toggleBtn = w.querySelector(".item-toggle");
   const removeBtn = w.querySelector(".item-remove");
   const body = w.querySelector(".item-body");
-  const iconSpan = toggleBtn.querySelector(".material-symbols-outlined");
+  const iconSpan = toggleBtn?.querySelector(".material-symbols-outlined");
 
-  select.addEventListener("change", () => {
+  select?.addEventListener("change", () => {
     const it = ITEMS.find((x) => x.name === select.value);
-    meta.textContent = it ? `${it.perc}% · ${it.tipo.replace(/_/g, " ")}` : "";
+    if (meta) meta.textContent = it ? `${it.perc}% · ${it.tipo.replace(/_/g, " ")}` : "";
     recalcularNotaPreview();
   });
 
-  toggleBtn.addEventListener("click", () => {
+  toggleBtn?.addEventListener("click", () => {
     const isOpen = body.style.display !== "none";
     body.style.display = isOpen ? "none" : "block";
     toggleBtn.setAttribute("aria-expanded", isOpen ? "false" : "true");
-    iconSpan.textContent = isOpen ? "expand_more" : "expand_less";
+    if (iconSpan) iconSpan.textContent = isOpen ? "expand_more" : "expand_less";
   });
 
-  removeBtn.addEventListener("click", () => {
+  removeBtn?.addEventListener("click", () => {
     w.remove();
     recalcularNotaPreview();
   });
-
-  detail.addEventListener("input", () => {});
 
   return w;
 }
@@ -381,8 +431,8 @@ function crearItemBlock() {
 function obtenerItemsFormulario() {
   if (!itemsContainer) return [];
   const blocks = Array.from(itemsContainer.querySelectorAll(".item-block"));
-  const items = [];
 
+  const items = [];
   for (const b of blocks) {
     const select = b.querySelector(".item-select");
     const detail = b.querySelector(".item-detail");
@@ -392,7 +442,6 @@ function obtenerItemsFormulario() {
     if (!name) continue;
 
     const meta = ITEMS.find((i) => i.name === name) || { tipo: "OTRO", perc: 0 };
-
     items.push({
       name,
       tipo: meta.tipo,
@@ -403,7 +452,9 @@ function obtenerItemsFormulario() {
   return items;
 }
 
-/* ---------------- PREVIEW IMÁGENES ---------------- */
+/* =========================================================
+   PREVIEW IMÁGENES
+========================================================= */
 function manejarPreviewImagenes(event) {
   const files = event.target.files;
   if (!imgPreviewContainer) return;
@@ -422,7 +473,9 @@ function manejarPreviewImagenes(event) {
   });
 }
 
-/* ---------------- CÁLCULO DE NOTA ---------------- */
+/* =========================================================
+   CÁLCULO DE NOTA
+========================================================= */
 function calcularNota(items) {
   if (items.some((i) => i.tipo === "ERROR_INEXCUSABLE")) return 0;
 
@@ -445,6 +498,7 @@ function calcularNota(items) {
 
   if (nota < 0) nota = 0;
   if (nota > 100) nota = 100;
+
   return Math.round(nota * 10) / 10;
 }
 
@@ -474,7 +528,6 @@ function recalcularNotaPreview() {
     .reduce((s, i) => s + (i.perc || 0), 0);
 
   const dedPENCUF = 25 * (totalPENCUF / 100);
-
   const hasPECNEG = items.some((i) => i.tipo === "PECNEG");
   const hasPECUF = items.some((i) => i.tipo === "PECUF");
   const hasPECCUMP = items.some((i) => i.tipo === "PECCUMP");
@@ -487,16 +540,18 @@ function recalcularNotaPreview() {
   if (infoEIEl) infoEIEl.textContent = hasEI ? "Aplica ⇒ nota 0" : "No aplicado";
 }
 
-/* ---------------- SUBMIT ---------------- */
+/* =========================================================
+   SUBMIT
+========================================================= */
 async function manejarSubmit() {
   setMsg("⏳ Subiendo monitoreo...", true);
 
   try {
+    // Validaciones mínimas
     if (!registradoPorSel?.value) {
       setMsg("Debes seleccionar quién registra el monitoreo.", false);
       return;
     }
-
     if (!asesorSel?.value) {
       setMsg("Debes seleccionar al asesor monitoreado.", false);
       return;
@@ -504,19 +559,21 @@ async function manejarSubmit() {
 
     const opt = asesorSel.options[asesorSel.selectedIndex];
     const asesorNombre = asesorSel.value;
-    const asesorUid = opt?.dataset?.uid || "";
-    const gc = (opt?.dataset?.gc || "").trim() || "SIN GC";
-    const cargoFixed = (opt?.dataset?.cargo || "").trim() || (cargoSel?.value || "SIN CARGO");
+
+    // ✅ Desde usuarios (dataset)
+    const asesorUid = safeStr(opt?.dataset?.uid);
+    const gc = safeStr(opt?.dataset?.gc) || "SIN GC";
+    const cargoFixed = safeStr(opt?.dataset?.cargo) || safeStr(cargoSel?.value) || "SIN CARGO";
 
     if (!asesorUid) {
-      setMsg("El asesor seleccionado no tiene UID configurado. Revisa la colección 'asesores'.", false);
+      setMsg("El asesor seleccionado no tiene UID. Revisa colección 'usuarios' (docId = uid).", false);
       return;
     }
 
     const items = obtenerItemsFormulario();
     const nota = calcularNota(items);
 
-    // subir evidencias
+    // Subir evidencias
     const files = imgsInput?.files || [];
     const imageURLs = [];
 
@@ -526,6 +583,7 @@ async function manejarSubmit() {
       const storageRef = ref(storage, path);
       await uploadBytes(storageRef, f);
       const url = await getDownloadURL(storageRef);
+
       imageURLs.push({
         name: f.name,
         url,
@@ -533,55 +591,72 @@ async function manejarSubmit() {
       });
     }
 
+    // Armar data final
     const data = {
-      idLlamada: (idLlamadaInput?.value || "").trim(),
-      idContacto: (idContactoInput?.value || "").trim(),
-      tipo: (tipoDetectadoInput?.value || "").trim(),
+      idLlamada: safeStr(idLlamadaInput?.value),
+      idContacto: safeStr(idContactoInput?.value),
+      tipo: safeStr(tipoDetectadoInput?.value),
 
       asesor: asesorNombre,
-      asesorId: asesorUid, // UID REAL
-      gc,                  // FIJO desde asesores
-      cargo: cargoFixed,   // ✅ FIJO desde asesores
+      asesorId: asesorUid,  // docId en usuarios
+      gc,                   // desde usuarios.GC
+      cargo: cargoFixed,    // desde usuarios.cargo (FIJO)
 
       cliente: {
-        dni: (cliDniInput?.value || "").trim(),
-        nombre: (cliNombreInput?.value || "").trim(),
-        tel: (cliTelInput?.value || "").trim(),
+        dni: safeStr(cliDniInput?.value),
+        nombre: safeStr(cliNombreInput?.value),
+        tel: safeStr(cliTelInput?.value),
       },
 
-      tipificacion: (cliTipifInput?.value || "").trim(),
-      observacionCliente: (cliObsInput?.value || "").trim(),
-      resumen: (resumenInput?.value || "").trim(),
+      tipificacion: safeStr(cliTipifInput?.value),
+      observacionCliente: safeStr(cliObsInput?.value),
+      resumen: safeStr(resumenInput?.value),
 
       items,
       nota,
       imagenes: imageURLs,
+
       fecha: new Date().toISOString(),
 
-      registradoPor: registradoPorSel.value, // ✅ desde colección registradores
+      // ✅ desde registradores (label "Nombre - Cargo")
+      registradoPor: registradoPorSel.value,
+
       estado: "PENDIENTE",
+
+      // opcional (auditoría)
+      creadoPorUid: currentUser?.uid || "",
+      creadoPorEmail: currentUser?.email || "",
     };
 
     await addDoc(collection(db, "registros"), data);
 
     setMsg(`✔ Guardado correctamente · Nota final: ${nota}`, true);
 
-    // limpiar
+    // Limpiar UI
     if (itemsContainer) itemsContainer.innerHTML = "";
     if (imgsInput) imgsInput.value = "";
     if (imgPreviewContainer) imgPreviewContainer.innerHTML = "";
-    recalcularNotaPreview();
 
+    recalcularNotaPreview();
   } catch (err) {
     console.error(err);
     setMsg("❌ Error al guardar: " + (err?.message || err), false);
   }
 }
 
-/* ---------------- EVENTOS ---------------- */
+/* =========================================================
+   EVENTOS
+========================================================= */
 function inicializarEventos() {
   if (idLlamadaInput) idLlamadaInput.addEventListener("input", actualizarTipoDetectado);
   if (idContactoInput) idContactoInput.addEventListener("input", actualizarTipoDetectado);
+
+  // ✅ Cuando cambias asesor -> fija cargo (y GC queda fijo en dataset)
+  if (asesorSel) {
+    asesorSel.addEventListener("change", () => {
+      aplicarGCyCargoDesdeAsesor();
+    });
+  }
 
   if (btnAddItem) {
     btnAddItem.addEventListener("click", () => {
@@ -602,6 +677,11 @@ function inicializarEventos() {
   if (imgsInput) imgsInput.addEventListener("change", manejarPreviewImagenes);
   if (btnSubmit) btnSubmit.addEventListener("click", manejarSubmit);
 
-  // por si ya hay texto al cargar
+  // Inicial
   actualizarTipoDetectado();
+  aplicarGCyCargoDesdeAsesor(); // por si ya había un asesor preseleccionado
 }
+
+/* =========================================================
+   (FIN)
+========================================================= */

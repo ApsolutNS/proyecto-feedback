@@ -8,143 +8,140 @@
 </head>
 <body>
 
-  <!-- =======================
-       NAVBAR
-  ======================== -->
-  <nav class="navbar">
-    <div class="nav-left">
-      <span class="logo">⚙️ Admin</span>
-    </div>
-    <div class="nav-right">
-      <a href="index.html" class="nav-btn">🏠 Ir al Dashboard</a>
-      <button class="nav-btn red" id="btnLogout">Cerrar sesión</button>
-    </div>
-  </nav>
+<!-- =======================
+     NAVBAR
+======================== -->
+<nav class="navbar">
+  <div class="nav-left">
+    <span class="logo">⚙️ Admin</span>
+  </div>
+  <div class="nav-right">
+    <a href="index.html" class="nav-btn">🏠 Ir al Dashboard</a>
+    <button class="nav-btn red" id="btnLogout">Cerrar sesión</button>
+  </div>
+</nav>
 
-  <!-- =======================
-       CONTENEDOR PRINCIPAL
-  ======================== -->
-  <div class="container">
-    <h1>Panel Administrador</h1>
-    <p>Crear usuarios, registradores y administrar accesos del sistema</p>
+<!-- =======================
+     CONTENEDOR PRINCIPAL
+======================== -->
+<div class="container">
+  <h1>Panel Administrador</h1>
+  <p>Crear usuarios, registradores y administrar accesos del sistema</p>
+
+  <div class="admin-grid">
 
     <!-- =======================
-         GRID ADMIN (2 COLUMNAS)
+         COLUMNA IZQUIERDA
     ======================== -->
-    <div class="admin-grid">
+    <div class="admin-col">
 
-      <!-- =======================
-           COLUMNA IZQUIERDA
-      ======================== -->
-      <div class="admin-col">
+      <!-- ===== CREAR USUARIO ===== -->
+      <div class="card">
+        <h3>Crear nuevo usuario</h3>
 
-        <!-- ===== CREAR USUARIO ===== -->
-        <div class="card">
-          <h3>Crear nuevo usuario</h3>
+        <label>Email</label>
+        <input id="email" type="email" placeholder="correo@dominio.com" />
 
-          <label>Email</label>
-          <input id="email" type="email" placeholder="correo@dominio.com" />
+        <label>Contraseña</label>
+        <input id="password" type="password" placeholder="********" />
 
-          <label>Contraseña</label>
-          <input id="password" type="password" placeholder="********" />
+        <label>Rol</label>
+        <select id="rol">
+          <option value="admin">Administrador</option>
+          <option value="supervisor">Supervisor</option>
+          <option value="agente">Agente</option>
+        </select>
 
-          <label>Rol</label>
-          <select id="rol">
-            <option value="admin">Administrador</option>
-            <option value="supervisor">Supervisor</option>
-            <option value="agente">Agente</option>
-          </select>
+        <!-- SOLO AGENTE -->
+        <div data-only-agent="1">
+          <label>Nombre del asesor</label>
+          <input id="nombreAsesor" type="text" placeholder="Nombre completo" />
 
-          <!-- CAMPOS SOLO PARA AGENTE -->
-          <div data-only-agent="1">
-            <label>Nombre del asesor</label>
-            <input id="nombreAsesor" type="text" placeholder="Nombre completo" />
+          <label>Cargo del agente</label>
+          <select id="cargo"></select>
 
-            <label>Cargo del agente</label>
-            <select id="cargo"></select>
-
-            <label>GC (opcional)</label>
-            <input id="GC" type="text" placeholder="GC / DNI" />
-          </div>
-
-          <button id="btnCrear">Crear usuario</button>
-          <p id="msg"></p>
+          <label>GC (opcional)</label>
+          <input id="GC" type="text" placeholder="GC / DNI" />
         </div>
 
-        <!-- ===== USUARIOS EXISTENTES ===== -->
-        <div class="card">
-          <h3>Usuarios existentes</h3>
-
-          <div class="row">
-            <input
-              id="userSearch"
-              type="text"
-              placeholder="Buscar por email / nombre / rol..."
-            />
-            <button id="btnRefreshUsers" class="btn-mini" type="button">
-              Actualizar
-            </button>
-          </div>
-
-          <div id="usersInfo" class="small" style="margin-top:10px;"></div>
-
-          <div id="usersList" class="users-list">
-            <div class="small">Cargando usuarios...</div>
-          </div>
-
-          <p class="small" style="margin-top:10px;color:var(--muted)">
-            ⚠️ Eliminar aquí borra el perfil en <b>Firestore</b>.  
-            El usuario de <b>Authentication</b> solo se elimina con Admin SDK /
-            Cloud Function.
-          </p>
-        </div>
-
+        <button id="btnCrear">Crear usuario</button>
+        <p id="msg"></p>
       </div>
 
-      <!-- =======================
-           COLUMNA DERECHA
-      ======================== -->
-      <div class="admin-col">
+      <!-- ===== USUARIOS EXISTENTES ===== -->
+      <div class="card">
+        <h3>Usuarios existentes</h3>
 
-        <!-- ===== REGISTRADORES ===== -->
-        <div class="card">
-          <h3>Registradores (registradoPor)</h3>
-
-          <label>Nombre</label>
+        <div class="row">
           <input
-            id="regNombre"
+            id="userSearch"
             type="text"
-            placeholder="Ej: Alex Paolo Nuñez Sulca"
+            placeholder="Buscar por email / nombre / rol..."
           />
-
-          <label>Cargo</label>
-          <select id="regCargo"></select>
-          
-          <!-- SOLO PARA LÍDER DE CALIDAD -->
-          <div id="firmaLiderBox" style="display:none">
-            <label>Firma del Líder de Calidad (PNG/JPG)</label>
-            <input type="file" id="firmaLider" accept="image/*">
-            <small class="small">
-              Esta firma será obligatoria y se usará en todos los refuerzos.
-            </small>
-          </div>
-
-          <button id="btnCrearRegistrador" type="button">
-            Agregar registrador
+          <button id="btnRefreshUsers" class="btn-mini" type="button">
+            Actualizar
           </button>
-
-          <p id="regMsg"></p>
-
-          <ul id="listaRegistradores" class="reg-list"></ul>
         </div>
 
+        <div id="usersInfo" class="small" style="margin-top:10px;"></div>
+        <div id="usersList" class="users-list">
+          <div class="small">Cargando usuarios...</div>
+        </div>
+
+        <p class="small" style="margin-top:10px;color:var(--muted)">
+          ⚠️ Eliminar aquí borra el perfil en <b>Firestore</b>.  
+          El usuario de <b>Authentication</b> solo se elimina con Admin SDK /
+          Cloud Function.
+        </p>
+      </div>
+    </div>
+
+    <!-- =======================
+         COLUMNA DERECHA
+    ======================== -->
+    <div class="admin-col">
+
+      <!-- ===== REGISTRADORES ===== -->
+      <div class="card">
+        <h3>Registradores (registradoPor)</h3>
+
+        <label>Nombre</label>
+        <input
+          id="regNombre"
+          type="text"
+          placeholder="Ej: Alex Paolo Nuñez Sulca"
+        />
+
+        <label>Cargo</label>
+        <select id="regCargo"></select>
+
+        <!-- ===== FIRMA LÍDER CALIDAD ===== -->
+        <div id="firmaLiderBox" class="firma-box" style="display:none;">
+          <label>Firma del Líder de Calidad</label>
+          <input
+            type="file"
+            id="firmaLider"
+            accept="image/png, image/jpeg"
+          />
+          <small class="small">
+            ⚠️ Obligatoria. Esta firma se usará automáticamente en todos los refuerzos.
+          </small>
+        </div>
+
+        <button id="btnCrearRegistrador" type="button">
+          Agregar registrador
+        </button>
+
+        <p id="regMsg"></p>
+        <ul id="listaRegistradores" class="reg-list"></ul>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- =======================
-       MODAL CONFIRMACIÓN
-  ======================== -->
+<!-- =======================
+     MODAL CONFIRMACIÓN
+======================== -->
 <div id="confirmModal" class="modal-confirm">
   <div class="modal-box">
     <h3 id="confirmTitle">¿Estás seguro?</h3>
@@ -156,10 +153,10 @@
   </div>
 </div>
 
-  <!-- =======================
-       SCRIPT
-  ======================== -->
-  <script type="module" src="js/admin.js"></script>
+<!-- =======================
+     SCRIPT
+======================== -->
+<script type="module" src="js/admin.js"></script>
 
 </body>
 </html>

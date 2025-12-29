@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Administrador del Sistema</title>
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin.css" />
 </head>
 <body>
-  <!-- 🔵 NAVBAR -->
+
+  <!-- =======================
+       NAVBAR
+  ======================== -->
   <nav class="navbar">
     <div class="nav-left">
       <span class="logo">⚙️ Admin</span>
@@ -18,108 +21,140 @@
     </div>
   </nav>
 
+  <!-- =======================
+       CONTENEDOR PRINCIPAL
+  ======================== -->
   <div class="container">
     <h1>Panel Administrador</h1>
-    <p>Crear usuarios, registradores y administrar accesos</p>
-
-    <div class="admin-grid">
-      <!-- =======================
-           CARD: CREAR USUARIO
-      ======================== -->
-      <div class="admin-col">
-      <div class="card">
-        <h3>Crear nuevo usuario</h3>
-
-        <label>Email:</label>
-        <input id="email" type="email" placeholder="correo@dominio.com">
-
-        <label>Contraseña:</label>
-        <input id="password" type="password" placeholder="********">
-
-        <label>Rol:</label>
-        <select id="rol">
-          <option value="admin">Administrador</option>
-          <option value="supervisor">Supervisor</option>
-          <option value="agente">Agente</option>
-        </select>
-
-        <!-- SOLO AGENTE -->
-        <div data-only-agent="1">
-          <label>nombreAsesor:</label>
-          <input id="nombreAsesor" type="text" placeholder="Nombre Apellido">
-
-          <label>Cargo (Agente):</label>
-          <select id="cargo"></select>
-
-          <label>GC (opcional):</label>
-          <input id="GC" type="text" placeholder="GC o DNI">
-        </div>
-
-        <button id="btnCrear">Crear usuario</button>
-        <p id="msg"></p>
-      </div>
-      <!-- =======================
-           CARD: USUARIOS EXISTENTES
-      ======================== -->
-      <div class="card">
-        <h3>Usuarios existentes</h3>
-
-        <div class="row">
-          <input id="userSearch" type="text" placeholder="Buscar por email / nombre / rol...">
-          <button class="btn-mini" id="btnRefreshUsers" type="button">Actualizar</button>
-        </div>
-
-        <div id="usersInfo" class="small" style="margin-top:10px;"></div>
-        <div id="usersList" class="users-list">
-          <div class="small">Cargando usuarios...</div>
-        </div>
-
-        <p class="small" style="margin-top:10px;color:var(--muted)">
-          Nota: “Eliminar” aquí borra el perfil en Firestore (colección <b>usuarios</b>).
-          El usuario de Authentication solo se elimina con Admin SDK/Cloud Function.
-        </p>
-      </div>
-    </div>
-      </div>
+    <p>Crear usuarios, registradores y administrar accesos del sistema</p>
 
     <!-- =======================
-         CARD: REGISTRADORES
+         GRID ADMIN (2 COLUMNAS)
     ======================== -->
-    <div class="admin-col">
-    <div class="card">
-      <h3>Registradores</h3>
+    <div class="admin-grid">
 
-      <label>Nombre:</label>
-      <input id="regNombre" placeholder="Ej: Alex Paolo Nuñez Sulca">
+      <!-- =======================
+           COLUMNA IZQUIERDA
+      ======================== -->
+      <div class="admin-col">
 
-      <label>Cargo:</label>
-      <select id="regCargo"></select>
+        <!-- ===== CREAR USUARIO ===== -->
+        <div class="card">
+          <h3>Crear nuevo usuario</h3>
 
-      <button id="btnCrearRegistrador" type="button">Agregar registrador</button>
-      <p id="regMsg"></p>
+          <label>Email</label>
+          <input id="email" type="email" placeholder="correo@dominio.com" />
 
-      <ul id="listaRegistradores" class="reg-list"></ul>
+          <label>Contraseña</label>
+          <input id="password" type="password" placeholder="********" />
+
+          <label>Rol</label>
+          <select id="rol">
+            <option value="admin">Administrador</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="agente">Agente</option>
+          </select>
+
+          <!-- CAMPOS SOLO PARA AGENTE -->
+          <div data-only-agent="1">
+            <label>Nombre del asesor</label>
+            <input id="nombreAsesor" type="text" placeholder="Nombre completo" />
+
+            <label>Cargo del agente</label>
+            <select id="cargo"></select>
+
+            <label>GC (opcional)</label>
+            <input id="GC" type="text" placeholder="GC / DNI" />
+          </div>
+
+          <button id="btnCrear">Crear usuario</button>
+          <p id="msg"></p>
+        </div>
+
+        <!-- ===== USUARIOS EXISTENTES ===== -->
+        <div class="card">
+          <h3>Usuarios existentes</h3>
+
+          <div class="row">
+            <input
+              id="userSearch"
+              type="text"
+              placeholder="Buscar por email / nombre / rol..."
+            />
+            <button id="btnRefreshUsers" class="btn-mini" type="button">
+              Actualizar
+            </button>
+          </div>
+
+          <div id="usersInfo" class="small" style="margin-top:10px;"></div>
+
+          <div id="usersList" class="users-list">
+            <div class="small">Cargando usuarios...</div>
+          </div>
+
+          <p class="small" style="margin-top:10px;color:var(--muted)">
+            ⚠️ Eliminar aquí borra el perfil en <b>Firestore</b>.  
+            El usuario de <b>Authentication</b> solo se elimina con Admin SDK /
+            Cloud Function.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- =======================
+           COLUMNA DERECHA
+      ======================== -->
+      <div class="admin-col">
+
+        <!-- ===== REGISTRADORES ===== -->
+        <div class="card">
+          <h3>Registradores (registradoPor)</h3>
+
+          <label>Nombre</label>
+          <input
+            id="regNombre"
+            type="text"
+            placeholder="Ej: Alex Paolo Nuñez Sulca"
+          />
+
+          <label>Cargo</label>
+          <select id="regCargo"></select>
+
+          <button id="btnCrearRegistrador" type="button">
+            Agregar registrador
+          </button>
+
+          <p id="regMsg"></p>
+
+          <ul id="listaRegistradores" class="reg-list"></ul>
+        </div>
+
+      </div>
     </div>
   </div>
-  </div>
-   <!-- FULL WIDTH -->
-  <div class="card users-section">
-    <!-- Usuarios existentes -->
-  </div>
 
-</div>
-<!-- Modal Confirmación -->
-<div id="confirmModal" class="modal-confirm">
-  <div class="modal-box">
-    <h3>¿Estás seguro?</h3>
-    <p>Esta acción no se puede deshacer.</p>
-    <div class="modal-actions">
-      <button class="btn-cancel" id="btnCancelConfirm">Cancelar</button>
-      <button class="btn-confirm" id="btnConfirmAction">Eliminar</button>
+  <!-- =======================
+       MODAL CONFIRMACIÓN
+  ======================== -->
+  <div id="confirmModal" class="modal-confirm">
+    <div class="modal-box">
+      <h3>¿Estás seguro?</h3>
+      <p>Esta acción no se puede deshacer.</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="btnCancelConfirm">
+          Cancelar
+        </button>
+        <button class="btn-confirm" id="btnConfirmAction">
+          Eliminar
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
+  <!-- =======================
+       SCRIPT
+  ======================== -->
   <script type="module" src="js/admin.js"></script>
+
 </body>
 </html>

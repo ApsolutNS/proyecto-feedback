@@ -16,7 +16,7 @@ import {
 
 /* ---------------- CONSTANTES FIRESTORE ---------------- */
 const colRefuerzos = collection(db, "refuerzos_calidad");
-const colAsesores = collection(db, "asesores");
+const colAsesores = collection(db, "usuarios");
 
 /* Firma Alex (igual que usabas antes) */
 const FIRMA_ALEX_URL =
@@ -133,32 +133,50 @@ function formatearFechaHora(fechaISO) {
 }
 
 /* ---------------- CARGAR ASESORES ---------------- */
+/* ---------------- CARGAR ASESORES (DESDE usuarios) ---------------- */
 async function cargarAsesores() {
   const cont = document.getElementById("asesoresContainer");
   if (!cont) return;
+
   try {
     setLoading(true, "Cargando asesores…");
-    const snap = await getDocs(colAsesores);
-    const lista = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    lista.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+
+    const snap = await getDocs(colUsuarios);
+
+    const lista = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(u =>
+        u.rol === "agente" &&
+        u.activo !== false &&
+        u.nombreAsesor
+      )
+      .sort((a, b) =>
+        a.nombreAsesor.localeCompare(b.nombreAsesor, "es", {
+          sensitivity: "base"
+        })
+      );
 
     asesoresMap = {};
     cont.innerHTML = "";
 
-    lista.forEach(a => {
-      const id = a.id;
-      const nombre = a.nombre || "(sin nombre)";
-      const gc = a.GC || a.gc || "";
+    lista.forEach(u => {
+      const id = u.uid || u.id;
+      const nombre = u.nombreAsesor;
+      const gc = u.GC || "SIN GC";
+      const cargo = u.cargo || "";
 
-      asesoresMap[id] = { nombre, gc };
+      asesoresMap[id] = { nombre, gc, cargo };
 
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "asesor-chip";
       btn.dataset.id = id;
+
       btn.innerHTML = `
         <span class="asesor-chip-name">${nombre}</span>
-        <span class="asesor-chip-gc">${gc ? gc : "Sin GC"}</span>
+        <span class="asesor-chip-gc">
+          ${gc} ${cargo ? "· " + cargo : ""}
+        </span>
       `;
 
       btn.addEventListener("click", () => {
@@ -167,9 +185,16 @@ async function cargarAsesores() {
 
       cont.appendChild(btn);
     });
+
+    if (!lista.length) {
+      cont.innerHTML =
+        "<div class='hint'>No hay asesores activos disponibles.</div>";
+    }
+
   } catch (e) {
     console.error(e);
-    cont.innerHTML = "<div class='hint'>Error cargando asesores</div>";
+    cont.innerHTML =
+      "<div class='hint'>Error cargando asesores</div>";
     alert("Error cargando asesores: " + e.message);
   } finally {
     setLoading(false);
@@ -378,7 +403,8 @@ async function guardarRefuerzo() {
       return {
         asesorId: id,
         nombre: info.nombre,
-        gc: info.gc || ""
+        gc: info.gc || "",
+        cargo: info.cargo || ""
       };
     })
     .filter(Boolean);

@@ -290,6 +290,75 @@ input:focus, select:focus{
 .reg-actions .delete:hover{
   background: var(--danger-bg);
 }
+/* =========================
+   USERS LIST
+========================= */
+.user-list{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.user-item{
+  padding: 12px;
+  border: 1px solid var(--outline-2);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  background: var(--surface-2);
+}
+.user-row{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.user-info{
+  font-size: 13px;
+}
+.user-actions{
+  display: flex;
+  gap: 6px;
+}
+.btn-mini{
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--outline);
+  cursor: pointer;
+}
+.btn-mini.danger{
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* =========================
+   CONFIRM MODAL
+========================= */
+.confirm-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+.confirm-overlay.open{
+  display: flex;
+}
+.confirm-box{
+  background: var(--surface);
+  padding: 18px;
+  border-radius: 16px;
+  width: 280px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+}
+.confirm-actions{
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
 
 /* =========================
    RESPONSIVE

@@ -683,35 +683,47 @@ input:focus, select:focus, textarea:focus{
      document.querySelector('.modal-confirm').classList.add('show')
      y quitar para cerrar.
 ========================= */
-.modal-confirm{
+/* OVERLAY */
+.modal-confirm {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 999;
-  padding: 16px;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  z-index: 9999; /* más alto que navbar */
 }
 
-.modal-confirm.show{ display: flex; }
+/* MOSTRAR */
+.modal-confirm.show {
+  display: flex;
+}
 
-.modal-confirm .modal-box{
+/* CAJA */
+.modal-confirm .modal-box {
   width: 100%;
   max-width: 360px;
   background: var(--surface);
-  border-radius: 18px;
-  padding: 18px 16px;
-  box-shadow: var(--shadow-float);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.35);
   border: 1px solid var(--outline-2);
-  animation: popIn .18s ease-out;
+  animation: popIn 0.2s ease-out;
 }
 
-@keyframes popIn{
-  from{ transform: scale(0.94); opacity: 0; }
-  to{ transform: scale(1); opacity: 1; }
+/* ANIMACIÓN */
+@keyframes popIn {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
+
 
 .modal-confirm .modal-box h3{
   margin: 0 0 6px;

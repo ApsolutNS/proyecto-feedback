@@ -1,79 +1,88 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Administrador del Sistema</title>
-  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
 
-  <!-- 🔵 NAVBAR -->
-  <nav class="navbar">
-    <div class="nav-left">
-      <span class="logo">⚙️ Admin</span>
-    </div>
-    <div class="nav-right">
-      <a href="index.html" class="nav-btn">🏠 Ir al Dashboard</a>
-      <button class="nav-btn red" id="btnLogout">Cerrar sesión</button>
-    </div>
-  </nav>
+<!-- 🔵 NAVBAR -->
+<nav class="navbar">
+  <div class="nav-left">
+    <span class="logo">⚙️ Admin</span>
+  </div>
+  <div class="nav-right">
+    <a href="index.html" class="nav-btn">🏠 Ir al Dashboard</a>
+    <button class="nav-btn red" id="btnLogout">Cerrar sesión</button>
+  </div>
+</nav>
 
-  <div class="container">
-    <h1>Panel Administrador</h1>
-    <p>Gestión de usuarios y registradores</p>
+<div class="container">
+  <h1>Panel Administrador</h1>
+  <p>Gestión de usuarios y registradores</p>
 
-    <!-- =========================
-         USUARIOS
-    ========================== -->
-    <div class="card">
-      <h3>➕ Crear nuevo usuario</h3>
+  <!-- =========================
+       CREAR USUARIO
+  ========================== -->
+  <div class="card">
+    <h3>Crear nuevo usuario</h3>
 
-      <label>Email</label>
-      <input id="email" type="email" placeholder="usuario@empresa.com" />
+    <label>Email</label>
+    <input id="email" type="email">
 
-      <label>Contraseña</label>
-      <input id="password" type="password" />
+    <label>Contraseña</label>
+    <input id="password" type="password">
 
-      <label>Rol</label>
-      <select id="rol">
-        <option value="admin">Administrador</option>
-        <option value="supervisor">Supervisor</option>
-        <option value="agente">Agente</option>
-      </select>
+    <label>Rol</label>
+    <select id="rol">
+      <option value="admin">Administrador</option>
+      <option value="supervisor">Supervisor</option>
+      <option value="agente">Agente</option>
+    </select>
 
-      <label>Nombre del asesor</label>
-      <input id="nombreAsesor" placeholder="Nombre completo del agente" />
+    <label>Nombre del asesor</label>
+    <input id="nombreAsesor" placeholder="Nombre completo del agente">
 
-      <label>Cargo del agente</label>
-      <input id="cargoAgente" placeholder="ASESOR INBOUND / REDES / CORREOS" />
+    <label>Cargo del agente</label>
+    <select id="cargoAgente">
+      <option value="">Seleccione</option>
+      <option value="ASESOR INBOUND">ASESOR INBOUND</option>
+      <option value="ASESOR REDES">ASESOR REDES</option>
+      <option value="ASESOR CORREOS">ASESOR CORREOS</option>
+    </select>
 
-      <label>GC</label>
-      <input id="gcAgente" placeholder="GC########" />
+    <label>GC</label>
+    <input id="gc" placeholder="GC########">
 
-      <button id="btnCrear">Crear usuario</button>
-      <p id="msg" class="msg"></p>
-    </div>
-
-    <!-- =========================
-         REGISTRADORES
-    ========================== -->
-    <div class="card">
-      <h3>👤 Registradores (registradoPor)</h3>
-
-      <label>Nombre</label>
-      <input id="regNombre" placeholder="Ej: Alex Paolo Nuñez Sulca" />
-
-      <label>Cargo</label>
-      <input id="regCargo" placeholder="Líder de Calidad y Formación" />
-
-      <button id="btnCrearRegistrador">Agregar registrador</button>
-
-      <h4 style="margin-top:16px">Listado</h4>
-      <ul id="listaRegistradores" class="list"></ul>
-    </div>
+    <button id="btnCrear">Crear usuario</button>
+    <p id="msg"></p>
   </div>
 
-  <script type="module" src="js/admin.js"></script>
+  <!-- =========================
+       REGISTRADORES
+  ========================== -->
+  <div class="card">
+    <h3>Registradores (registradoPor)</h3>
+
+    <label>Nombre</label>
+    <input id="regNombre">
+
+    <label>Cargo</label>
+    <select id="regCargo">
+      <option value="">Seleccione</option>
+      <option value="Líder de Calidad y Formación">Líder de Calidad y Formación</option>
+      <option value="Líder de Operaciones">Líder de Operaciones</option>
+      <option value="Supervisor">Supervisor</option>
+    </select>
+
+    <button id="btnCrearRegistrador">Agregar registrador</button>
+
+    <ul id="listaRegistradores"></ul>
+  </div>
+</div>
+
+<script type="module" src="js/admin.js"></script>
 </body>
 </html>

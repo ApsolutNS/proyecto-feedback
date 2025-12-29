@@ -14,12 +14,19 @@
 // ----------------------------------------------
 
 "use strict";
-
+const $ = (id) => document.getElementById(id);
 // ----------------------------
 // IMPORTS
 // ----------------------------
 import { app, db } from "./firebase.js";
 import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
 import {
   getAuth,
@@ -59,6 +66,32 @@ const CARGOS_REGISTRADORES = [
   "Supervisor",
 ];
 
+const storage = getStorage(app);
+
+let FIRMA_LIDER_URL = "";
+let FIRMA_LIDER_NOMBRE = "";
+
+async function cargarFirmaLider() {
+  const snap = await getDocs(
+    query(collection(db, "registradores"))
+  );
+
+  const lider = snap.docs
+    .map(d => d.data())
+    .find(r =>
+      r.activo !== false &&
+      r.cargo === "Líder de Calidad y Formación" &&
+      r.firmaUrl
+    );
+
+  if (!lider) {
+    throw new Error("No existe Líder de Calidad con firma activa.");
+  }
+
+  FIRMA_LIDER_URL = lider.firmaUrl;
+  FIRMA_LIDER_NOMBRE = lider.registradoPorNombre;
+}
+
 async function existeLiderCalidadActivo(excludeId = null) {
   const snap = await getDocs(
     query(collection(db, "registradores"), orderBy("cargo", "asc"))
@@ -74,7 +107,6 @@ async function existeLiderCalidadActivo(excludeId = null) {
 // ----------------------------
 // HELPERS DOM / UI
 // ----------------------------
-const $ = (id) => document.getElementById(id);
 
 function escapeHTML(str) {
   return (str ?? "")
@@ -238,6 +270,18 @@ function initSecondaryAuth() {
 
 initSecondaryAuth();
 
+async function subirFirmaLider(file, registradorId) {
+  if (!file) throw new Error("Firma requerida");
+
+  const refFirma = storageRef(
+    storage,
+    `firmas/lider_calidad_${registradorId}.png`
+  );
+
+  await uploadBytes(refFirma, file);
+  return await getDownloadURL(refFirma);
+}
+
 // ----------------------------
 // ESTADO EN MEMORIA
 // ----------------------------
@@ -250,6 +294,17 @@ let registradoresCache = []; // array de registradores (/registradores)
 // ----------------------------
 document.addEventListener("DOMContentLoaded", () => {
   ensureConfirmModalWiring();
+
+  const regCargoSel = $("regCargo");
+  const firmaBox = $("firmaLiderBox");
+  if (regCargoSel && firmaBox) {
+    const toggleFirma = () => {
+      firmaBox.style.display =
+        regCargoSel.value === "Líder de Calidad y Formación" ? "block" : "none";
+    };
+    regCargoSel.addEventListener("change", toggleFirma);
+    toggleFirma(); // estado inicial
+  }
 
   // Selects fijos
   fillSelect($("cargo"), CARGOS_AGENTES, "Selecciona cargo del agente");
@@ -393,7 +448,9 @@ $("btnCrearRegistrador")?.addEventListener("click", async () => {
   const cargo = ($("regCargo")?.value || "").trim();
 
   if (!nombre) return setRegMsg("El nombre es obligatorio.", "error");
-  if (!CARGOS_REGISTRADORES.includes(cargo)) return setRegMsg("Selecciona un cargo válido.", "error");
+  if (!CARGOS_REGISTRADORES.includes(cargo)) {
+    return setRegMsg("Selecciona un cargo válido.", "error");
+  }
 
   setRegMsg("Procesando...", "");
 
@@ -406,6 +463,7 @@ $("btnCrearRegistrador")?.addEventListener("click", async () => {
     });
     if (!ok) return setRegMsg("Acción cancelada.", "");
 
+    // ✅ Validación: solo 1 líder activo
     if (cargo === "Líder de Calidad y Formación") {
       const existe = await existeLiderCalidadActivo();
       if (existe) {
@@ -414,8 +472,41 @@ $("btnCrearRegistrador")?.addEventListener("click", async () => {
           "error"
         );
       }
+
+      // ✅ Firma obligatoria
+      const file = $("firmaLider")?.files?.[0];
+      if (!file) {
+        return setRegMsg("Debes subir la firma del Líder de Calidad.", "error");
+      }
+
+      // 1) Crear doc
+      const docRef = await addDoc(collection(db, "registradores"), {
+        registradoPorNombre: nombre,
+        cargo,
+        activo: true,
+        createdAt: serverTimestamp(),
+        creadoPor: auth.currentUser?.email || "",
+      });
+
+      // 2) Subir firma a Storage y guardar URL en el doc
+      const firmaUrl = await subirFirmaLider(file, docRef.id);
+
+      await updateDoc(doc(db, "registradores", docRef.id), {
+        registradorId: docRef.id,
+        firmaUrl,
+      });
+
+      // limpiar
+      if ($("regNombre")) $("regNombre").value = "";
+      if ($("regCargo")) $("regCargo").value = "";
+      if ($("firmaLider")) $("firmaLider").value = "";
+
+      setRegMsg("Líder de Calidad creado con firma.", "ok");
+      await loadRegistradores();
+      return;
     }
-    
+
+    // ✅ Caso normal (no líder)
     const docRef = await addDoc(collection(db, "registradores"), {
       registradoPorNombre: nombre,
       cargo,
@@ -424,7 +515,6 @@ $("btnCrearRegistrador")?.addEventListener("click", async () => {
       creadoPor: auth.currentUser?.email || "",
     });
 
-    // opcional: guardar id como campo (si te gusta verlo)
     await updateDoc(doc(db, "registradores", docRef.id), {
       registradorId: docRef.id,
     });

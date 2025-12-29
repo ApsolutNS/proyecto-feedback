@@ -17,10 +17,9 @@ import {
 /* ---------------- CONSTANTES FIRESTORE ---------------- */
 const colRefuerzos = collection(db, "refuerzos_calidad");
 const colUsuarios = collection(db, "usuarios");
+const colRegistradores = collection(db, "registradores");
 
-/* Firma Alex (igual que usabas antes) */
-const FIRMA_ALEX_URL =
-  "https://firebasestorage.googleapis.com/v0/b/feedback-app-ac30e.firebasestorage.app/o/firmas%2Ffirma_alex.png?alt=media&token=5081e2c6-8e5e-46e6-a340-c13cace95864";
+let responsableActivo = null; // ← cache global
 
 /* Correos con acceso a este módulo (coinciden con tus reglas isSupervisor()) */
 const ALLOWED_SUPERVISORS = [
@@ -132,7 +131,43 @@ function formatearFechaHora(fechaISO) {
   return new Date(fechaISO).toLocaleString("es-PE");
 }
 
-/* ---------------- CARGAR ASESORES ---------------- */
+async function cargarResponsableActivo() {
+  try {
+    const snap = await getDocs(colRegistradores);
+
+    const lider = snap.docs
+      .map(d => d.data())
+      .find(r =>
+        r.activo === true &&
+        r.cargo === "Líder de Calidad y Formación"
+      );
+
+    if (!lider) {
+      alert("No hay un Líder de Calidad activo en registradores");
+      return;
+    }
+
+    if (!lider.firmaUrl) {
+      alert(
+        "El Líder de Calidad activo no tiene firma registrada.\n" +
+        "Debes subir una firma en Admin."
+      );
+      return;
+    }
+
+    responsableActivo = lider;
+
+    // 👉 Actualiza input Responsable automáticamente
+    const inputResp = document.getElementById("responsable");
+    if (inputResp) {
+      inputResp.value = `${lider.registradoPorNombre} - ${lider.cargo}`;
+    }
+
+  } catch (e) {
+    console.error("Error cargando responsable:", e);
+  }
+}
+
 /* ---------------- CARGAR ASESORES (DESDE usuarios) ---------------- */
 async function cargarAsesores() {
   const cont = document.getElementById("asesoresContainer");
@@ -385,7 +420,7 @@ async function guardarRefuerzo() {
   const tipo = document.getElementById("tipo")?.value;
   const tema = document.getElementById("tema")?.value.trim();
   const canal = document.getElementById("canal")?.value;
-  const responsable = document.getElementById("responsable")?.value;
+  if (!responsableActivo) {   alert("No hay Responsable de Calidad configurado.");   return; }  const responsable = `${responsableActivo.registradoPorNombre} - ${responsableActivo.cargo}`;
   const objetivo = document.getElementById("objetivo")?.value.trim();
 
   // ✅ AHORA DETALLE SALE DE QUILL (HTML)
@@ -436,6 +471,10 @@ async function guardarRefuerzo() {
     publico,
     asesores: asesoresSeleccionados,
     responsable,
+    responsableId: responsableActivo.registradorId,
+    responsableNombre: responsableActivo.registradoPorNombre,
+    responsableCargo: responsableActivo.cargo,
+    responsableFirmaUrl: responsableActivo.firmaUrl,
     objetivo,
     detalle,
     firmado: false,
@@ -660,11 +699,11 @@ function renderPdfContent(ref) {
         <div class="pdf-sign-resp">
           <div class="pdf-sign-resp-title">Responsable de Calidad</div>
           <div class="pdf-sign-img">
-            <img src="${FIRMA_ALEX_URL}" />
+            <img src="${ref.responsableFirmaUrl}" />
           </div>
           <div class="pdf-sign-resp-line"></div>
-          <div><strong>Alex Paolo Nuñez Sulca</strong></div>
-          <div class="pdf-sign-resp-role">Líder de Calidad y Formación</div>
+          <div><strong>${ref.responsableNombre}</strong></div>
+          <div class="pdf-sign-resp-role">${ref.responsableCargo}</div>
         </div>
 
         <div class="pdf-sign-grid">
@@ -875,11 +914,13 @@ function initUIEvents() {
 
 async function initRefuerzos() {
   setToday();
+
+  await cargarResponsableActivo();
   await cargarAsesores();
   await cargarRefuerzos();
+
   initEditorBasico();
 }
-
 
 /* Protección con Auth + rol (coincide con tus reglas de Firestore) */
 onAuthStateChanged(auth, async user => {

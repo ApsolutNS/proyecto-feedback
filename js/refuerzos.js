@@ -130,6 +130,25 @@ function formatearFechaHora(fechaISO) {
   if (!fechaISO) return "";
   return new Date(fechaISO).toLocaleString("es-PE");
 }
+async function cargarResponsableCalidad() {
+  const snap = await getDocs(
+    query(collection(db, "registradores"))
+  );
+
+  const lider = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .find(r =>
+      r.activo !== false &&
+      r.cargo === "Líder de Calidad y Formación"
+    );
+
+  if (!lider) {
+    alert("No existe un Líder de Calidad y Formación activo.");
+    return null;
+  }
+
+  return lider;
+}
 
 async function cargarResponsableActivo() {
   try {

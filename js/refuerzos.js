@@ -16,7 +16,7 @@ import {
 
 /* ---------------- CONSTANTES FIRESTORE ---------------- */
 const colRefuerzos = collection(db, "refuerzos_calidad");
-const colAsesores = collection(db, "usuarios");
+const colUsuarios = collection(db, "usuarios");
 
 /* Firma Alex (igual que usabas antes) */
 const FIRMA_ALEX_URL =

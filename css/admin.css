@@ -1,12 +1,9 @@
 /* =========================================================
-   admin.css — Admin Panel (Usuarios + Registradores + Lista usuarios)
-   Objetivo visual (como tu screenshot):
-   - Header sticky
-   - Layout 2 columnas:
-       Izquierda: "Crear nuevo usuario" (ancho)
-       Derecha:  "Registradores" (columna)
-   - Debajo: "Usuarios del sistema" a lo ancho
-   - Popup pequeño “¿Estás seguro?” antes de eliminar
+   admin.css — ADMIN PANEL (Usuarios + Registradores + Listado)
+   - Layout como en la imagen: 2 columnas arriba + sección abajo
+   - Popup confirmación pequeño “¿Estás seguro?”
+   - Claro/Oscuro automático
+   - Incluye estilos para: cards, forms, listas, badges, botones
 ========================================================= */
 
 /* =========================
@@ -15,13 +12,14 @@
 :root{
   --radius-xl: 22px;
   --radius-lg: 18px;
-  --radius-md: 14px;
+  --radius-md: 12px;
   --radius-sm: 10px;
+  --radius-xs: 8px;
   --radius-pill: 999px;
 
-  --shadow-1: 0 10px 30px rgba(15, 23, 42, 0.10);
-  --shadow-2: 0 18px 60px rgba(15, 23, 42, 0.12);
-  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-card: 0 14px 40px rgba(15, 23, 42, 0.10);
+  --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.10);
+  --shadow-float: 0 18px 60px rgba(15, 23, 42, 0.12);
 
   --primary: #0b57d0;
   --primary-2: #0f4c81;
@@ -31,25 +29,28 @@
   --bg: #f3f4f6;
   --surface: #ffffff;
   --surface-2: #f8fafc;
-  --surface-3: #eef2f7;
+  --surface-3: #eef2ff;
 
   --text: #0f172a;
   --muted: #64748b;
 
   --outline: #d1d5db;
   --outline-2: #e5e7eb;
+  --outline-3: #eef2f7;
 
   --danger: #dc2626;
-  --danger-2: #b91c1c;
   --danger-bg: #fee2e2;
 
-  --success: #16a34a;
-  --warning: #f59e0b;
+  --ok: #16a34a;
+  --ok-bg: rgba(22, 163, 74, 0.10);
+
+  --warn: #f59e0b;
+  --warn-bg: rgba(245, 158, 11, 0.12);
 
   --focus: 0 0 0 3px rgba(11, 87, 208, 0.22);
 
-  --gap: 16px;
-  --maxw: 1180px; /* para parecerse más a tu captura */
+  --container-w: 1180px;
+  --gap: 18px;
 }
 
 /* =========================
@@ -57,9 +58,9 @@
 ========================= */
 @media (prefers-color-scheme: dark){
   :root{
-    --shadow-1: 0 14px 50px rgba(0, 0, 0, 0.40);
-    --shadow-2: 0 18px 70px rgba(0, 0, 0, 0.45);
-    --shadow-soft: 0 14px 50px rgba(0, 0, 0, 0.38);
+    --shadow-card: 0 18px 60px rgba(0, 0, 0, 0.45);
+    --shadow-soft: 0 14px 50px rgba(0, 0, 0, 0.40);
+    --shadow-float: 0 20px 80px rgba(0, 0, 0, 0.50);
 
     --primary: #a8c7fa;
     --primary-2: #0b1630;
@@ -69,20 +70,23 @@
     --bg: #050b16;
     --surface: #0b1220;
     --surface-2: #0f172a;
-    --surface-3: #101b2e;
+    --surface-3: #0b1b34;
 
     --text: #e5e7eb;
     --muted: #9aa4b2;
 
     --outline: #2b3444;
     --outline-2: #1a2233;
+    --outline-3: #141b29;
 
     --danger: #ff6b6b;
-    --danger-2: #ff4d4d;
     --danger-bg: rgba(255, 107, 107, 0.14);
 
-    --success: #4ade80;
-    --warning: #fbbf24;
+    --ok: #34d399;
+    --ok-bg: rgba(52, 211, 153, 0.10);
+
+    --warn: #fbbf24;
+    --warn-bg: rgba(251, 191, 36, 0.14);
 
     --focus: 0 0 0 3px rgba(168, 199, 250, 0.25);
   }
@@ -100,16 +104,16 @@ html, body{ height: 100%; }
 body{
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  color: var(--text);
   background:
     radial-gradient(1200px 600px at 20% -10%, rgba(11,87,208,0.10), transparent 60%),
     radial-gradient(900px 500px at 85% 10%, rgba(99,102,241,0.10), transparent 55%),
     var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a{ color: inherit; text-decoration: none; }
+a{ text-decoration: none; color: inherit; }
 
 ::selection{
   background: color-mix(in srgb, var(--primary) 30%, transparent);
@@ -117,29 +121,28 @@ a{ color: inherit; text-decoration: none; }
 
 img{ max-width: 100%; display: block; }
 
-.small{
-  font-size: 12px;
-  color: var(--muted);
+.small{ font-size: 12px; color: var(--muted); }
+
+hr{
+  border: none;
+  border-top: 1px solid var(--outline-2);
+  margin: 16px 0;
 }
 
 /* =========================
-   NAVBAR
+   NAVBAR (como tu HTML)
 ========================= */
 .navbar{
   position: sticky;
   top: 0;
-  z-index: 20;
-
+  z-index: 30;
   width: 100%;
   padding: 12px 18px;
-
   display: flex;
-  align-items: center;
   justify-content: space-between;
-
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  align-items: center;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(12px);
-
   border-bottom: 1px solid var(--outline-2);
 }
 
@@ -153,17 +156,14 @@ img{ max-width: 100%; display: block; }
   display: inline-flex;
   align-items: center;
   gap: 10px;
-
+  font-weight: 900;
+  letter-spacing: .2px;
+  font-size: 16px;
   padding: 8px 12px;
   border-radius: var(--radius-pill);
-
-  font-weight: 800;
-  font-size: 16px;
-  letter-spacing: 0.2px;
-
-  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
   border: 1px solid var(--outline-2);
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
 }
 
 .nav-right{
@@ -177,17 +177,13 @@ img{ max-width: 100%; display: block; }
   border: 1px solid var(--outline);
   background: color-mix(in srgb, var(--surface) 70%, transparent);
   color: var(--text);
-
   padding: 9px 14px;
   border-radius: var(--radius-pill);
-
   font-weight: 800;
   font-size: 13px;
-
   display: inline-flex;
   align-items: center;
   gap: 8px;
-
   cursor: pointer;
   transition: transform .08s ease, background .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
@@ -216,57 +212,59 @@ img{ max-width: 100%; display: block; }
    PAGE WRAP / HEADER
 ========================= */
 .container{
-  max-width: var(--maxw);
-  margin: 18px auto 50px;
+  max-width: var(--container-w);
+  margin: 18px auto 60px;
   padding: 0 16px;
 }
 
 .container h1{
-  margin: 16px 0 6px;
+  margin: 18px 0 6px;
   font-size: 24px;
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
 }
 
-.container > p{
+.container p{
   margin: 0 0 16px;
   color: var(--muted);
   font-size: 13px;
 }
 
 /* =========================
-   LAYOUT 2 COLUMNAS
-   (si tienes un wrapper .admin-grid, perfecto)
-   (si no, igual funcionará si lo agregas)
+   GRID STRUCTURE (imagen)
+   - Arriba: izquierda grande, derecha sidebar
+   - Abajo: sección completa
 ========================= */
 .admin-grid{
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.9fr 1fr; /* izquierda más grande */
   gap: var(--gap);
   align-items: start;
 }
 
-/* fallback suave: si NO usas .admin-grid, puedes poner la card de registradores
-   con class="card card-side" y se acomodará similar */
-.card-side{
-  position: sticky;
-  top: 86px; /* debajo del navbar */
+.left-col{ min-width: 0; }
+.right-col{ min-width: 0; }
+
+.full-row{
+  grid-column: 1 / -1;
 }
 
-/* secciones debajo a ancho completo */
-.section-wide{
-  margin-top: var(--gap);
-}
+/* Si NO tienes .admin-grid en HTML,
+   igual los cards se verán bien,
+   pero te recomiendo envolver las 2 cards
+   en un div class="admin-grid". */
 
 /* =========================
-   CARD
+   CARD (más pulido)
 ========================= */
 .card{
-  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   border: 1px solid var(--outline-2);
-  box-shadow: var(--shadow-2);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
   padding: 18px 18px;
 }
+
+.card + .card{ margin-top: 14px; }
 
 .card h3{
   margin: 0 0 12px;
@@ -274,149 +272,105 @@ img{ max-width: 100%; display: block; }
   letter-spacing: .2px;
 }
 
-.card .subtitle{
-  margin: -4px 0 12px;
-  color: var(--muted);
+.card .card-subtitle{
+  margin: -6px 0 10px;
   font-size: 12px;
+  color: var(--muted);
 }
 
 /* =========================
-   FORMS
+   FORM STYLES
 ========================= */
 label{
   display: block;
   margin: 10px 0 6px;
   font-size: 12px;
   font-weight: 800;
-  color: color-mix(in srgb, var(--text) 82%, var(--muted));
+  color: color-mix(in srgb, var(--text) 85%, var(--muted));
 }
 
-input, select{
+input, select, textarea{
   width: 100%;
-  padding: 11px 12px;
-
+  padding: 12px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--outline);
-
-  background: color-mix(in srgb, var(--surface-2) 78%, var(--surface));
+  background: color-mix(in srgb, var(--surface-2) 75%, var(--surface));
   color: var(--text);
-
-  font-size: 13px;
   outline: none;
-
-  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  font-size: 13px;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .08s ease;
 }
 
-input::placeholder{
+textarea{ resize: vertical; min-height: 92px; }
+
+input::placeholder, textarea::placeholder{
   color: color-mix(in srgb, var(--muted) 85%, transparent);
 }
 
-input:focus, select:focus{
+input:focus, select:focus, textarea:focus{
   border-color: color-mix(in srgb, var(--primary) 55%, var(--outline));
   box-shadow: var(--focus);
-  background: color-mix(in srgb, var(--primary-container) 18%, var(--surface));
+  background: color-mix(in srgb, var(--primary-container) 16%, var(--surface));
 }
 
-select{ cursor: pointer; }
-
-/* grid interno para inputs si algún día lo usas */
-.form-grid{
+.form-row{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-@media (max-width: 840px){
-  .form-grid{ grid-template-columns: 1fr; }
+
+.form-row-3{
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 920px){
+  .form-row, .form-row-3{ grid-template-columns: 1fr; }
 }
 
 /* =========================
-   BUTTONS
+   PRIMARY BUTTONS
 ========================= */
-.btn-primary,
 #btnCrear,
 #btnCrearRegistrador{
-  margin-top: 12px;
-
+  margin-top: 14px;
   width: 100%;
-  padding: 12px 14px;
-
+  padding: 13px 14px;
   border: none;
   border-radius: var(--radius-pill);
-
   background: var(--primary);
   color: var(--on-primary);
-
   font-weight: 900;
   font-size: 13px;
   letter-spacing: .2px;
-
   cursor: pointer;
-  box-shadow: 0 12px 30px rgba(11, 87, 208, 0.30);
+  box-shadow: 0 14px 30px rgba(11, 87, 208, 0.25);
   transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
 }
 
-.btn-primary:hover,
 #btnCrear:hover,
 #btnCrearRegistrador:hover{
   transform: translateY(-1px);
-  filter: brightness(1.05);
-  box-shadow: 0 16px 36px rgba(11, 87, 208, 0.34);
+  filter: brightness(1.04);
+  box-shadow: 0 18px 44px rgba(11, 87, 208, 0.30);
 }
 
-.btn-primary:active,
 #btnCrear:active,
 #btnCrearRegistrador:active{
   transform: translateY(0px);
 }
 
-.btn-primary:focus-visible,
 #btnCrear:focus-visible,
 #btnCrearRegistrador:focus-visible{
   outline: none;
-  box-shadow: var(--focus), 0 16px 36px rgba(11, 87, 208, 0.34);
-}
-
-/* mini buttons para editar/eliminar */
-.btn-mini{
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--outline);
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  color: var(--text);
-
-  font-weight: 800;
-  font-size: 12px;
-
-  cursor: pointer;
-  transition: background .15s ease, border-color .15s ease, transform .08s ease, box-shadow .15s ease;
-}
-
-.btn-mini:hover{
-  background: color-mix(in srgb, var(--primary-container) 22%, var(--surface));
-  border-color: color-mix(in srgb, var(--primary) 30%, var(--outline));
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-soft);
-}
-
-.btn-mini:active{ transform: translateY(0px); }
-
-.btn-mini.danger{
-  border-color: color-mix(in srgb, var(--danger) 45%, var(--outline));
-  color: color-mix(in srgb, var(--danger) 92%, var(--text));
-  background: color-mix(in srgb, var(--danger-bg) 55%, var(--surface));
-}
-
-.btn-mini.danger:hover{
-  border-color: color-mix(in srgb, var(--danger) 60%, var(--outline));
-  box-shadow: 0 12px 26px rgba(220, 38, 38, 0.20);
+  box-shadow: var(--focus), 0 18px 44px rgba(11, 87, 208, 0.30);
 }
 
 /* =========================
    STATUS MESSAGES
 ========================= */
-#msg,
-#regMsg,
-#usersMsg{
+#msg, #regMsg, #usersMsg{
   margin-top: 10px;
   font-weight: 800;
   font-size: 13px;
@@ -424,17 +378,39 @@ select{ cursor: pointer; }
   min-height: 18px;
 }
 
-#msg.ok, #regMsg.ok, #usersMsg.ok{ color: var(--success); }
+#msg.ok, #regMsg.ok, #usersMsg.ok{ color: var(--ok); }
 #msg.error, #regMsg.error, #usersMsg.error{ color: var(--danger); }
 
 /* =========================
-   REGISTRADORES (DERECHA)
+   RIGHT SIDEBAR “REGISTRADORES”
+   (como en la imagen)
+========================= */
+.sidebar-title{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+
+.sidebar-title .icon{
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  border: 1px solid var(--outline-2);
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--surface-3) 60%, var(--surface));
+}
+
+/* =========================
+   LISTA REGISTRADORES (cards)
 ========================= */
 #listaRegistradores{
   list-style: none;
   padding: 0;
   margin: 14px 0 0;
-
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -442,198 +418,314 @@ select{ cursor: pointer; }
 
 .reg-item{
   border: 1px solid var(--outline-2);
-  background: color-mix(in srgb, var(--surface-2) 80%, var(--surface));
   border-radius: var(--radius-lg);
-  padding: 14px 14px;
-  box-shadow: var(--shadow-1);
+  background: color-mix(in srgb, var(--surface-2) 85%, var(--surface));
+  padding: 12px 12px;
 }
 
 .reg-row{
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
-  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
-.reg-main{
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
+.reg-main{ min-width: 0; }
 
 .reg-name{
-  font-weight: 900;
+  font-weight: 950;
   font-size: 13px;
-  line-height: 1.2;
-  word-break: break-word;
+  margin-bottom: 2px;
 }
 
 .reg-cargo{
   font-size: 12px;
   color: var(--muted);
+  margin-bottom: 10px;
 }
 
 .reg-meta{
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.reg-actions{
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 2px;
 }
 
-/* switch activo */
 .reg-switch{
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  font-weight: 800;
-  color: color-mix(in srgb, var(--text) 80%, var(--muted));
+  color: var(--muted);
+  user-select: none;
 }
 
 .reg-switch input[type="checkbox"]{
   width: 16px;
   height: 16px;
   accent-color: var(--primary);
+  cursor: pointer;
 }
 
-/* editor interno */
+.reg-actions{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.btn-mini{
+  appearance: none;
+  border: 1px solid var(--outline);
+  background: color-mix(in srgb, var(--surface) 80%, var(--surface-2));
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.btn-mini:hover{
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--primary-container) 24%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--outline));
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.10);
+}
+
+.btn-mini:active{ transform: translateY(0px); }
+
+.btn-mini.danger{
+  border-color: color-mix(in srgb, var(--danger) 50%, var(--outline));
+  color: color-mix(in srgb, var(--danger) 92%, var(--text));
+  background: color-mix(in srgb, var(--danger-bg) 60%, var(--surface));
+}
+
+.btn-mini.danger:hover{
+  border-color: color-mix(in srgb, var(--danger) 70%, var(--outline));
+  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.18);
+}
+
+/* Editor inline (registradores) */
 .reg-edit{
   margin-top: 10px;
+  border-top: 1px dashed var(--outline-2);
   padding-top: 10px;
-  border-top: 1px dashed var(--outline);
+}
+
+.reg-edit label{ margin-top: 8px; }
+
+.reg-edit input, .reg-edit select{
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
 }
 
 /* =========================
-   USERS LIST (ABAJO)
+   USERS SECTION (abajo)
 ========================= */
+.users-section-title{
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.users-section-subtitle{
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Lista de usuarios */
 .user-list{
   list-style: none;
   padding: 0;
-  margin: 14px 0 0;
-
-  display: flex;
-  flex-direction: column;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
 .user-item{
-  border: 1px solid var(--outline-2);
   background: color-mix(in srgb, var(--surface-2) 85%, var(--surface));
-  border-radius: var(--radius-xl);
-  padding: 14px 14px;
-  box-shadow: var(--shadow-1);
+  border: 1px solid var(--outline-2);
+  border-radius: var(--radius-lg);
+  padding: 12px 12px;
 }
 
 .user-row{
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   gap: 12px;
-  align-items: center;
 }
 
 .user-info{
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   min-width: 0;
+  display: grid;
+  gap: 4px;
 }
 
-.user-info strong{
-  font-size: 13px;
-  font-weight: 900;
-  word-break: break-word;
-}
-
-.user-info .meta{
-  font-size: 12px;
-  color: var(--muted);
+.user-line{
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
-.user-pill{
+.user-name{
+  font-weight: 950;
+  font-size: 13px;
+}
+
+.user-email{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.user-badges{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.badge{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-
-  padding: 4px 10px;
+  padding: 6px 10px;
   border-radius: var(--radius-pill);
-
   border: 1px solid var(--outline-2);
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-
+  background: color-mix(in srgb, var(--surface) 70%, var(--surface-2));
   font-size: 12px;
   font-weight: 900;
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
 }
 
-.user-pill.role{
+.badge.primary{
   border-color: color-mix(in srgb, var(--primary) 35%, var(--outline));
   background: color-mix(in srgb, var(--primary-container) 26%, var(--surface));
 }
 
+.badge.ok{
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--outline));
+  background: color-mix(in srgb, var(--ok-bg) 75%, var(--surface));
+}
+
+.badge.warn{
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--outline));
+  background: color-mix(in srgb, var(--warn-bg) 75%, var(--surface));
+}
+
+.badge.danger{
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--outline));
+  background: color-mix(in srgb, var(--danger-bg) 75%, var(--surface));
+  color: color-mix(in srgb, var(--danger) 92%, var(--text));
+}
+
 .user-actions{
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Bloque de edición de usuario (si lo muestras con JS) */
+.user-edit{
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--outline-2);
+  display: grid;
+  gap: 10px;
+}
+
+.user-edit .edit-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.user-edit .edit-actions{
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 820px){
+  .user-edit .edit-grid{ grid-template-columns: 1fr; }
 }
 
 /* =========================
-   POPUP “¿ESTÁS SEGURO?”
-   (usa .modal-confirm.show para mostrar)
+   SMALL HELPERS / DIVIDERS
+========================= */
+.divider{
+  height: 1px;
+  background: var(--outline-2);
+  margin: 14px 0;
+}
+
+.pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--outline-2);
+  background: color-mix(in srgb, var(--surface) 70%, var(--surface-2));
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* =========================
+   CONFIRM MODAL (popup pequeño)
+   - Usa JS para:
+     document.querySelector('.modal-confirm').classList.add('show')
+     y quitar para cerrar.
 ========================= */
 .modal-confirm{
   position: fixed;
   inset: 0;
-  z-index: 999;
-
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
   display: none;
   align-items: center;
   justify-content: center;
-
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(4px);
+  z-index: 999;
+  padding: 16px;
 }
 
 .modal-confirm.show{ display: flex; }
 
 .modal-confirm .modal-box{
-  width: min(92vw, 360px);
+  width: 100%;
+  max-width: 360px;
   background: var(--surface);
-
-  border: 1px solid var(--outline-2);
-  border-radius: 16px;
-
+  border-radius: 18px;
   padding: 18px 16px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-
+  box-shadow: var(--shadow-float);
+  border: 1px solid var(--outline-2);
   animation: popIn .18s ease-out;
 }
 
 @keyframes popIn{
-  from{ transform: scale(.94); opacity: 0; }
+  from{ transform: scale(0.94); opacity: 0; }
   to{ transform: scale(1); opacity: 1; }
 }
 
-.modal-confirm h3{
-  margin: 0 0 8px;
+.modal-confirm .modal-box h3{
+  margin: 0 0 6px;
   font-size: 16px;
   font-weight: 950;
   text-align: center;
 }
 
-.modal-confirm p{
+.modal-confirm .modal-box p{
   margin: 0 0 14px;
   font-size: 13px;
   color: var(--muted);
   text-align: center;
+  line-height: 1.35;
 }
 
 .modal-confirm .modal-actions{
@@ -641,83 +733,55 @@ select{ cursor: pointer; }
   gap: 10px;
 }
 
-.modal-confirm button{
+.modal-confirm .modal-actions button{
   flex: 1;
   padding: 10px 12px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--outline);
-
-  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
-  color: var(--text);
-
-  font-weight: 900;
+  background: color-mix(in srgb, var(--surface-2) 80%, var(--surface));
+  font-weight: 950;
   font-size: 13px;
-
   cursor: pointer;
-  transition: transform .08s ease, box-shadow .15s ease, filter .15s ease, background .15s ease;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 
-.modal-confirm button:hover{
+.modal-confirm .modal-actions button:hover{
   transform: translateY(-1px);
-  box-shadow: var(--shadow-soft);
+  background: color-mix(in srgb, var(--primary-container) 22%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--outline));
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
-.modal-confirm button:active{ transform: translateY(0px); }
+.modal-confirm .modal-actions button:active{
+  transform: translateY(0px);
+}
 
-.modal-confirm .btn-cancel:hover{
-  background: color-mix(in srgb, var(--outline-2) 80%, var(--surface));
+.modal-confirm .btn-cancel{
+  color: var(--text);
 }
 
 .modal-confirm .btn-confirm{
   background: var(--danger);
   border-color: var(--danger);
-  color: #fff;
+  color: white;
 }
 
 .modal-confirm .btn-confirm:hover{
-  filter: brightness(1.05);
-  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.30);
+  background: color-mix(in srgb, var(--danger) 90%, black);
+  border-color: color-mix(in srgb, var(--danger) 90%, black);
+  box-shadow: 0 14px 34px rgba(220, 38, 38, 0.25);
 }
 
 /* =========================
-   VISUAL DETAIL: TITLES
-========================= */
-.section-title{
-  margin: 0 0 8px;
-  font-size: 14px;
-  font-weight: 950;
-}
-
-.section-subtitle{
-  margin: 0 0 14px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* =========================
-   SPACING HELPERS (opcional)
-========================= */
-.mt-8{ margin-top: 8px; }
-.mt-12{ margin-top: 12px; }
-.mt-16{ margin-top: 16px; }
-.mt-20{ margin-top: 20px; }
-.mb-8{ margin-bottom: 8px; }
-.mb-12{ margin-bottom: 12px; }
-.mb-16{ margin-bottom: 16px; }
-.gap-8{ gap: 8px; }
-.gap-12{ gap: 12px; }
-
-/* =========================
-   RESPONSIVE
+   RESPONSIVE (layout imagen)
 ========================= */
 @media (max-width: 980px){
   .admin-grid{
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* apila */
   }
-  .card-side{
-    position: static;
-    top: auto;
-  }
+  .right-col{ order: 2; }
+  .left-col{ order: 1; }
+  .full-row{ order: 3; }
 }
 
 @media (max-width: 640px){
@@ -726,22 +790,73 @@ select{ cursor: pointer; }
     gap: 10px;
   }
   .nav-right{ gap: 8px; }
-  .nav-btn{ padding: 8px 10px; font-size: 12px; }
-  .logo{ padding: 7px 10px; font-size: 14px; }
-
+  .nav-btn{
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .logo{
+    padding: 7px 10px;
+    font-size: 14px;
+  }
   .container h1{ font-size: 21px; }
-  .card{ padding: 16px 14px; border-radius: 18px; }
-
-  .user-row,
-  .reg-row{
-    grid-template-columns: 1fr;
-  }
-  .user-actions,
-  .reg-actions{
-    justify-content: flex-start;
-  }
+  .card{ padding: 16px 14px; }
+  #btnCrear, #btnCrearRegistrador{ padding: 12px 12px; }
 }
 
 /* =========================
-   FIN (CSS > 300 líneas)
+   OPTIONAL: “glass” header strip (como el fondo)
+========================= */
+.hero-strip{
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border: 1px solid var(--outline-3);
+  padding: 14px 16px;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+  margin-bottom: 14px;
+}
+
+/* =========================
+   OPTIONAL: section headings
+========================= */
+.section-header{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.section-header .title{
+  font-weight: 950;
+  font-size: 15px;
+}
+
+.section-header .subtitle{
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* =========================
+   OPTIONAL: icon chips
+========================= */
+.icon-chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--outline-2);
+  background: color-mix(in srgb, var(--surface-3) 55%, var(--surface));
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* =========================
+   OPTIONAL: subtle animations
+========================= */
+@media (prefers-reduced-motion: reduce){
+  *{ transition: none !important; animation: none !important; }
+}
+
+/* =========================
+   END
 ========================= */

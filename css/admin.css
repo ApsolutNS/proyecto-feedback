@@ -240,7 +240,7 @@ img{ max-width: 100%; display: block; }
 ========================= */
 .admin-grid{
   display: grid;
-  grid-template-columns: 1.7fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--gap);
   align-items: start;
 }

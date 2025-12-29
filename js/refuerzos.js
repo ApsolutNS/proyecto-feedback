@@ -422,6 +422,7 @@ async function guardarRefuerzo() {
     asesorId: a.asesorId,
     nombre: a.nombre,
     gc: a.gc || "",
+    cargo: a.cargo || "",
     url: "",
     fechaFirma: null,
     compromiso: ""
@@ -539,7 +540,10 @@ function construirTarjetasFirmas(ref) {
           <div class="pdf-sign-card-header">
             <div>
               <div class="pdf-sign-name">${a.nombre}</div>
-              <div class="pdf-sign-gc">${a.gc ? "GC: " + a.gc : ""}</div>
+              <div class="pdf-sign-gc">
+                ${a.gc ? "GC: " + a.gc : ""}
+                ${a.cargo ? "<br/>" + a.cargo : ""}
+              </div>
             </div>
             <div class="${
               tieneFirma

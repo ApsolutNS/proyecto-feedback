@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Administrador del Sistema</title>
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin.css" />
 </head>
-
 <body>
 
   <!-- 🔵 NAVBAR -->
@@ -22,26 +21,56 @@
 
   <div class="container">
     <h1>Panel Administrador</h1>
-    <p>Crear usuarios y asignar roles</p>
+    <p>Gestión de usuarios y registradores</p>
 
+    <!-- =========================
+         USUARIOS
+    ========================== -->
     <div class="card">
-      <h3>Crear nuevo usuario</h3>
+      <h3>➕ Crear nuevo usuario</h3>
 
-      <label>Email:</label>
-      <input id="email" type="email">
+      <label>Email</label>
+      <input id="email" type="email" placeholder="usuario@empresa.com" />
 
-      <label>Contraseña:</label>
-      <input id="password" type="password">
+      <label>Contraseña</label>
+      <input id="password" type="password" />
 
-      <label>Rol:</label>
+      <label>Rol</label>
       <select id="rol">
         <option value="admin">Administrador</option>
         <option value="supervisor">Supervisor</option>
         <option value="agente">Agente</option>
       </select>
 
+      <label>Nombre del asesor</label>
+      <input id="nombreAsesor" placeholder="Nombre completo del agente" />
+
+      <label>Cargo del agente</label>
+      <input id="cargoAgente" placeholder="ASESOR INBOUND / REDES / CORREOS" />
+
+      <label>GC</label>
+      <input id="gcAgente" placeholder="GC########" />
+
       <button id="btnCrear">Crear usuario</button>
-      <p id="msg"></p>
+      <p id="msg" class="msg"></p>
+    </div>
+
+    <!-- =========================
+         REGISTRADORES
+    ========================== -->
+    <div class="card">
+      <h3>👤 Registradores (registradoPor)</h3>
+
+      <label>Nombre</label>
+      <input id="regNombre" placeholder="Ej: Alex Paolo Nuñez Sulca" />
+
+      <label>Cargo</label>
+      <input id="regCargo" placeholder="Líder de Calidad y Formación" />
+
+      <button id="btnCrearRegistrador">Agregar registrador</button>
+
+      <h4 style="margin-top:16px">Listado</h4>
+      <ul id="listaRegistradores" class="list"></ul>
     </div>
   </div>
 

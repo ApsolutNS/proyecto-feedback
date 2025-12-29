@@ -56,14 +56,6 @@ onAuthStateChanged(auth, async (user) => {
   const el = document.getElementById("userRoleName");
   if (el) el.textContent = user.displayName || user.email || "Usuario";
 
-  // Ocultar admin si no corresponde
-  const btnAdmin = document.getElementById("btnAdmin");
-  if (btnAdmin && !user.email?.includes("@efectiva.com")) {
-    btnAdmin.style.display = "none";
-  }
-});
-
-
 /* ------------------------------
    HELPERS
 ------------------------------ */

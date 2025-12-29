@@ -775,7 +775,7 @@ input:focus, select:focus, textarea:focus{
 .modal-confirm .btn-confirm{
   background: var(--danger);
   border-color: var(--danger);
-  color: white;
+  color: black;
 }
 
 .modal-confirm .btn-confirm:hover{

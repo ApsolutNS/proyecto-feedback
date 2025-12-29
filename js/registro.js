@@ -38,6 +38,7 @@ const auth = getAuth(app);
 
 /* ---------------- DOM REFS ---------------- */
 const userEmailLabel = document.getElementById("userEmailLabel");
+
 const registradoPorSel = document.getElementById("registradoPor");
 const asesorSel = document.getElementById("asesor");
 const cargoSel = document.getElementById("cargo");
@@ -53,7 +54,7 @@ const cliTipifInput = document.getElementById("cliTipif");
 const cliObsInput = document.getElementById("cliObs");
 const resumenInput = document.getElementById("resumen");
 
-const itemsContainer = document.getElementById("itemsContainer");
+const itemsContainer = document.getElementById("itemsContainer"); // OJO: en tu HTML hay 2 con el mismo id
 const imgsInput = document.getElementById("imgs");
 const imgPreviewContainer = document.getElementById("imgPreview");
 
@@ -76,7 +77,6 @@ const infoEIEl = document.getElementById("infoEI");
 let currentUser = null;
 
 /* ---------------- ITEMS DEFINICIÓN ---------------- */
-/* Cada ítem: name, perc, tipo */
 const ITEMS = [
   // ERROR INEXCUSABLE
   { name: "Corte de Gestión", perc: 100, tipo: "ERROR_INEXCUSABLE" },
@@ -84,24 +84,16 @@ const ITEMS = [
   { name: "Normativa Regulatoria", perc: 100, tipo: "ERROR_INEXCUSABLE" },
   { name: "Protección de datos", perc: 100, tipo: "ERROR_INEXCUSABLE" },
 
-  // PENCUF (hasta -25 pts según % acumulado)
+  // PENCUF
   { name: "Contestación sin demora", perc: 5, tipo: "PENCUF" },
   { name: "Optimización de esperas", perc: 5, tipo: "PENCUF" },
   { name: "Empatía e implicación", perc: 7, tipo: "PENCUF" },
   { name: "Escucha Activa", perc: 7, tipo: "PENCUF" },
   { name: "Sondeo", perc: 7, tipo: "PENCUF" },
-  {
-    name: "Solicita datos de forma correcta y oportuna",
-    perc: 7,
-    tipo: "PENCUF",
-  },
+  { name: "Solicita datos de forma correcta y oportuna", perc: 7, tipo: "PENCUF" },
   { name: "Herramientas de Gestión", perc: 10, tipo: "PENCUF" },
   { name: "Codificación y Registro inConcert", perc: 7, tipo: "PENCUF" },
-  {
-    name: "Codificación y Registro en Monitor Logístico",
-    perc: 7,
-    tipo: "PENCUF",
-  },
+  { name: "Codificación y Registro en Monitor Logístico", perc: 7, tipo: "PENCUF" },
   { name: "Codificación y Registro en SmartSheet", perc: 7, tipo: "PENCUF" },
   { name: "Presentación", perc: 7, tipo: "PENCUF" },
   { name: "Personalización", perc: 7, tipo: "PENCUF" },
@@ -121,16 +113,8 @@ const ITEMS = [
   // PECUF
   { name: "Cumple con devolución de llamado", perc: 35, tipo: "PECUF" },
   { name: "Actitud - Manejo de llamada", perc: 35, tipo: "PECUF" },
-  {
-    name: "Conocimientos para resolver la consulta",
-    perc: 35,
-    tipo: "PECUF",
-  },
-  {
-    name: "Asesoramiento de Producto o Servicio (Pagina Web | Posible Compra | Servicios)",
-    perc: 35,
-    tipo: "PECUF",
-  },
+  { name: "Conocimientos para resolver la consulta", perc: 35, tipo: "PECUF" },
+  { name: "Asesoramiento de Producto o Servicio (Pagina Web | Posible Compra | Servicios)", perc: 35, tipo: "PECUF" },
   { name: "Solución al primer contacto", perc: 35, tipo: "PECUF" },
 
   // PECCUMP
@@ -138,7 +122,30 @@ const ITEMS = [
   { name: "Damos el número de Ticket", perc: 10, tipo: "PECCUMP" },
 ];
 
-/* ---------------- AUTH & INIT ---------------- */
+/* =========================
+   HELPERS
+========================= */
+function setMsg(text, ok = true) {
+  if (!msgEl) return;
+  msgEl.style.color = ok ? "#15803d" : "#b91c1c";
+  msgEl.textContent = text || "";
+}
+
+function escapeHTML(str) {
+  return (str ?? "")
+    .toString()
+    .replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }[c] || c));
+}
+
+/* =========================
+   AUTH & INIT
+========================= */
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     alert("Debes iniciar sesión para registrar monitoreos.");
@@ -147,72 +154,152 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentUser = user;
+
   if (userEmailLabel) {
     userEmailLabel.textContent = user.email || "Usuario autenticado";
   }
 
-  await cargarAsesores();
+  // 1) Cargar combos dinámicos (registradores + asesores)
+  await cargarRegistradores(); // NUEVO: desde colección registradores
+  await cargarAsesores();      // NUEVO: trae gc + cargo desde colección asesores
+
+  // 2) Eventos / UI
   inicializarEventos();
   recalcularNotaPreview();
 });
 
-/* ---------------- CARGAR ASESORES (UID reales) ---------------- */
+/* =========================
+   CARGAR REGISTRADORES (desde colección registradores)
+   - Usa: registradoPorNombre + cargo
+   - Value final: "Nombre - Cargo"
+========================= */
+async function cargarRegistradores() {
+  if (!registradoPorSel) return;
+
+  // Reemplaza lo hardcodeado del HTML (sin modificar el HTML)
+  registradoPorSel.innerHTML = `<option value="">Cargando registradores...</option>`;
+
+  try {
+    const snap = await getDocs(collection(db, "registradores"));
+    if (snap.empty) {
+      registradoPorSel.innerHTML = `<option value="">(No hay registradores)</option>`;
+      return;
+    }
+
+    const lista = snap.docs
+      .map((d) => {
+        const data = d.data() || {};
+        const nombre = (data.registradoPorNombre || "").trim();
+        const cargo = (data.cargo || "").trim();
+        const activo = data.activo !== false;
+        const label = [nombre, cargo].filter(Boolean).join(" - ").trim();
+        return { id: d.id, nombre, cargo, activo, label };
+      })
+      .filter((x) => x.label && x.activo); // solo activos
+
+    lista.sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
+
+    registradoPorSel.innerHTML =
+      `<option value="">Selecciona...</option>` +
+      lista.map((r) => `<option value="${escapeHTML(r.label)}">${escapeHTML(r.label)}</option>`).join("");
+
+  } catch (err) {
+    console.error("Error cargando registradores:", err);
+    registradoPorSel.innerHTML = `<option value="">❌ Error al cargar registradores</option>`;
+    setMsg("Error al cargar registradores. Revisa reglas/permisos.", false);
+  }
+}
+
+/* =========================
+   CARGAR ASESORES (desde colección asesores)
+   - Cada option guarda:
+     data-uid, data-gc, data-cargo
+   - Y al seleccionar asesor:
+     GC y Cargo quedan "fijos" (no editable)
+========================= */
 async function cargarAsesores() {
   if (!asesorSel) return;
 
   asesorSel.innerHTML = `<option value="">Cargando asesores...</option>`;
 
   try {
-    const colRef = collection(db, "asesores");
-    const snap = await getDocs(colRef);
-
+    const snap = await getDocs(collection(db, "asesores"));
     if (snap.empty) {
-      asesorSel.innerHTML =
-        '<option value="">(No hay asesores registrados)</option>';
+      asesorSel.innerHTML = `<option value="">(No hay asesores registrados)</option>`;
       return;
     }
 
     const lista = snap.docs.map((d) => {
-      const data = d.data();
+      const data = d.data() || {};
+
+      // En tu BD puede estar como "gc" o "GC"
+      const gc = (data.gc || data.GC || "").trim();
+
+      // Cargo en asesores (ideal): "ASESOR INBOUND|REDES|CORREOS"
+      // Si no existe, queda vacío y lo verás como "SIN CARGO"
+      const cargo = (data.cargo || data.Cargo || "").trim();
+
       return {
         uid: d.id, // UID REAL
         nombre: (data.nombre || "SIN NOMBRE").trim(),
-        gc: (data.gc || data.GC || "").trim(),
+        gc,
+        cargo,
       };
     });
 
-    lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" }));
 
     asesorSel.innerHTML =
-      '<option value="">Selecciona asesor...</option>' +
-      lista
-        .map(
-          (a) => `
-        <option value="${a.nombre}"
-                data-uid="${a.uid}"
-                data-gc="${a.gc}">
-          ${a.nombre} — ${a.gc || "SIN GC"}
-        </option>`
-        )
-        .join("");
+      `<option value="">Selecciona asesor...</option>` +
+      lista.map((a) => {
+        const right = `${a.gc || "SIN GC"}${a.cargo ? " · " + a.cargo : ""}`;
+        return `
+          <option value="${escapeHTML(a.nombre)}"
+                  data-uid="${escapeHTML(a.uid)}"
+                  data-gc="${escapeHTML(a.gc || "")}"
+                  data-cargo="${escapeHTML(a.cargo || "")}">
+            ${escapeHTML(a.nombre)} — ${escapeHTML(right)}
+          </option>
+        `;
+      }).join("");
+
+    // fuerza comportamiento “fijo” de cargo según asesor
+    if (cargoSel) {
+      cargoSel.disabled = true; // ✅ fijo (no editable)
+    }
+
+    asesorSel.addEventListener("change", aplicarGCyCargoDesdeAsesor);
+    // si ya viene con selección por defecto, aplica
+    aplicarGCyCargoDesdeAsesor();
+
   } catch (err) {
     console.error("Error cargando asesores:", err);
-    asesorSel.innerHTML =
-      '<option value="">❌ Error al cargar asesores</option>';
-    if (msgEl) {
-      msgEl.style.color = "red";
-      msgEl.textContent =
-        "Error al cargar asesores. Verifica tus reglas o conexión.";
-    }
+    asesorSel.innerHTML = `<option value="">❌ Error al cargar asesores</option>`;
+    setMsg("Error al cargar asesores. Verifica reglas/permisos.", false);
   }
+}
+
+function aplicarGCyCargoDesdeAsesor() {
+  if (!asesorSel || !cargoSel) return;
+
+  const opt = asesorSel.options[asesorSel.selectedIndex];
+  if (!opt || !opt.dataset) return;
+
+  const cargo = (opt.dataset.cargo || "").trim();
+
+  // Cargo “fijo”: dejamos el select con 1 sola opción (la del asesor)
+  // Si en la colección asesores no hay cargo, mostrará “SIN CARGO”.
+  const fixed = cargo || "SIN CARGO";
+  cargoSel.innerHTML = `<option value="${escapeHTML(fixed)}">${escapeHTML(fixed)}</option>`;
+  cargoSel.value = fixed;
+  cargoSel.disabled = true;
 }
 
 /* ---------------- DETECTAR TIPO ---------------- */
 function detectarTipoTexto(text) {
   if (!text) return "NO IDENTIFICADO";
   const lower = text.toLowerCase();
-  if (lower.includes("intefectivank") || lower.includes("vank"))
-    return "EFECTIVANK";
+  if (lower.includes("intefectivank") || lower.includes("vank")) return "EFECTIVANK";
   if (lower.includes("intefectiva")) return "EFECTIVA";
   if (lower.includes("intxperto")) return "XPERTO";
   if (lower.includes("facebook")) return "FACEBOOK";
@@ -222,26 +309,21 @@ function detectarTipoTexto(text) {
 }
 
 function actualizarTipoDetectado() {
-  const val =
-    (idLlamadaInput?.value || "") + " " + (idContactoInput?.value || "");
-  tipoDetectadoInput.value = detectarTipoTexto(val);
+  const val = (idLlamadaInput?.value || "") + " " + (idContactoInput?.value || "");
+  if (tipoDetectadoInput) tipoDetectadoInput.value = detectarTipoTexto(val);
 }
 
 /* ---------------- UI: ÍTEMS ---------------- */
 function crearItemBlock() {
   const w = document.createElement("div");
   w.className = "item-block";
-
   w.innerHTML = `
     <div class="item-main">
-      <!-- HEADER DEL ÍTEM (select + meta + botones) -->
       <div class="item-header-row">
         <div class="item-header-left">
           <select class="item-select">
             <option value="">-- Selecciona ítem --</option>
-            ${ITEMS.map(
-              (it) => `<option value="${it.name}">${it.name}</option>`
-            ).join("")}
+            ${ITEMS.map((it) => `<option value="${escapeHTML(it.name)}">${escapeHTML(it.name)}</option>`).join("")}
           </select>
           <div class="item-meta"></div>
         </div>
@@ -250,79 +332,54 @@ function crearItemBlock() {
             <span class="material-symbols-outlined md-btn-icon">expand_more</span>
             Detalle
           </button>
-          <button class="md-btn md-btn-text item-remove" type="button">
-            Eliminar
-          </button>
+          <button class="md-btn md-btn-text item-remove" type="button">Eliminar</button>
         </div>
       </div>
 
-      <!-- CUERPO EXPANDIBLE (detalle) -->
       <div class="item-body" style="display:none;">
         <div class="md-field">
           <label class="md-label">Detalle del ítem</label>
           <div class="md-input-wrapper">
-            <textarea
-              class="item-detail"
-              rows="2"
-              placeholder="Describe el incumplimiento: contexto, frase del cliente/asesor, impacto, etc."></textarea>
-          </div>
-          <div class="md-helper">
-            Ejemplo: 
-            <em>“Cliente indica que no recibió la devolución acordada, asesor no realiza seguimiento…”</em>
+            <textarea class="item-detail" rows="2" placeholder="Describe el incumplimiento..."></textarea>
           </div>
         </div>
       </div>
     </div>
   `;
 
-  const select    = w.querySelector(".item-select");
-  const meta      = w.querySelector(".item-meta");
-  const detail    = w.querySelector(".item-detail");
+  const select = w.querySelector(".item-select");
+  const meta = w.querySelector(".item-meta");
+  const detail = w.querySelector(".item-detail");
   const toggleBtn = w.querySelector(".item-toggle");
   const removeBtn = w.querySelector(".item-remove");
-  const body      = w.querySelector(".item-body");
-  const iconSpan  = toggleBtn.querySelector(".material-symbols-outlined");
+  const body = w.querySelector(".item-body");
+  const iconSpan = toggleBtn.querySelector(".material-symbols-outlined");
 
-  // Cambio de ítem ⇒ actualiza meta + recalcula nota
   select.addEventListener("change", () => {
     const it = ITEMS.find((x) => x.name === select.value);
-    if (it) {
-      meta.textContent = `${it.perc}% · ${it.tipo.replace(/_/g, " ")}`;
-    } else {
-      meta.textContent = "";
-    }
+    meta.textContent = it ? `${it.perc}% · ${it.tipo.replace(/_/g, " ")}` : "";
     recalcularNotaPreview();
   });
 
-  // Toggle expandir/colapsar detalle
   toggleBtn.addEventListener("click", () => {
     const isOpen = body.style.display !== "none";
-    if (isOpen) {
-      body.style.display = "none";
-      toggleBtn.setAttribute("aria-expanded", "false");
-      iconSpan.textContent = "expand_more";
-    } else {
-      body.style.display = "block";
-      toggleBtn.setAttribute("aria-expanded", "true");
-      iconSpan.textContent = "expand_less";
-    }
+    body.style.display = isOpen ? "none" : "block";
+    toggleBtn.setAttribute("aria-expanded", isOpen ? "false" : "true");
+    iconSpan.textContent = isOpen ? "expand_more" : "expand_less";
   });
 
-  // Eliminar ítem
   removeBtn.addEventListener("click", () => {
     w.remove();
     recalcularNotaPreview();
   });
 
-  // Input en detalle (por ahora solo para posible uso futuro)
-  detail.addEventListener("input", () => {
-    // Aquí podrías disparar auto-guardado, etc.
-  });
+  detail.addEventListener("input", () => {});
 
   return w;
 }
 
 function obtenerItemsFormulario() {
+  if (!itemsContainer) return [];
   const blocks = Array.from(itemsContainer.querySelectorAll(".item-block"));
   const items = [];
 
@@ -334,10 +391,7 @@ function obtenerItemsFormulario() {
     const name = select.value;
     if (!name) continue;
 
-    const meta = ITEMS.find((i) => i.name === name) || {
-      tipo: "OTRO",
-      perc: 0,
-    };
+    const meta = ITEMS.find((i) => i.name === name) || { tipo: "OTRO", perc: 0 };
 
     items.push({
       name,
@@ -346,13 +400,14 @@ function obtenerItemsFormulario() {
       detail: detail.value || "",
     });
   }
-
   return items;
 }
 
 /* ---------------- PREVIEW IMÁGENES ---------------- */
 function manejarPreviewImagenes(event) {
   const files = event.target.files;
+  if (!imgPreviewContainer) return;
+
   imgPreviewContainer.innerHTML = "";
   if (!files || !files.length) return;
 
@@ -368,16 +423,6 @@ function manejarPreviewImagenes(event) {
 }
 
 /* ---------------- CÁLCULO DE NOTA ---------------- */
-/*
-  Reglas:
-  - Si hay ERROR_INEXCUSABLE → nota = 0
-  - Nota base: 100
-  - PENCUF → 25 * (sumaPercPENCUF / 100)
-  - PECNEG → -30 (si hay al menos uno)
-  - PECUF → -35 (si hay al menos uno)
-  - PECCUMP → -10 (si hay al menos uno)
-*/
-
 function calcularNota(items) {
   if (items.some((i) => i.tipo === "ERROR_INEXCUSABLE")) return 0;
 
@@ -386,6 +431,7 @@ function calcularNota(items) {
   const totalPENCUF = items
     .filter((i) => i.tipo === "PENCUF")
     .reduce((sum, i) => sum + (i.perc || 0), 0);
+
   const dedPENCUF = 25 * (totalPENCUF / 100);
 
   const hasPECNEG = items.some((i) => i.tipo === "PECNEG");
@@ -399,7 +445,6 @@ function calcularNota(items) {
 
   if (nota < 0) nota = 0;
   if (nota > 100) nota = 100;
-
   return Math.round(nota * 10) / 10;
 }
 
@@ -407,27 +452,27 @@ function recalcularNotaPreview() {
   const items = obtenerItemsFormulario();
   const nota = calcularNota(items);
 
-  // nota
   const texto = nota.toFixed(1).replace(/\.0$/, "");
-  notaPreviewEl.textContent = texto;
+  if (notaPreviewEl) notaPreviewEl.textContent = texto;
 
-  // estilo
-  if (nota >= 85) {
-    scoreCircleEl.classList.remove("bad");
-    badgeCalidadEl.classList.remove("md-badge-bad");
-    badgeCalidadEl.classList.add("md-badge-good");
-    badgeCalidadEl.textContent = "🟢 Aprobado";
-  } else {
-    scoreCircleEl.classList.add("bad");
-    badgeCalidadEl.classList.remove("md-badge-good");
-    badgeCalidadEl.classList.add("md-badge-bad");
-    badgeCalidadEl.textContent = "🔴 No aprobado";
+  if (scoreCircleEl && badgeCalidadEl) {
+    if (nota >= 85) {
+      scoreCircleEl.classList.remove("bad");
+      badgeCalidadEl.classList.remove("md-badge-bad");
+      badgeCalidadEl.classList.add("md-badge-good");
+      badgeCalidadEl.textContent = "🟢 Aprobado";
+    } else {
+      scoreCircleEl.classList.add("bad");
+      badgeCalidadEl.classList.remove("md-badge-good");
+      badgeCalidadEl.classList.add("md-badge-bad");
+      badgeCalidadEl.textContent = "🔴 No aprobado";
+    }
   }
 
-  // detalles por grupo
   const totalPENCUF = items
     .filter((i) => i.tipo === "PENCUF")
     .reduce((s, i) => s + (i.perc || 0), 0);
+
   const dedPENCUF = 25 * (totalPENCUF / 100);
 
   const hasPECNEG = items.some((i) => i.tipo === "PECNEG");
@@ -435,41 +480,36 @@ function recalcularNotaPreview() {
   const hasPECCUMP = items.some((i) => i.tipo === "PECCUMP");
   const hasEI = items.some((i) => i.tipo === "ERROR_INEXCUSABLE");
 
-  infoPENCUFEl.textContent = totalPENCUF
-    ? `-${dedPENCUF.toFixed(1)} pts (suma ${totalPENCUF}%)`
-    : "Sin descuentos";
-  infoPECNEGEl.textContent = hasPECNEG ? "-30 pts" : "Sin descuentos";
-  infoPECUFEl.textContent = hasPECUF ? "-35 pts" : "Sin descuentos";
-  infoPECCUMPEl.textContent = hasPECCUMP ? "-10 pts" : "Sin descuentos";
-  infoEIEl.textContent = hasEI ? "Aplica ⇒ nota 0" : "No aplicado";
+  if (infoPENCUFEl) infoPENCUFEl.textContent = totalPENCUF ? `-${dedPENCUF.toFixed(1)} pts (suma ${totalPENCUF}%)` : "Sin descuentos";
+  if (infoPECNEGEl) infoPECNEGEl.textContent = hasPECNEG ? "-30 pts" : "Sin descuentos";
+  if (infoPECUFEl) infoPECUFEl.textContent = hasPECUF ? "-35 pts" : "Sin descuentos";
+  if (infoPECCUMPEl) infoPECCUMPEl.textContent = hasPECCUMP ? "-10 pts" : "Sin descuentos";
+  if (infoEIEl) infoEIEl.textContent = hasEI ? "Aplica ⇒ nota 0" : "No aplicado";
 }
 
 /* ---------------- SUBMIT ---------------- */
 async function manejarSubmit() {
-  msgEl.style.color = "#15803d";
-  msgEl.textContent = "⏳ Subiendo monitoreo...";
+  setMsg("⏳ Subiendo monitoreo...", true);
 
   try {
-    if (!registradoPorSel.value) {
-      msgEl.style.color = "#b91c1c";
-      msgEl.textContent = "Debes seleccionar quién registra el monitoreo.";
+    if (!registradoPorSel?.value) {
+      setMsg("Debes seleccionar quién registra el monitoreo.", false);
       return;
     }
-    if (!asesorSel.value) {
-      msgEl.style.color = "#b91c1c";
-      msgEl.textContent = "Debes seleccionar al asesor monitoreado.";
+
+    if (!asesorSel?.value) {
+      setMsg("Debes seleccionar al asesor monitoreado.", false);
       return;
     }
 
     const opt = asesorSel.options[asesorSel.selectedIndex];
     const asesorNombre = asesorSel.value;
-    const asesorUid = opt.dataset.uid || "";
-    const gc = opt.dataset.gc || "SIN GC";
+    const asesorUid = opt?.dataset?.uid || "";
+    const gc = (opt?.dataset?.gc || "").trim() || "SIN GC";
+    const cargoFixed = (opt?.dataset?.cargo || "").trim() || (cargoSel?.value || "SIN CARGO");
 
     if (!asesorUid) {
-      msgEl.style.color = "#b91c1c";
-      msgEl.textContent =
-        "El asesor seleccionado no tiene UID configurado. Revisa la colección 'asesores'.";
+      setMsg("El asesor seleccionado no tiene UID configurado. Revisa la colección 'asesores'.", false);
       return;
     }
 
@@ -477,7 +517,7 @@ async function manejarSubmit() {
     const nota = calcularNota(items);
 
     // subir evidencias
-    const files = imgsInput.files || [];
+    const files = imgsInput?.files || [];
     const imageURLs = [];
 
     for (const f of files) {
@@ -494,57 +534,58 @@ async function manejarSubmit() {
     }
 
     const data = {
-      idLlamada: idLlamadaInput.value.trim(),
-      idContacto: idContactoInput.value.trim(),
-      tipo: tipoDetectadoInput.value.trim(),
+      idLlamada: (idLlamadaInput?.value || "").trim(),
+      idContacto: (idContactoInput?.value || "").trim(),
+      tipo: (tipoDetectadoInput?.value || "").trim(),
+
       asesor: asesorNombre,
-      asesorId: asesorUid, // ✅ UID REAL
-      gc,
-      cargo: cargoSel.value,
+      asesorId: asesorUid, // UID REAL
+      gc,                  // FIJO desde asesores
+      cargo: cargoFixed,   // ✅ FIJO desde asesores
+
       cliente: {
-        dni: cliDniInput.value.trim(),
-        nombre: cliNombreInput.value.trim(),
-        tel: cliTelInput.value.trim(),
+        dni: (cliDniInput?.value || "").trim(),
+        nombre: (cliNombreInput?.value || "").trim(),
+        tel: (cliTelInput?.value || "").trim(),
       },
-      tipificacion: cliTipifInput.value.trim(),
-      observacionCliente: cliObsInput.value.trim(),
-      resumen: resumenInput.value.trim(),
+
+      tipificacion: (cliTipifInput?.value || "").trim(),
+      observacionCliente: (cliObsInput?.value || "").trim(),
+      resumen: (resumenInput?.value || "").trim(),
+
       items,
       nota,
       imagenes: imageURLs,
       fecha: new Date().toISOString(),
-      registradoPor: registradoPorSel.value,
+
+      registradoPor: registradoPorSel.value, // ✅ desde colección registradores
       estado: "PENDIENTE",
     };
 
     await addDoc(collection(db, "registros"), data);
 
-    msgEl.style.color = "#15803d";
-    msgEl.textContent = `✔ Guardado correctamente · Nota final: ${nota}`;
+    setMsg(`✔ Guardado correctamente · Nota final: ${nota}`, true);
 
     // limpiar
-    itemsContainer.innerHTML = "";
-    imgsInput.value = "";
-    imgPreviewContainer.innerHTML = "";
+    if (itemsContainer) itemsContainer.innerHTML = "";
+    if (imgsInput) imgsInput.value = "";
+    if (imgPreviewContainer) imgPreviewContainer.innerHTML = "";
     recalcularNotaPreview();
+
   } catch (err) {
     console.error(err);
-    msgEl.style.color = "#b91c1c";
-    msgEl.textContent = "❌ Error al guardar: " + err.message;
+    setMsg("❌ Error al guardar: " + (err?.message || err), false);
   }
 }
 
 /* ---------------- EVENTOS ---------------- */
 function inicializarEventos() {
-  if (idLlamadaInput) {
-    idLlamadaInput.addEventListener("input", actualizarTipoDetectado);
-  }
-  if (idContactoInput) {
-    idContactoInput.addEventListener("input", actualizarTipoDetectado);
-  }
+  if (idLlamadaInput) idLlamadaInput.addEventListener("input", actualizarTipoDetectado);
+  if (idContactoInput) idContactoInput.addEventListener("input", actualizarTipoDetectado);
 
   if (btnAddItem) {
     btnAddItem.addEventListener("click", () => {
+      if (!itemsContainer) return;
       itemsContainer.appendChild(crearItemBlock());
       recalcularNotaPreview();
     });
@@ -552,16 +593,15 @@ function inicializarEventos() {
 
   if (btnClearItems) {
     btnClearItems.addEventListener("click", () => {
+      if (!itemsContainer) return;
       itemsContainer.innerHTML = "";
       recalcularNotaPreview();
     });
   }
 
-  if (imgsInput) {
-    imgsInput.addEventListener("change", manejarPreviewImagenes);
-  }
+  if (imgsInput) imgsInput.addEventListener("change", manejarPreviewImagenes);
+  if (btnSubmit) btnSubmit.addEventListener("click", manejarSubmit);
 
-  if (btnSubmit) {
-    btnSubmit.addEventListener("click", manejarSubmit);
-  }
+  // por si ya hay texto al cargar
+  actualizarTipoDetectado();
 }

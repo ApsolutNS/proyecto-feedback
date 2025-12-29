@@ -3,10 +3,10 @@
 // Firebase v9 modular
 // ----------------------------------------------
 //
-// ✅ Crea usuarios con Auth secundario (no cambia sesión admin)
-// ✅ CRUD Registradores (colección "registradores")
-// ✅ Listado/edición/eliminación de Usuarios (colección "usuarios")
-// ✅ Modal confirmación pequeño “¿Estás seguro?” usando #confirmModal del HTML
+// Crea usuarios con Auth secundario (no cambia sesión admin)
+// CRUD Registradores (colección "registradores")
+// Listado/edición/eliminación de Usuarios (colección "usuarios")
+// Modal confirmación pequeño “¿Estás seguro?” usando #confirmModal del HTML
 //
 // NOTA: El botón "Eliminar usuario" solo borra el doc de Firestore /usuarios/{uid}
 //       NO elimina el usuario de Authentication (eso requiere Admin SDK / Cloud Function)
@@ -58,6 +58,25 @@ const CARGOS_REGISTRADORES = [
   "Líder de Operaciones",
   "Supervisor",
 ];
+
+async function existeLiderCalidadActivo(excludeId = null) {
+  const snap = await getDocs(
+    query(
+      collection(db, "registradores"),
+      orderBy("cargo", "asc")
+    )
+  );
+
+  return snap.docs.some(d => {
+    const data = d.data();
+    if (excludeId && d.id === excludeId) return false;
+    return (
+      data.activo !== false &&
+      data.cargo === "Líder de Calidad y Formación"
+    );
+  });
+}
+
 
 // ----------------------------
 // HELPERS DOM / UI
@@ -232,6 +251,7 @@ initSecondaryAuth();
 let usersCache = [];        // array de usuarios (/usuarios)
 let registradoresCache = []; // array de registradores (/registradores)
 
+
 // ----------------------------
 // INIT UI
 // ----------------------------
@@ -393,6 +413,16 @@ $("btnCrearRegistrador")?.addEventListener("click", async () => {
     });
     if (!ok) return setRegMsg("Acción cancelada.", "");
 
+    if (cargo === "Líder de Calidad y Formación") {
+      const existe = await existeLiderCalidadActivo();
+      if (existe) {
+        return setRegMsg(
+          "Ya existe un Líder de Calidad y Formación activo. Desactívalo antes de crear otro.",
+          "error"
+        );
+      }
+    }
+    
     const docRef = await addDoc(collection(db, "registradores"), {
       registradoPorNombre: nombre,
       cargo,
@@ -581,6 +611,16 @@ async function loadRegistradores() {
           danger: false,
         });
         if (!ok) return;
+        
+        if (cargo === "Líder de Calidad y Formación" && activo) {
+          const existe = await existeLiderCalidadActivo(id);
+          if (existe) {
+            return setRegMsg(
+              "Ya existe otro Líder de Calidad y Formación activo.",
+              "error"
+            );
+          }
+        }
 
         try {
           await updateDoc(doc(db, "registradores", id), {

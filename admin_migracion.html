@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Migración Refuerzos</title>
+</head>
+<body>
+  <h2>Migración Refuerzos (solo una vez)</h2>
+  <button id="btnMigrar">🚀 Ejecutar migración</button>
+
+  <script type="module">
+    import { db } from "./js/firebase.js";
+    import {
+      collection,
+      getDocs,
+      updateDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    async function migrarRefuerzos() {
+      console.log("🔄 Iniciando migración...");
+
+      const snap = await getDocs(collection(db, "refuerzos_calidad"));
+      let actualizados = 0;
+
+      for (const d of snap.docs) {
+        const r = d.data();
+
+        // Si ya tiene responsableFirmaUrl, NO tocar
+        if (r.responsableFirmaUrl) continue;
+
+        // Migrar responsable antiguo
+        const updates = {
+          responsableNombre: r.responsableNombre || "",
+          responsableCargo: r.responsableCargo || "",
+          responsableFirmaUrl: r.firmaResponsable || "",
+        };
+
+        await updateDoc(doc(db, "refuerzos_calidad", d.id), updates);
+        actualizados++;
+        console.log("✔ Migrado:", d.id);
+      }
+
+      alert(`Migración completa. Refuerzos actualizados: ${actualizados}`);
+      console.log("✅ Migración finalizada");
+    }
+
+    document
+      .getElementById("btnMigrar")
+      .addEventListener("click", migrarRefuerzos);
+  </script>
+</body>
+</html>

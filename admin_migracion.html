@@ -2,74 +2,18 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Validación final refuerzos</title>
+  <title>Migración de refuerzos antiguos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
 <body>
-  <h2>Validación FINAL de Refuerzos</h2>
-  <button id="run">Ejecutar validación definitiva</button>
-  <pre id="log"></pre>
 
-  <script type="module">
-    import { db } from "./js/firebase.js";
-    import {
-      collection,
-      getDocs,
-      updateDoc,
-      doc
-    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+<h2>Migración de refuerzos antiguos</h2>
+<p>Ejecutar solo una vez como ADMIN</p>
 
-    const log = msg =>
-      document.getElementById("log").textContent += msg + "\n";
+<button id="btnMigrar">Ejecutar migración</button>
 
-    document.getElementById("run").onclick = async () => {
-      log("🔍 Buscando Líder de Calidad activo...");
+<div id="log" style="margin-top:15px;font-family:monospace;"></div>
 
-      const regSnap = await getDocs(collection(db, "registradores"));
-      const lider = regSnap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .find(r =>
-          r.activo === true &&
-          r.cargo === "Líder de Calidad y Formación" &&
-          r.firmaUrl
-        );
-
-      if (!lider) {
-        log("❌ ERROR: No hay Líder de Calidad activo con firma");
-        return;
-      }
-
-      log("✅ Líder encontrado: " + lider.registradoPorNombre);
-
-      const refSnap = await getDocs(collection(db, "refuerzos_calidad"));
-      let corregidos = 0;
-
-      for (const d of refSnap.docs) {
-        const ref = d.data();
-
-        const needsFix =
-          !ref.responsableFirmaUrl ||
-          !ref.responsableNombre ||
-          !ref.responsableCargo ||
-          !ref.responsableId;
-
-        if (!needsFix) continue;
-
-        await updateDoc(doc(db, "refuerzos_calidad", d.id), {
-          responsable: `${lider.registradoPorNombre} - ${lider.cargo}`,
-          responsableId: lider.id,
-          responsableNombre: lider.registradoPorNombre,
-          responsableCargo: lider.cargo,
-          responsableFirmaUrl: lider.firmaUrl
-        });
-
-        corregidos++;
-        log("🛠️ Corregido: " + d.id);
-      }
-
-      log("✅ VALIDACIÓN COMPLETA");
-      log("Total corregidos: " + corregidos);
-      log("👉 Firestore está ahora 100% consistente");
-    };
-  </script>
+<script type="module" src="js/admin_migracion.js"></script>
 </body>
 </html>

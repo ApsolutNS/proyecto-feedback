@@ -1,6 +1,18 @@
 // js/visualizacion_feedback.js
 "use strict";
 
+function assertPdfLibs() {
+  if (typeof window.html2canvas !== "function") {
+    alert("html2canvas no está cargado. Revisa el CDN.");
+    return false;
+  }
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert("jsPDF no está cargado. Revisa el CDN.");
+    return false;
+  }
+  return true;
+}
+
 /* =====================================================================
    VISUALIZACIÓN FEEDBACK — M3
    - No usa colección "asesores"
@@ -633,28 +645,20 @@ function verDetalleEnModal(id) {
 async function generarPdfDesdeDetalleModal() {
   ensureModalsExist();
 
+  if (!assertPdfLibs()) return;
+
   const area = document.getElementById("pdfExportArea");
   if (!area) {
     alert("No se encontró el contenido para exportar.");
     return;
   }
 
-  // Verifica librerías globales
-  if (typeof window.html2canvas !== "function") {
-    console.error("html2canvas no está disponible.");
-    alert("No se pudo generar el PDF. html2canvas no está cargado.");
-    return;
-  }
-
-  const { jsPDF } = window.jspdf || {};
-  if (!jsPDF) {
-    console.error("jsPDF no está disponible.");
-    alert("No se pudo generar el PDF. jsPDF no está cargado.");
-    return;
-  }
-
   try {
-    // Espera a que carguen imágenes antes de capturar (reduce PDF en blanco)
+    // 🔥 esperar 2 frames reales (DOM + render)
+    await new Promise((r) => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
+
+    // esperar imágenes
     await waitImages(area);
 
     const canvas = await window.html2canvas(area, {
@@ -665,32 +669,32 @@ async function generarPdfDesdeDetalleModal() {
     });
 
     const imgData = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf;
 
     const pdf = new jsPDF("p", "mm", "a4");
     const pageWidth = pdf.internal.pageSize.getWidth() - 20;
-
-    // Mantener proporción
     const pageHeight = (canvas.height * pageWidth) / canvas.width;
 
-    // Si se pasa de una página A4, igual lo ponemos (simple). (Puedes paginar si luego quieres)
     pdf.addImage(imgData, "PNG", 10, 10, pageWidth, pageHeight);
 
-    const fileName = currentFeedbackId ? `feedback_${currentFeedbackId}.pdf` : "feedback.pdf";
+    const fileName = currentFeedbackId
+      ? `feedback_${currentFeedbackId}.pdf`
+      : "feedback.pdf";
 
-    // Blob + objectURL
     const pdfBlob = pdf.output("blob");
     const pdfUrl = URL.createObjectURL(pdfBlob);
 
-    // Guardar para revocar luego
     _pdfObjectUrl = pdfUrl;
 
-    // Mostrar modal PDF
+    // 🔥 mostrar SIEMPRE el modal PDF
     openPdfModal(pdfUrl, fileName);
+
   } catch (err) {
     console.error("Error generando PDF:", err);
-    alert("No se pudo generar el PDF. Revisa consola.");
+    alert("No se pudo generar el PDF. Revisa la consola.");
   }
 }
+
 
 /* -------------------- Esperar carga de imágenes -------------------- */
 function waitImages(container) {

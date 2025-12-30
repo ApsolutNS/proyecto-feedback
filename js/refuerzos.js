@@ -241,6 +241,12 @@ async function cargarRefuerzos() {
         responsableCargo: data.responsableCargo || ""
       };
     });
+    
+    refuerzosCache.sort((a, b) => {
+      const fa = a.fechaRefuerzo ? new Date(a.fechaRefuerzo).getTime() : 0;
+      const fb = b.fechaRefuerzo ? new Date(b.fechaRefuerzo).getTime() : 0;
+      return fb - fa; // 🔥 más reciente primero
+    });
 
     renderTabla();
   } catch (e) {
@@ -620,7 +626,10 @@ function renderPdfContent(ref) {
           <div class="pdf-sign-resp-title">Responsable de Calidad</div>
           <div class="pdf-sign-img">
            ${ref.responsableFirmaUrl
-            ? `<img src="${ref.responsableFirmaUrl}" />`
+            ? `<img src="${ref.responsableFirmaUrl}"
+              crossOrigin="anonymous"
+              referrerpolicy="no-referrer"
+            />
             : `<div class="pdf-sign-img-empty">Firma no registrada</div>`
           }
           </div>
@@ -676,10 +685,15 @@ async function descargarPdfActual() {
 
     const imgs = element.querySelectorAll("img");
     await Promise.all(
-      Array.from(imgs).map(img => new Promise(resolve => {
-        if (img.complete) resolve();
-        else img.onload = img.onerror = resolve;
-      }))
+      Array.from(imgs).map(img =>
+        new Promise(resolve => {
+          if (img.complete && img.naturalHeight !== 0) {
+            resolve();
+          } else {
+            img.onload = img.onerror = resolve;
+          }
+        })
+      )
     );
 
     const opt = {

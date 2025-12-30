@@ -226,8 +226,8 @@ function cargarAsesoresFiltro() {
   asesores.sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
 
   const options =
-    `<option value="${ALL_VALUE}">— Todos —</option>` +
     `<option value="">— Selecciona un asesor —</option>` +
+    `<option value="${ALL_VALUE}">— Todos —</option>` +
     asesores
       .map((a) => `<option value="${escapeHTML(a)}">${escapeHTML(a)}</option>`)
       .join("");

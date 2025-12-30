@@ -231,10 +231,15 @@ async function cargarRefuerzos() {
     const snap = await getDocs(colRefuerzos);
     refuerzosCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    refuerzosCache.sort((a, b) => {
-      const fa = a.fechaRefuerzo ? new Date(a.fechaRefuerzo) : 0;
-      const fb = b.fechaRefuerzo ? new Date(b.fechaRefuerzo) : 0;
-      return fb - fa;
+    refuerzosCache = snap.docs.map(d => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ...data,
+        responsableFirmaUrl: data.responsableFirmaUrl || "",
+        responsableNombre: data.responsableNombre || "",
+        responsableCargo: data.responsableCargo || ""
+      };
     });
 
     renderTabla();
@@ -614,7 +619,10 @@ function renderPdfContent(ref) {
         <div class="pdf-sign-resp">
           <div class="pdf-sign-resp-title">Responsable de Calidad</div>
           <div class="pdf-sign-img">
-            <img src="${ref.responsableFirmaUrl || ""}" />
+           ${ref.responsableFirmaUrl
+            ? `<img src="${ref.responsableFirmaUrl}" />`
+            : `<div class="pdf-sign-img-empty">Firma no registrada</div>`
+          }
           </div>
           <div class="pdf-sign-resp-line"></div>
           <div><strong>${ref.responsableNombre || ""}</strong></div>

@@ -5,49 +5,16 @@
   <title>Migración Refuerzos</title>
 </head>
 <body>
-  <h2>Migración Refuerzos (solo una vez)</h2>
-  <button id="btnMigrar">🚀 Ejecutar migración</button>
+  <h2>Migración de refuerzos antiguos</h2>
+  <p>Ejecutar solo una vez como ADMIN</p>
 
-  <script type="module">
-    import { db } from "./js/firebase.js";
-    import {
-      collection,
-      getDocs,
-      updateDoc,
-      doc
-    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+  <button id="btnMigrar">
+    Ejecutar migración
+  </button>
 
-    async function migrarRefuerzos() {
-      console.log("🔄 Iniciando migración...");
+  <pre id="log"></pre>
 
-      const snap = await getDocs(collection(db, "refuerzos_calidad"));
-      let actualizados = 0;
-
-      for (const d of snap.docs) {
-        const r = d.data();
-
-        // Si ya tiene responsableFirmaUrl, NO tocar
-        if (r.responsableFirmaUrl) continue;
-
-        // Migrar responsable antiguo
-        const updates = {
-          responsableNombre: r.responsableNombre || "",
-          responsableCargo: r.responsableCargo || "",
-          responsableFirmaUrl: r.firmaResponsable || "",
-        };
-
-        await updateDoc(doc(db, "refuerzos_calidad", d.id), updates);
-        actualizados++;
-        console.log("✔ Migrado:", d.id);
-      }
-
-      alert(`Migración completa. Refuerzos actualizados: ${actualizados}`);
-      console.log("✅ Migración finalizada");
-    }
-
-    document
-      .getElementById("btnMigrar")
-      .addEventListener("click", migrarRefuerzos);
-  </script>
+  <!-- ✅ SOLO SCRIPT EXTERNO -->
+  <script type="module" src="js/migracion_refuerzos.js"></script>
 </body>
 </html>

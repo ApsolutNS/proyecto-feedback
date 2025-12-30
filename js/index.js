@@ -83,8 +83,6 @@ onAuthStateChanged(auth, async (user) => {
     console.warn("Error leyendo rol:", e);
   }
 
-  // ✅ ahora sí
-  ensureAdminButton();
 });
 
 /* ------------------------------

@@ -66,6 +66,18 @@ function initQuill() {
   });
 }
 
+function cargarImagenSegura(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.referrerPolicy = "no-referrer";
+    img.onload = () => resolve(img.src);
+    img.onerror = () => resolve("");
+    img.src = url;
+  });
+}
+
+
 function getDetalleFromEditor() {
   if (quillDetalle) {
     const html = quillDetalle.root.innerHTML || "";
@@ -619,32 +631,39 @@ function renderPdfContent(ref) {
       <div class="pdf-detail-box">${ref.detalle || "—"}</div>
     </div>
 
-    <div class="pdf-section-title">Firmas</div>
-    <div class="pdf-section-body">
-      <div class="pdf-signatures">
-        <div class="pdf-sign-resp">
-          <div class="pdf-sign-resp-title">Responsable de Calidad</div>
-          <div class="pdf-sign-img">
-            ${
-              ref.responsableFirmaUrl && ref.responsableFirmaUrl.startsWith("https")
-                ? `<img 
-                      src="${ref.responsableFirmaUrl}" 
-                      crossorigin="anonymous"
-                      referrerpolicy="no-referrer"
-                  />`
-                : `<div class="pdf-sign-img-empty">Firma no registrada</div>`
-            }
-          </div>
+   <div class="pdf-section-title">Firmas</div>
+<div class="pdf-section-body">
+  <div class="pdf-signatures">
 
-          <div class="pdf-sign-resp-line"></div>
-          <div><strong>${ref.responsableNombre || ""}</strong></div>
-          <div class="pdf-sign-resp-role">${ref.responsableCargo || ""}</div>
-        </div>
-        <div class="pdf-sign-grid">
-          ${construirTarjetasFirmas(ref)}
-        </div>
+    <!-- RESPONSABLE -->
+    <div class="pdf-sign-resp">
+      <div class="pdf-sign-resp-title">Responsable de Calidad</div>
+
+      <div class="pdf-sign-img">
+        ${
+          ref.responsableFirmaUrl
+            ? `<img
+                src="${ref.responsableFirmaUrl}"
+                crossorigin="anonymous"
+                referrerpolicy="no-referrer"
+                style="max-width:100%; max-height:120px; object-fit:contain;"
+              />`
+            : `<div class="pdf-sign-img-empty">Firma no registrada</div>`
+        }
       </div>
+
+      <div class="pdf-sign-resp-line"></div>
+      <div><strong>${ref.responsableNombre || ""}</strong></div>
+      <div class="pdf-sign-resp-role">${ref.responsableCargo || ""}</div>
     </div>
+
+    <!-- ASESORES -->
+    <div class="pdf-sign-grid">
+      ${construirTarjetasFirmas(ref)}
+    </div>
+
+  </div>
+</div>
   `;
 }
 

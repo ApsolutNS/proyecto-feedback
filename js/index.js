@@ -150,24 +150,20 @@ function ensureAdminButton() {
   const headerRight = document.querySelector(".header-right");
   if (!headerRight) return;
 
-  // no duplicar
-  let btn = document.getElementById("btnAdmin");
-  if (btn) return;
+  // evitar duplicado
+  if (document.getElementById("btnAdmin")) return;
 
-  // solo admin
   if (!currentUserIsAdmin) return;
 
-  btn = document.createElement("button");
+  const btn = document.createElement("button");
   btn.id = "btnAdmin";
   btn.className = "btn btn-secondary";
   btn.type = "button";
   btn.textContent = "⚙️ Admin";
 
-  // ✅ RUTA ABSOLUTA (clave en Vercel cuando estás en subcarpetas)
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    window.location.assign("/admin.html");
+  // ✅ NAVEGACIÓN DIRECTA (NO dataset, NO delegado)
+  btn.addEventListener("click", () => {
+    window.location.href = "/admin.html";
   });
 
   const logoutBtn = document.getElementById("btnLogout");

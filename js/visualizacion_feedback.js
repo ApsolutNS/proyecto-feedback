@@ -357,79 +357,59 @@ function verDetalle(id) {
 
 /* -------------------- PDF -------------------- */
 function initPdfExport() {
-  const pdfBtn = $("pdfBtn");
-  if (!pdfBtn) return;
+  const pdfBtn = document.getElementById("pdfBtn");
+const pdfModal = document.getElementById("pdfModal");
+const pdfIframe = document.getElementById("pdfIframe");
+const pdfModalClose = document.getElementById("pdfModalClose");
 
+if (pdfModalClose) {
+  pdfModalClose.addEventListener("click", () => {
+    pdfModal.style.display = "none";
+    pdfIframe.src = "";
+  });
+}
+
+if (pdfBtn) {
   pdfBtn.addEventListener("click", async () => {
-    const detailBox = $("detailBox");
+    const detailBox = document.getElementById("detailBox");
     if (!detailBox) return;
 
-    // Verifica librerías
-    if (typeof window.html2canvas !== "function") {
-      console.error("html2canvas no está disponible.");
-      alert("No se pudo generar el PDF. html2canvas no está cargado.");
-      return;
-    }
-    const jsPDF = window?.jspdf?.jsPDF;
-    if (typeof jsPDF !== "function") {
-      console.error("jsPDF no está disponible.");
-      alert("No se pudo generar el PDF. jsPDF no está cargado.");
-      return;
-    }
-
     try {
-      // Espera a que carguen imágenes dentro del detalle (firma/evidencias/logo)
-      const imgs = detailBox.querySelectorAll("img");
-      await Promise.all(
-        Array.from(imgs).map(
-          (img) =>
-            new Promise((resolve) => {
-              if (img.complete && img.naturalHeight !== 0) return resolve();
-              img.onload = img.onerror = () => resolve();
-            })
-        )
-      );
-
-      const canvas = await window.html2canvas(detailBox, {
+      const canvas = await html2canvas(detailBox, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
-        logging: false,
       });
 
       const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
 
-      const margin = 10;
-      const pageWidth = pdf.internal.pageSize.getWidth() - margin * 2;
-      const pageHeight = pdf.internal.pageSize.getHeight() - margin * 2;
-
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // Si el contenido es más alto que una página, lo partimos (simple)
-      let y = margin;
-      let remainingHeight = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, "PNG", margin, y, imgWidth, imgHeight);
-
-      // Paginación básica si excede
-      while (remainingHeight > pageHeight) {
-        remainingHeight -= pageHeight;
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", margin, margin + position, imgWidth, imgHeight);
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF) {
+        alert("jsPDF no está disponible");
+        return;
       }
 
-      const filename = currentFeedbackId ? `feedback_${currentFeedbackId}.pdf` : "feedback.pdf";
-      pdf.save(filename);
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth() - 20;
+      const pageHeight = (canvas.height * pageWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 10, 10, pageWidth, pageHeight);
+
+      // 👉 CONVERTIMOS A BLOB
+      const pdfBlob = pdf.output("blob");
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+
+      // 👉 MOSTRAMOS EN POPUP
+      pdfIframe.src = pdfUrl;
+      pdfModal.style.display = "block";
+
     } catch (err) {
-      console.error("Error exportando PDF:", err);
-      alert("Ocurrió un error al exportar el PDF. Revisa la consola.");
+      console.error("Error generando PDF:", err);
+      alert("No se pudo generar el PDF");
     }
   });
 }
+
 
 /* -------------------- APP INIT -------------------- */
 async function initApp() {

@@ -6,12 +6,13 @@ function assertPdfLibs() {
     alert("html2canvas no está cargado. Revisa el CDN.");
     return false;
   }
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    alert("jsPDF no está cargado. Revisa el CDN.");
+  if (!window.jspdf || typeof window.jspdf.jsPDF !== "function") {
+    alert("jsPDF no está cargado correctamente (CSP / CDN).");
     return false;
   }
   return true;
 }
+
 
 /* =====================================================================
    VISUALIZACIÓN FEEDBACK — M3

@@ -59,8 +59,17 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   currentUserIsAdmin = false;
 
-   const el = document.getElementById("userRoleName");
-   if (el) el.textContent = user.email || "Usuario";
+   const elUser =
+     document.getElementById("userRoleName") ||
+     document.getElementById("userEmail") ||
+     document.getElementById("userName");
+
+   if (elUser) {
+     elUser.textContent = user?.email || user?.displayName || "Usuario";
+   } else {
+     console.warn("No existe el elemento para mostrar usuario (id userRoleName/userEmail/userName).");
+   }
+
 
   try {
     const snap = await getDoc(doc(db, "usuarios", user.uid));
@@ -140,16 +149,26 @@ function getWeeksOfMonth(year, monthIndex) {
 function ensureAdminButton() {
   const headerRight = document.querySelector(".header-right");
   if (!headerRight) return;
-  if (document.getElementById("btnAdmin")) return;
+
+  // no duplicar
+  let btn = document.getElementById("btnAdmin");
+  if (btn) return;
+
+  // solo admin
   if (!currentUserIsAdmin) return;
 
-  const btn = document.createElement("button");
+  btn = document.createElement("button");
   btn.id = "btnAdmin";
   btn.className = "btn btn-secondary";
+  btn.type = "button";
   btn.textContent = "⚙️ Admin";
 
-  // 🔥 ESTA ES LA CLAVE
-  btn.dataset.nav = "admin.html";
+  // ✅ RUTA ABSOLUTA (clave en Vercel cuando estás en subcarpetas)
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.assign("/admin.html");
+  });
 
   const logoutBtn = document.getElementById("btnLogout");
   if (logoutBtn && logoutBtn.parentElement === headerRight) {
@@ -158,7 +177,6 @@ function ensureAdminButton() {
     headerRight.appendChild(btn);
   }
 }
-
 
 /* ------------------------------
    FIREBASE LOAD

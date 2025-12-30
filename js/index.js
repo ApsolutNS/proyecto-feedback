@@ -135,33 +135,50 @@ function getWeeksOfMonth(year, monthIndex) {
    BOTÓN ADMIN (sin tocar HTML)
 ------------------------------ */
 function ensureAdminButton() {
-  if (!currentUserIsAdmin) return;
-
-  const headerRight = document.querySelector(".header-right");
-  if (!headerRight) {
-    // Reintenta cuando el DOM esté listo
-    requestAnimationFrame(ensureAdminButton);
-    return;
-  }
-
+  // evitar duplicados
   if (document.getElementById("btnAdmin")) return;
 
-  const btn = document.createElement("button");
-  btn.id = "btnAdmin";
-  btn.className = "btn btn-secondary";
-  btn.textContent = "⚙️ Admin";
-  btn.type = "button";
+  if (!currentUserIsAdmin) return;
 
-  btn.addEventListener("click", () => {
-    window.location.href = "admin.html";
+  const tryInsert = () => {
+    const headerRight = document.querySelector(".header-right");
+    if (!headerRight) return false;
+
+    if (document.getElementById("btnAdmin")) return true;
+
+    const btn = document.createElement("button");
+    btn.id = "btnAdmin";
+    btn.className = "btn btn-secondary";
+    btn.textContent = "⚙️ Admin";
+    btn.type = "button";
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.location.href = "admin.html";
+    });
+
+    const logoutBtn = document.getElementById("btnLogout");
+    if (logoutBtn && logoutBtn.parentElement === headerRight) {
+      headerRight.insertBefore(btn, logoutBtn);
+    } else {
+      headerRight.appendChild(btn);
+    }
+
+    return true;
+  };
+
+  // intento inmediato
+  if (tryInsert()) return;
+
+  // observar DOM si aún no existe
+  const observer = new MutationObserver(() => {
+    if (tryInsert()) observer.disconnect();
   });
 
-  const logoutBtn = document.getElementById("btnLogout");
-  if (logoutBtn && logoutBtn.parentElement === headerRight) {
-    headerRight.insertBefore(btn, logoutBtn);
-  } else {
-    headerRight.appendChild(btn);
-  }
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
 }
 
 /* ------------------------------

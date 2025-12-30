@@ -285,3 +285,130 @@ body {
     align-items: flex-start;
   }
 }
+/* ============================
+   MODAL FEEDBACK (FORZAR LIGHT)
+   ============================ */
+
+/* Overlay */
+.m3-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Card del modal */
+.m3-modal-card {
+  width: 100%;
+  max-width: 980px;
+  background: #ffffff;
+  color: #111827; /* 🔑 TEXTO NEGRO */
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+/* Header del modal */
+.m3-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+}
+
+/* Título */
+.m3-modal-header > div:first-child {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Subtítulo */
+#feedbackModalSub {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+/* Body */
+.m3-modal-body {
+  padding: 18px;
+  color: #111827;
+  background: #ffffff;
+}
+
+/* Forzar texto oscuro dentro del contenido */
+.m3-modal-body *,
+.m3-modal-body p,
+.m3-modal-body div,
+.m3-modal-body span,
+.m3-modal-body strong,
+.m3-modal-body em {
+  color: #111827;
+}
+
+/* Cajas internas */
+.m3-modal-body .box {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+}
+
+/* Secciones */
+.m3-modal-body .section-title {
+  margin-top: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Firma */
+.m3-modal-body .firma-box {
+  background: #ffffff;
+  border: 1px dashed #9ca3af;
+  color: #111827;
+}
+
+/* Evidencias */
+.m3-modal-body img {
+  background: #ffffff;
+}
+
+/* Botones del modal */
+.m3-modal-header .m3-btn {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.m3-modal-header .m3-btn:hover {
+  background: #4f46e5;
+}
+
+/* Botón cerrar secundario */
+.m3-modal-header .m3-btn:not(.primary) {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.m3-modal-header .m3-btn:not(.primary):hover {
+  background: #d1d5db;
+}
+
+/* Animación */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

@@ -340,3 +340,23 @@ body {
   font-size: 18px;
   cursor: pointer;
 }
+/* ====== PDF IFRAME ====== */
+.pdf-modal iframe {
+  width: 100%;
+  height: 80vh;
+  border: none;
+  background: #fff;
+}
+body.modal-open {
+  overflow: hidden;
+}
+@media (max-width: 640px) {
+  .pdf-modal-content {
+    width: 95%;
+    margin: 2vh auto;
+  }
+
+  .pdf-modal iframe {
+    height: 75vh;
+  }
+}

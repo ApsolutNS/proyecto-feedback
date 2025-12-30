@@ -1,20 +1,75 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Migración Refuerzos</title>
+  <meta charset="UTF-8" />
+  <title>Validación final refuerzos</title>
 </head>
 <body>
-  <h2>Migración de refuerzos antiguos</h2>
-  <p>Ejecutar solo una vez como ADMIN</p>
-
-  <button id="btnMigrar">
-    Ejecutar migración
-  </button>
-
+  <h2>Validación FINAL de Refuerzos</h2>
+  <button id="run">Ejecutar validación definitiva</button>
   <pre id="log"></pre>
 
-  <!-- ✅ SOLO SCRIPT EXTERNO -->
-  <script type="module" src="js/migracion_refuerzos.js"></script>
+  <script type="module">
+    import { db } from "./js/firebase.js";
+    import {
+      collection,
+      getDocs,
+      updateDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const log = msg =>
+      document.getElementById("log").textContent += msg + "\n";
+
+    document.getElementById("run").onclick = async () => {
+      log("🔍 Buscando Líder de Calidad activo...");
+
+      const regSnap = await getDocs(collection(db, "registradores"));
+      const lider = regSnap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .find(r =>
+          r.activo === true &&
+          r.cargo === "Líder de Calidad y Formación" &&
+          r.firmaUrl
+        );
+
+      if (!lider) {
+        log("❌ ERROR: No hay Líder de Calidad activo con firma");
+        return;
+      }
+
+      log("✅ Líder encontrado: " + lider.registradoPorNombre);
+
+      const refSnap = await getDocs(collection(db, "refuerzos_calidad"));
+      let corregidos = 0;
+
+      for (const d of refSnap.docs) {
+        const ref = d.data();
+
+        const needsFix =
+          !ref.responsableFirmaUrl ||
+          !ref.responsableNombre ||
+          !ref.responsableCargo ||
+          !ref.responsableId;
+
+        if (!needsFix) continue;
+
+        await updateDoc(doc(db, "refuerzos_calidad", d.id), {
+          responsable: `${lider.registradoPorNombre} - ${lider.cargo}`,
+          responsableId: lider.id,
+          responsableNombre: lider.registradoPorNombre,
+          responsableCargo: lider.cargo,
+          responsableFirmaUrl: lider.firmaUrl
+        });
+
+        corregidos++;
+        log("🛠️ Corregido: " + d.id);
+      }
+
+      log("✅ VALIDACIÓN COMPLETA");
+      log("Total corregidos: " + corregidos);
+      log("👉 Firestore está ahora 100% consistente");
+    };
+  </script>
 </body>
 </html>

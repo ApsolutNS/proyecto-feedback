@@ -1,4 +1,6 @@
-/* ====== GLOBAL ====== */
+/* =====================================================
+   RESET + BASE
+===================================================== */
 *,
 *::before,
 *::after {
@@ -8,74 +10,69 @@
 body {
   margin: 0;
   padding: 24px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Arial, sans-serif;
-  background: #0f172a; /* dark */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Arial, sans-serif;
+  background: #0f172a;
   color: #e5e7eb;
 }
 
-/* ====== CARD PRINCIPAL (DARK M3) ====== */
+/* =====================================================
+   CONTENEDOR PRINCIPAL (M3 DARK)
+===================================================== */
 .main-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 24px 32px;
-  border-radius: 20px;
+  padding: 28px 28px 36px;
+  border-radius: 22px;
   background: radial-gradient(circle at top left, #1d283a, #020617);
   border: 1px solid #1f2937;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.7);
-}
-
-.m3-card {
-  /* helper, por si quieres reusar la clase */
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.75);
 }
 
 .m3-title {
   text-align: center;
   font-size: 24px;
-  margin: 0 0 20px;
+  margin-bottom: 20px;
+  font-weight: 700;
   color: #f9fafb;
 }
 
-.m3-section {
-  margin-bottom: 18px;
-}
-
+/* =====================================================
+   FORM / SELECTORES
+===================================================== */
 .m3-label {
-  display: block;
-  margin-top: 10px;
-  margin-bottom: 4px;
+  margin: 12px 0 4px;
   font-size: 13px;
   font-weight: 600;
-  color: #cbd5f5;
+  color: #c7d2fe;
 }
 
 .m3-select {
   width: 100%;
-  padding: 10px 12px;
+  padding: 10px 14px;
   border-radius: 999px;
   border: 1px solid #4b5563;
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(2, 6, 23, 0.9);
   color: #e5e7eb;
   font-size: 14px;
-  outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease,
-    background 0.15s ease;
 }
 
 .m3-select:focus {
+  outline: none;
   border-color: #6366f1;
-  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.7);
-  background: #020617;
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.6);
 }
 
-/* ====== TABLA ====== */
+/* =====================================================
+   TABLA
+===================================================== */
 .m3-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 12px;
   font-size: 13px;
-  margin-top: 10px;
-  overflow: hidden;
   border-radius: 14px;
+  overflow: hidden;
 }
 
 .m3-table thead {
@@ -84,13 +81,12 @@ body {
 
 .m3-table th,
 .m3-table td {
-  padding: 8px 10px;
-  text-align: left;
+  padding: 10px 12px;
 }
 
 .m3-table th {
-  font-weight: 600;
   font-size: 12px;
+  font-weight: 700;
   color: #e5e7eb;
   border-bottom: 1px solid #374151;
 }
@@ -104,155 +100,110 @@ body {
 }
 
 .m3-table tbody tr:hover {
-  background: rgba(55, 65, 81, 0.9);
+  background: rgba(55, 65, 81, 0.95);
 }
 
-/* ====== ESTADO CHIP ====== */
+/* =====================================================
+   ESTADOS
+===================================================== */
 .chip-estado {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .chip-estado.pending {
-  background: rgba(248, 250, 252, 0.06);
+  background: rgba(251, 191, 36, 0.15);
   color: #fbbf24;
   border: 1px solid rgba(251, 191, 36, 0.5);
 }
 
 .chip-estado.done {
-  background: rgba(22, 163, 74, 0.14);
+  background: rgba(34, 197, 94, 0.15);
   color: #4ade80;
-  border: 1px solid rgba(74, 222, 128, 0.7);
+  border: 1px solid rgba(74, 222, 128, 0.6);
 }
 
-/* ====== BOTONES ====== */
+/* =====================================================
+   BOTONES
+===================================================== */
 .m3-btn {
+  padding: 8px 16px;
   border-radius: 999px;
-  padding: 8px 14px;
-  border: none;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
+  border: none;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .m3-btn.primary {
   background: #6366f1;
-  color: #f9fafb;
+  color: #fff;
 }
 
 .m3-btn.primary:hover {
   background: #4f46e5;
 }
 
-.m3-btn.ghost {
-  background: transparent;
-  color: #e5e7eb;
-  border: 1px solid #4b5563;
-}
-
-/* ====== EMPTY STATE ====== */
-.m3-empty-state {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 13px;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px dashed #4b5563;
-  color: #9ca3af;
-}
-
-/* ====== BANNER DE ACCESO ====== */
-.m3-access-warning {
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 13px;
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(248, 113, 113, 0.7);
-  color: #fecaca;
-  margin-bottom: 12px;
-}
-
-/* ====== CARD DETALLE (LIGHT M3) ====== */
+/* =====================================================
+   CARD DETALLE (LIGHT)
+===================================================== */
 .m3-detail-card {
-  margin-top: 22px;
-  padding: 24px 24px 28px;
+  margin-top: 24px;
+  padding: 26px;
   border-radius: 18px;
-  background: #f9fafb;
+  background: #ffffff;
   color: #111827;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.35);
 }
 
 .detail-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 10px;
+  align-items: center;
 }
 
 .detail-title {
-  margin: 0;
   font-size: 20px;
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: 800;
 }
 
 .detail-subtitle {
-  margin: 4px 0 0;
   font-size: 13px;
   color: #4b5563;
 }
 
-.logo {
-  max-height: 50px;
-}
-
-/* sección títulos */
+/* =====================================================
+   SECCIONES DETALLE
+===================================================== */
 .section-title {
-  margin-top: 14px;
-  margin-bottom: 4px;
+  margin-top: 18px;
+  margin-bottom: 6px;
   font-size: 14px;
-  font-weight: 700;
-  color: #111827;
+  font-weight: 800;
 }
 
-/* caja de texto */
 .box {
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 12px;
+  border-radius: 12px;
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
-  font-size: 13px;
 }
 
-/* Ítems observados */
-.item-block {
-  border-left: 3px solid #2563eb;
-  padding-left: 8px;
-  margin-bottom: 6px;
-  font-size: 13px;
-}
-
-/* Firma */
+/* =====================================================
+   FIRMA
+===================================================== */
 .firma-box {
   width: 280px;
   height: 120px;
   border: 2px solid #111827;
-  border-radius: 6px;
+  border-radius: 8px;
+  background: #fff;
   display: flex;
-  justify-content: center;
   align-items: center;
-  margin-top: 6px;
-  background: #ffffff;
+  justify-content: center;
 }
 
 .firma-box img {
@@ -261,45 +212,203 @@ body {
   object-fit: contain;
 }
 
-/* Evidencias */
-.evidence-img {
-  width: 100%;
-  max-width: 640px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  margin-top: 6px;
+/* =====================================================
+   MODAL PDF
+===================================================== */
+.pdf-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
 }
 
-/* Nota */
-.nota-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 14px;
-  background: #e0f2fe;
-  color: #1d4ed8;
+.pdf-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
 }
 
-/* Acciones detalle */
-.detail-actions {
-  margin-top: 18px;
+.pdf-modal-content {
+  position: relative;
+  background: #fff;
+  width: 92%;
+  max-width: 900px;
+  height: 90vh;
+  margin: 4vh auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
 }
 
-/* Responsive pequeño */
+.pdf-modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+}
+
+.pdf-modal-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.pdf-modal-header button {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+#pdfIframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
 @media (max-width: 768px) {
+  body {
+    padding: 12px;
+  }
   .main-container {
-    padding: 16px;
+    padding: 18px;
   }
   .detail-header {
     flex-direction: column;
     align-items: flex-start;
   }
-  .logo {
-    align-self: flex-end;
+}
+/* ============================
+   MODAL FEEDBACK (FORZAR LIGHT)
+   ============================ */
+
+/* Overlay */
+.m3-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Card del modal */
+.m3-modal-card {
+  width: 100%;
+  max-width: 980px;
+  background: #ffffff;
+  color: #111827; /* 🔑 TEXTO NEGRO */
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+/* Header del modal */
+.m3-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #111827;
+}
+
+/* Título */
+.m3-modal-header > div:first-child {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Subtítulo */
+#feedbackModalSub {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+/* Body */
+.m3-modal-body {
+  padding: 18px;
+  color: #111827;
+  background: #ffffff;
+}
+
+/* Forzar texto oscuro dentro del contenido */
+.m3-modal-body *,
+.m3-modal-body p,
+.m3-modal-body div,
+.m3-modal-body span,
+.m3-modal-body strong,
+.m3-modal-body em {
+  color: #111827;
+}
+
+/* Cajas internas */
+.m3-modal-body .box {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+}
+
+/* Secciones */
+.m3-modal-body .section-title {
+  margin-top: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Firma */
+.m3-modal-body .firma-box {
+  background: #ffffff;
+  border: 1px dashed #9ca3af;
+  color: #111827;
+}
+
+/* Evidencias */
+.m3-modal-body img {
+  background: #ffffff;
+}
+
+/* Botones del modal */
+.m3-modal-header .m3-btn {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.m3-modal-header .m3-btn:hover {
+  background: #4f46e5;
+}
+
+/* Botón cerrar secundario */
+.m3-modal-header .m3-btn:not(.primary) {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.m3-modal-header .m3-btn:not(.primary):hover {
+  background: #d1d5db;
+}
+
+/* Animación */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }

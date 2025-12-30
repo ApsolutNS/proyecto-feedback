@@ -10,13 +10,15 @@
 
   <!-- jsPDF + html2canvas (externos, sin inline) -->
   <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
-    crossorigin="anonymous">
-  </script>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-    crossorigin="anonymous">
-  </script>
+  src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+  crossorigin="anonymous">
+</script>
+
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+  crossorigin="anonymous">
+</script>
+
 </head>
 <body>
   <div class="m3-card main-container">
@@ -93,8 +95,30 @@
       </div>
     </section>
   </div>
+<!-- MODAL PDF -->
+<div id="pdfModal" class="pdf-modal" style="display:none;">
+  <div class="pdf-modal-backdrop"></div>
+
+  <div class="pdf-modal-content">
+    <div class="pdf-modal-header">
+      <h3>Vista previa del PDF</h3>
+      <button id="pdfModalClose" type="button">✖</button>
+    </div>
+
+    <iframe
+      id="pdfIframe"
+      style="width:100%; height:80vh; border:none;"
+    ></iframe>
+  </div>
+</div>
 
   <!-- JS principal (MÓDULO) -->
   <script type="module" src="js/visualizacion_feedback.js"></script>
 </body>
 </html>
+
+
+
+
+
+

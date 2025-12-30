@@ -1,50 +1,162 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Administrador del Sistema</title>
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/admin.css" />
 </head>
-
 <body>
 
-  <!-- 🔵 NAVBAR -->
-  <nav class="navbar">
-    <div class="nav-left">
-      <span class="logo">⚙️ Admin</span>
+<!-- =======================
+     NAVBAR
+======================== -->
+<nav class="navbar">
+  <div class="nav-left">
+    <span class="logo">⚙️ Admin</span>
+  </div>
+  <div class="nav-right">
+    <a href="index.html" class="nav-btn">🏠 Ir al Dashboard</a>
+    <button class="nav-btn red" id="btnLogout">Cerrar sesión</button>
+  </div>
+</nav>
+
+<!-- =======================
+     CONTENEDOR PRINCIPAL
+======================== -->
+<div class="container">
+  <h1>Panel Administrador</h1>
+  <p>Crear usuarios, registradores y administrar accesos del sistema</p>
+
+  <div class="admin-grid">
+
+    <!-- =======================
+         COLUMNA IZQUIERDA
+    ======================== -->
+    <div class="admin-col">
+
+      <!-- ===== CREAR USUARIO ===== -->
+      <div class="card">
+        <h3>Crear nuevo usuario</h3>
+
+        <label>Email</label>
+        <input id="email" type="email" placeholder="correo@dominio.com" />
+
+        <label>Contraseña</label>
+        <input id="password" type="password" placeholder="********" />
+
+        <label>Rol</label>
+        <select id="rol">
+          <option value="admin">Administrador</option>
+          <option value="supervisor">Supervisor</option>
+          <option value="agente">Agente</option>
+        </select>
+
+        <!-- SOLO AGENTE -->
+        <div data-only-agent="1">
+          <label>Nombre del asesor</label>
+          <input id="nombreAsesor" type="text" placeholder="Nombre completo" />
+
+          <label>Cargo del agente</label>
+          <select id="cargo"></select>
+
+          <label>GC (opcional)</label>
+          <input id="GC" type="text" placeholder="GC / DNI" />
+        </div>
+
+        <button id="btnCrear">Crear usuario</button>
+        <p id="msg"></p>
+      </div>
+
+      <!-- ===== USUARIOS EXISTENTES ===== -->
+      <div class="card">
+        <h3>Usuarios existentes</h3>
+
+        <div class="row">
+          <input
+            id="userSearch"
+            type="text"
+            placeholder="Buscar por email / nombre / rol..."
+          />
+          <button id="btnRefreshUsers" class="btn-mini" type="button">
+            Actualizar
+          </button>
+        </div>
+
+        <div id="usersInfo" class="small" style="margin-top:10px;"></div>
+        <div id="usersList" class="users-list">
+          <div class="small">Cargando usuarios...</div>
+        </div>
+
+        <p class="small" style="margin-top:10px;color:var(--muted)">
+          ⚠️ Eliminar aquí borra el perfil en <b>Firestore</b>.  
+          El usuario de <b>Authentication</b> solo se elimina con Admin SDK /
+          Cloud Function.
+        </p>
+      </div>
     </div>
-    <div class="nav-right">
-      <a href="index.html" class="nav-btn">🏠 Ir al Dashboard</a>
-      <button class="nav-btn red" id="btnLogout">Cerrar sesión</button>
-    </div>
-  </nav>
 
-  <div class="container">
-    <h1>Panel Administrador</h1>
-    <p>Crear usuarios y asignar roles</p>
+    <!-- =======================
+         COLUMNA DERECHA
+    ======================== -->
+    <div class="admin-col">
 
-    <div class="card">
-      <h3>Crear nuevo usuario</h3>
+      <!-- ===== REGISTRADORES ===== -->
+      <div class="card">
+        <h3>Registradores (registradoPor)</h3>
 
-      <label>Email:</label>
-      <input id="email" type="email">
+        <label>Nombre</label>
+        <input
+          id="regNombre"
+          type="text"
+          placeholder="Ej: Alex Paolo Nuñez Sulca"
+        />
 
-      <label>Contraseña:</label>
-      <input id="password" type="password">
+        <label>Cargo</label>
+        <select id="regCargo"></select>
 
-      <label>Rol:</label>
-      <select id="rol">
-        <option value="admin">Administrador</option>
-        <option value="supervisor">Supervisor</option>
-        <option value="agente">Agente</option>
-      </select>
+        <!-- ===== FIRMA LÍDER CALIDAD ===== -->
+        <div id="firmaLiderBox" class="firma-box" style="display:none;">
+          <label>Firma del Líder de Calidad</label>
+          <input
+            type="file"
+            id="firmaLider"
+            accept="image/png, image/jpeg"
+          />
+          <small class="small">
+            ⚠️ Obligatoria. Esta firma se usará automáticamente en todos los refuerzos.
+          </small>
+        </div>
 
-      <button id="btnCrear">Crear usuario</button>
-      <p id="msg"></p>
+        <button id="btnCrearRegistrador" type="button">
+          Agregar registrador
+        </button>
+
+        <p id="regMsg"></p>
+        <ul id="listaRegistradores" class="reg-list"></ul>
+      </div>
     </div>
   </div>
+</div>
 
-  <script type="module" src="js/admin.js"></script>
+<!-- =======================
+     MODAL CONFIRMACIÓN
+======================== -->
+<div id="confirmModal" class="modal-confirm">
+  <div class="modal-box">
+    <h3 id="confirmTitle">¿Estás seguro?</h3>
+    <p id="confirmText">Esta acción no se puede deshacer.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btnCancelConfirm">Cancelar</button>
+      <button class="btn-confirm" id="btnConfirmAction">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- =======================
+     SCRIPT
+======================== -->
+<script type="module" src="js/admin.js"></script>
+
 </body>
 </html>

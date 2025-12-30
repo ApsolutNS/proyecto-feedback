@@ -1,10 +1,12 @@
 /* =========================================================
    index.js – Dashboard Supervisión (INBOUND/REDES/CORREOS)
-   ✔ Filtro semanal GLOBAL (dependiente de Año/Mes)
-   ✔ Vista ejecutiva (tarjetas clic)
-   ✔ Modal ranking ítems + filtro semanal dentro del modal
-   ✔ NUEVO: Modal limpio para "Motivo/Detalle" (popup + volver)
-   ✔ Tema claro/oscuro + Logout + Accesos rápidos
+    Filtro semanal GLOBAL (dependiente de Año/Mes)
+    Vista ejecutiva (tarjetas clic)
+    Modal ranking ítems + filtro semanal dentro del modal
+    Modal limpio para "Motivo/Detalle" (popup + volver)
+    Tema claro/oscuro + Logout + Accesos rápidos
+    NUEVO: filtro "Registrado por" dinámico (colección registradores)
+    NUEVO: botón Admin (insertado por JS) -> admin.html
    Requiere:
    - js/firebase.js exportando { db }
    - Chart.js cargado en index.html
@@ -16,45 +18,67 @@
 ------------------------------ */
 import { getAuth, onAuthStateChanged, signOut } from
   "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
 import { db } from "./firebase.js";
-import { collection, getDocs } from
-  "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 /* ------------------------------
    CONFIG: vista por cargo
-   - Por defecto INBOUND
-   - Puedes reutilizar el mismo index.html con:
-     index.html?view=inbound
-     index.html?view=redes
-     index.html?view=correos
 ------------------------------ */
 const CARGO_MAP = {
   inbound: "ASESOR INBOUND",
   redes: "ASESOR REDES",
   correos: "ASESOR CORREOS",
 };
-
 function getDashboardCargo() {
   const params = new URLSearchParams(location.search);
   const view = (params.get("view") || "inbound").toLowerCase();
   return CARGO_MAP[view] || CARGO_MAP.inbound;
 }
-
 const DASHBOARD_CARGO = getDashboardCargo();
 
 /* ------------------------------
    AUTH
 ------------------------------ */
 const auth = getAuth();
+let currentUser = null;
+let currentUserIsAdmin = false;
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     location.href = "login.html";
     return;
   }
-  const el = document.getElementById("userRoleName");
-  if (el) el.textContent = user.displayName || user.email || "Usuario";
+
+  const elUser =
+    document.getElementById("userRoleName") ||
+    document.getElementById("userEmail") ||
+    document.getElementById("userName");
+
+  if (elUser) {
+    elUser.textContent = user.email || "Usuario";
+  }
 });
+
+function ensureAdminButton() {
+  const headerRight = document.querySelector(".header-right");
+  if (!headerRight) return;
+  if (document.getElementById("btnAdmin")) return;
+
+  const btn = document.createElement("button");
+  btn.id = "btnAdmin";
+  btn.className = "btn secondary";
+  btn.textContent = "⚙️ Admin";
+  btn.dataset.nav = "admin.html";
+
+  headerRight.insertBefore(btn, document.getElementById("btnTheme"));
+}
 
 /* ------------------------------
    HELPERS
@@ -94,8 +118,10 @@ function parseFecha(fecha) {
       const [y, hhmm = "00:00"] = (yRest || "").split(" ");
       return new Date(`${y}-${m}-${d}T${hhmm}`);
     }
+
     return new Date(fecha);
   }
+
   return new Date(fecha);
 }
 
@@ -116,28 +142,60 @@ function getWeeksOfMonth(year, monthIndex) {
 async function loadRegistros() {
   const snap = await getDocs(collection(db, "registros"));
   const arr = [];
-  snap.forEach((doc) => arr.push({ id: doc.id, ...doc.data() }));
+  snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
   return arr;
 }
 
-async function loadAsesores() {
-  const snap = await getDocs(collection(db, "asesores"));
+// Usamos colección "usuarios" para GC/cargo (porque ya migraste desde asesores)
+async function loadUsuariosAgentesMap() {
+  const snap = await getDocs(collection(db, "usuarios"));
   const mapa = {};
-  snap.forEach((doc) => {
-    const d = doc.data();
-    if (d?.nombre) mapa[d.nombre.trim()] = d.GC || "SIN GC";
+  snap.forEach((d) => {
+    const u = d.data() || {};
+    if (u.rol === "agente" && u.activo !== false && u.nombreAsesor) {
+      mapa[u.nombreAsesor.trim()] = {
+        gc: (u.GC || u.gc || "").toString().trim() || "SIN GC",
+        cargo: (u.cargo || "").toString().trim(),
+      };
+    }
   });
   return mapa;
 }
 
+// Cargar registradores (para el filtro)
+async function loadRegistradoresActivos() {
+  const snap = await getDocs(collection(db, "registradores"));
+  const lista = [];
+  snap.forEach((d) => {
+    const r = d.data() || {};
+    const activo = r.activo !== false;
+    const nombre = (r.registradoPorNombre || "").toString().trim();
+    const cargo = (r.cargo || "").toString().trim();
+    if (!activo) return;
+    const label = [nombre, cargo].filter(Boolean).join(" - ").trim();
+    if (!label) return;
+    lista.push(label);
+  });
+  // únicos + orden
+  return [...new Set(lista)].sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+}
+
 async function getMergedData() {
-  const [registros, asesores] = await Promise.all([loadRegistros(), loadAsesores()]);
-  return registros.map((r) => ({
-    ...r,
-    gc: asesores[r.asesor?.trim()] || r.gc || "SIN GC",
-    registradoPor: r.registradoPor || r.registrado_por || "",
-    cargo: (r.cargo || "").toString(),
-  }));
+  const [registros, usuariosMap] = await Promise.all([
+    loadRegistros(),
+    loadUsuariosAgentesMap(),
+  ]);
+
+  return registros.map((r) => {
+    const asesorKey = (r.asesor || "").toString().trim();
+    const u = usuariosMap[asesorKey] || {};
+    return {
+      ...r,
+      gc: u.gc || r.gc || "SIN GC",
+      cargo: (u.cargo || r.cargo || "").toString(),
+      registradoPor: (r.registradoPor || r.registrado_por || "").toString(),
+    };
+  });
 }
 
 /* ------------------------------
@@ -147,10 +205,10 @@ let rawData = [];
 let filteredData = [];
 let allYears = [];
 let currentWeeks = [];
-let itemsModalAsesor = null; // null=ranking general, string=ranking por asesor
+let itemsModalAsesor = null;
 let chart = null;
 
-// cache del último agregado del modal para abrir detalle por ítem
+// cache modal items
 let lastItemsAgg = [];
 let lastItemsAggMap = new Map();
 
@@ -198,8 +256,7 @@ function setupYearFilter() {
 }
 
 /* ------------------------------
-   UI: WEEK FILTER OPTIONS (GLOBAL)
-   depende de Año/Mes seleccionados
+   UI: WEEK FILTER OPTIONS
 ------------------------------ */
 function setupWeekFilterOptions() {
   const selMes = document.getElementById("filterMes");
@@ -227,6 +284,46 @@ function setupWeekFilterOptions() {
 }
 
 /* ------------------------------
+   FILTRO "REGISTRADO POR" (dinámico)
+------------------------------ */
+async function setupRegistradoPorFilter() {
+  const sel = document.getElementById("filterRegistrado");
+  if (!sel) return;
+
+  // conserva selección previa si existe
+  const prev = sel.value || "";
+
+  // 1) preferencia: colección registradores (activos)
+  let options = [];
+  try {
+    options = await loadRegistradoresActivos();
+  } catch (e) {
+    console.warn("No se pudo cargar registradores:", e);
+  }
+
+  // 2) fallback: desde registros (valores únicos)
+  if (!options.length) {
+    const unique = new Set();
+    rawData.forEach((r) => {
+      const v = (r.registradoPor || "").toString().trim();
+      if (v) unique.add(v);
+    });
+    options = [...unique].sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+  }
+
+  sel.innerHTML =
+    `<option value="">Todos</option>` +
+    options.map((x) => `<option value="${escapeHTML(x)}">${escapeHTML(x)}</option>`).join("");
+
+  // restaurar selección si aún existe
+  if (prev && options.some((x) => normalize(x) === normalize(prev))) {
+    sel.value = prev;
+  } else {
+    sel.value = "";
+  }
+}
+
+/* ------------------------------
    APPLY FILTERS
 ------------------------------ */
 function applyFilters() {
@@ -242,14 +339,16 @@ function applyFilters() {
 
   let data = rawData.slice();
 
-  // ✅ separar vista por cargo (INBOUND/REDES/CORREOS)
+  // vista por cargo
   data = data.filter((r) => (r.cargo || "").toString().toUpperCase() === DASHBOARD_CARGO);
 
   if (anio !== "") data = data.filter((r) => parseFecha(r.fecha).getFullYear() == anio);
   if (mes !== "") data = data.filter((r) => parseFecha(r.fecha).getMonth() == mes);
+
+  // registrado por
   if (reg) data = data.filter((r) => normalize(r.registradoPor) === reg);
 
-  // ✅ semana global
+  // semana global
   if (semana !== "") {
     const w = currentWeeks[Number(semana)];
     if (w) {
@@ -265,7 +364,7 @@ function applyFilters() {
 }
 
 /* ------------------------------
-   EXEC VIEW (tarjetas)
+   EXEC VIEW
 ------------------------------ */
 function renderExecView(data) {
   const porAsesor = {};
@@ -314,7 +413,6 @@ function renderExecView(data) {
       const prom = Math.round(a.promedio * 10) / 10;
       const pillClass = prom >= 85 ? "green" : "red";
       const label = prom >= 85 ? "🟢 85–100" : "🔴 0–84";
-
       return `
         <div class="exec-card" data-asesor="${escapeHTML(a.asesor)}">
           <div class="exec-header">
@@ -402,8 +500,7 @@ function renderRecent(data) {
           <td>${escapeHTML(r.tipo || "—")}</td>
           <td>${escapeHTML(r.registradoPor || "—")}</td>
         </tr>
-      `)
-      .join("")
+      `).join("")
     : `<tr><td colspan="5">Sin registros</td></tr>`;
 }
 
@@ -434,6 +531,7 @@ function renderWeeklyAndChart(data) {
               return r.asesor === asesor && d >= startDay && d <= endDay;
             })
             .slice(0, 2);
+
           row += `<td>${escapeHTML(recs[0]?.tipo || "-")}</td>`;
           row += `<td>${escapeHTML(recs[1]?.tipo || "-")}</td>`;
         }
@@ -460,11 +558,11 @@ function renderWeeklyAndChart(data) {
 }
 
 /* ------------------------------
-   ITEMS RANKING (MODAL) + NUEVO POPUP DETALLE
+   ITEMS RANKING (MODAL) + DETALLE
 ------------------------------ */
 function aggregateItems(records, totalAuditorias) {
   const mapa = {};
-   
+
   records.forEach((reg) => {
     (reg.items || []).forEach((it) => {
       const key = (it?.name || "Sin nombre").toString();
@@ -474,13 +572,11 @@ function aggregateItems(records, totalAuditorias) {
           tipo: it?.tipo || "—",
           count: 0,
           sumPerc: 0,
-          details: [], // todo el historial
+          details: [],
         };
       }
-
       mapa[key].count++;
       mapa[key].sumPerc += Number(it?.perc || 0);
-
       if (it?.detail) {
         mapa[key].details.push({
           detail: String(it.detail),
@@ -498,17 +594,12 @@ function aggregateItems(records, totalAuditorias) {
     .map((o) => ({
       ...o,
       avgPerc: o.count ? Math.round((o.sumPerc / o.count) * 10) / 10 : 0,
-// NUEVO CÁLCULO: Cantidad de incidencias / Total de auditorías (ej. 35 / 86)
-      sharePorcentaje: totalAuditorias > 0 
-        ? ((o.count / totalAuditorias) * 100).toFixed(1) 
-        : 0
+      sharePorcentaje: totalAuditorias > 0 ? ((o.count / totalAuditorias) * 100).toFixed(1) : 0,
     }))
     .sort((a, b) => b.count - a.count);
 
-  // cache para abrir detalle rápido
   lastItemsAgg = list;
   lastItemsAggMap = new Map(list.map((x) => [x.name, x]));
-
   return list;
 }
 
@@ -525,12 +616,9 @@ function fillItemsPeriodSelect() {
 
 function renderItemsModalTable() {
   const selVal = document.getElementById("itemsPeriodSelect")?.value || "mes";
-
   let data = filteredData.slice();
 
-  if (itemsModalAsesor) {
-    data = data.filter((r) => r.asesor === itemsModalAsesor);
-  }
+  if (itemsModalAsesor) data = data.filter((r) => r.asesor === itemsModalAsesor);
 
   if (selVal.startsWith("week-")) {
     const index = Number(selVal.split("-")[1]);
@@ -542,17 +630,15 @@ function renderItemsModalTable() {
       });
     }
   }
-// 1. Guardamos el total de registros (auditorías) para el cálculo
-  const totalRegistrosActuales = data.length; 
 
-// 2. Pasamos ese total a la función de agrupamiento
+  const totalRegistrosActuales = data.length;
   const agg = aggregateItems(data, totalRegistrosActuales);
+
   const tbody = document.getElementById("itemsTableBody");
   if (!tbody) return;
 
   tbody.innerHTML = agg.length
-    ? agg
-      .map((it) => `
+    ? agg.map((it) => `
         <tr class="item-row" data-item="${escapeHTML(it.name)}">
           <td><b>${escapeHTML(it.name)}</b></td>
           <td>${escapeHTML(it.tipo)}</td>
@@ -561,11 +647,9 @@ function renderItemsModalTable() {
           <td>${it.sharePorcentaje}%</td>
           <td class="small link">Ver detalles</td>
         </tr>
-      `)
-      .join("")
+      `).join("")
     : `<tr><td colspan="6">Sin ítems debitados.</td></tr>`;
 
-  // Click en fila -> abrir POPUP de detalle
   tbody.querySelectorAll(".item-row").forEach((row) => {
     row.addEventListener("click", () => {
       const name = row.dataset.item || "";
@@ -575,20 +659,17 @@ function renderItemsModalTable() {
   });
 }
 
-/* -------- POPUP DETALLE (NUEVO) -------- */
 function openDetailModal(item) {
   const modal = document.getElementById("detailModal");
   const title = document.getElementById("detailModalTitle");
   const body = document.getElementById("detailModalBody");
   const sub = document.getElementById("detailModalSubtitle");
-
   if (!modal || !title || !body) return;
 
   title.textContent = `Detalle del ítem — ${item.name}`;
   if (sub) sub.textContent = `${item.count} ocurrencias · Promedio débito: ${item.avgPerc}%`;
 
   const detalles = (item.details || []).slice().sort((a, b) => b.fecha - a.fecha);
-
   body.innerHTML = detalles.length
     ? detalles.map((d) => `
       <div class="detail-card">
@@ -610,12 +691,12 @@ function closeDetailModal() {
   if (modal) modal.style.display = "none";
 }
 
-/* -------- modal ranking -------- */
 function openItemsModal(asesor = null) {
   itemsModalAsesor = asesor;
 
   const title = document.getElementById("itemsModalTitle");
   const subtitle = document.getElementById("itemsModalSubtitle");
+
   if (title) title.textContent = asesor ? `Ítems debitados – ${asesor}` : "Ranking general de ítems debitados";
   if (subtitle) subtitle.textContent = asesor ? "Ranking de ítems para este asesor." : "Basado en todos los registros filtrados.";
 
@@ -637,7 +718,6 @@ function closeItemsModal() {
 function renderFromFilteredData() {
   const data = filteredData;
 
-  // resumen
   const selReg = document.getElementById("filterRegistrado");
   const selMes = document.getElementById("filterMes");
   const selAnio = document.getElementById("filterAnio");
@@ -652,6 +732,7 @@ function renderFromFilteredData() {
     if (w) resumen += ` · Semana ${Number(selSemana.value) + 1} (${w.startDay}-${w.endDay})`;
   }
   if (selReg?.value) resumen += ` · Registrado por ${selReg.value}`;
+
   if (summary) summary.textContent = resumen;
 
   renderExecView(data);
@@ -668,7 +749,6 @@ const THEME_KEY = "dash_theme";
 function applyTheme(theme) {
   const body = document.body;
   const btn = document.getElementById("btnTheme");
-
   if (theme === "light") {
     body.classList.add("light");
     if (btn) btn.textContent = "🌙 Modo oscuro";
@@ -686,7 +766,6 @@ function wireEvents() {
   ["filterRegistrado", "filterMes", "filterAnio", "filterSemana"].forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
-
     el.addEventListener("change", () => {
       if (id === "filterMes" || id === "filterAnio") setupWeekFilterOptions();
       applyFilters();
@@ -701,7 +780,7 @@ function wireEvents() {
   });
   document.getElementById("itemsPeriodSelect")?.addEventListener("change", renderItemsModalTable);
 
-  // modal detalle (popup nuevo)
+  // modal detalle
   document.getElementById("btnCloseDetail")?.addEventListener("click", closeDetailModal);
   document.getElementById("detailModal")?.addEventListener("click", (e) => {
     if (e.target?.id === "detailModal") closeDetailModal();
@@ -716,23 +795,18 @@ function wireEvents() {
     applyTheme(next);
   });
 
-  // accesos rápidos (no rompe modales porque usa dataset)
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
+  // accesos rápidos
+ document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
 
-    const nav = btn.dataset.nav;
-    const ext = btn.dataset.external;
+  const nav = btn.dataset.nav;
+  const ext = btn.dataset.external;
 
-    if (nav) {
-      location.href = nav;
-      return;
-    }
-    if (ext) {
-      window.open(ext, "_blank");
-      return;
-    }
-  });
+  if (nav) location.href = nav;
+  if (ext) window.open(ext, "_blank");
+});
+
 
   // logout
   document.getElementById("btnLogout")?.addEventListener("click", async () => {
@@ -752,8 +826,11 @@ async function refreshDashboard() {
   const data = await getMergedData();
 
   rawData = data.sort((a, b) => parseFecha(a.fecha) - parseFecha(b.fecha));
-  allYears = [...new Set(rawData.map((r) => parseFecha(r.fecha).getFullYear()))];
 
+  // ✅ filtro "registrado por" completo (desde registradores)
+  await setupRegistradoPorFilter();
+
+  allYears = [...new Set(rawData.map((r) => parseFecha(r.fecha).getFullYear()))];
   setupYearFilter();
 
   const selMes = document.getElementById("filterMes");

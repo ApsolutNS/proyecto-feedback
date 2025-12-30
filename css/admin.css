@@ -1,41 +1,66 @@
-/* admin.css — estilo profesional y pulido (compatible con tu admin.html tal cual) */
+/* =========================================================
+   admin.css — ADMIN PANEL (Usuarios + Registradores + Listado)
+   - Layout como en la imagen: 2 columnas arriba + sección abajo
+   - Popup confirmación pequeño “¿Estás seguro?”
+   - Claro/Oscuro automático
+   - Incluye estilos para: cards, forms, listas, badges, botones
+========================================================= */
 
 /* =========================
    THEME TOKENS
 ========================= */
 :root{
+  --radius-xl: 22px;
   --radius-lg: 18px;
   --radius-md: 12px;
+  --radius-sm: 10px;
+  --radius-xs: 8px;
   --radius-pill: 999px;
 
   --shadow-card: 0 14px 40px rgba(15, 23, 42, 0.10);
-  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.10);
+  --shadow-float: 0 18px 60px rgba(15, 23, 42, 0.12);
 
   --primary: #0b57d0;
-  --primary-2: #0f4c81; /* navbar legacy */
+  --primary-2: #0f4c81;
   --primary-container: #d2e3ff;
   --on-primary: #ffffff;
 
   --bg: #f3f4f6;
   --surface: #ffffff;
   --surface-2: #f8fafc;
+  --surface-3: #eef2ff;
+
   --text: #0f172a;
   --muted: #64748b;
 
   --outline: #d1d5db;
   --outline-2: #e5e7eb;
+  --outline-3: #eef2f7;
 
   --danger: #dc2626;
   --danger-bg: #fee2e2;
 
+  --ok: #16a34a;
+  --ok-bg: rgba(22, 163, 74, 0.10);
+
+  --warn: #f59e0b;
+  --warn-bg: rgba(245, 158, 11, 0.12);
+
   --focus: 0 0 0 3px rgba(11, 87, 208, 0.22);
+
+  --container-w: 1180px;
+  --gap: 18px;
 }
 
-/* Auto dark (sin cambiar tu HTML) */
+/* =========================
+   DARK MODE AUTO
+========================= */
 @media (prefers-color-scheme: dark){
   :root{
     --shadow-card: 0 18px 60px rgba(0, 0, 0, 0.45);
     --shadow-soft: 0 14px 50px rgba(0, 0, 0, 0.40);
+    --shadow-float: 0 20px 80px rgba(0, 0, 0, 0.50);
 
     --primary: #a8c7fa;
     --primary-2: #0b1630;
@@ -45,14 +70,23 @@
     --bg: #050b16;
     --surface: #0b1220;
     --surface-2: #0f172a;
+    --surface-3: #0b1b34;
+
     --text: #e5e7eb;
     --muted: #9aa4b2;
 
     --outline: #2b3444;
     --outline-2: #1a2233;
+    --outline-3: #141b29;
 
     --danger: #ff6b6b;
     --danger-bg: rgba(255, 107, 107, 0.14);
+
+    --ok: #34d399;
+    --ok-bg: rgba(52, 211, 153, 0.10);
+
+    --warn: #fbbf24;
+    --warn-bg: rgba(251, 191, 36, 0.14);
 
     --focus: 0 0 0 3px rgba(168, 199, 250, 0.25);
   }
@@ -70,34 +104,44 @@ html, body{ height: 100%; }
 body{
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  background: radial-gradient(1200px 600px at 20% -10%, rgba(11,87,208,0.10), transparent 60%),
-              radial-gradient(900px 500px at 85% 10%, rgba(99,102,241,0.10), transparent 55%),
-              var(--bg);
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(11,87,208,0.10), transparent 60%),
+    radial-gradient(900px 500px at 85% 10%, rgba(99,102,241,0.10), transparent 55%),
+    var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a{ color: inherit; text-decoration: none; }
+a{ text-decoration: none; color: inherit; }
 
 ::selection{
   background: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
+img{ max-width: 100%; display: block; }
+
+.small{ font-size: 12px; color: var(--muted); }
+
+hr{
+  border: none;
+  border-top: 1px solid var(--outline-2);
+  margin: 16px 0;
+}
+
 /* =========================
-   NAVBAR
+   NAVBAR (como tu HTML)
 ========================= */
 .navbar{
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 30;
   width: 100%;
   padding: 12px 18px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  align-items: center;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--outline-2);
 }
@@ -112,14 +156,14 @@ a{ color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-weight: 800;
-  letter-spacing: 0.2px;
+  font-weight: 900;
+  letter-spacing: .2px;
   font-size: 16px;
   padding: 8px 12px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--outline-2);
   background: color-mix(in srgb, var(--surface-2) 70%, transparent);
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
 }
 
 .nav-right{
@@ -128,24 +172,20 @@ a{ color: inherit; text-decoration: none; }
   gap: 10px;
 }
 
-/* Botones del navbar */
 .nav-btn{
   appearance: none;
   border: 1px solid var(--outline);
   background: color-mix(in srgb, var(--surface) 70%, transparent);
   color: var(--text);
-
   padding: 9px 14px;
   border-radius: var(--radius-pill);
-  font-weight: 700;
+  font-weight: 800;
   font-size: 13px;
-
   display: inline-flex;
   align-items: center;
   gap: 8px;
-
   cursor: pointer;
-  transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  transition: transform .08s ease, background .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
 
 .nav-btn:hover{
@@ -169,139 +209,599 @@ a{ color: inherit; text-decoration: none; }
 }
 
 /* =========================
-   PAGE CONTAINER
+   PAGE WRAP / HEADER
 ========================= */
 .container{
-  max-width: 860px;
-  margin: 22px auto 50px;
-  padding: 0 14px;
+  max-width: var(--container-w);
+  margin: 18px auto 60px;
+  padding: 0 16px;
 }
 
 .container h1{
   margin: 18px 0 6px;
-  font-size: 22px;
+  font-size: 24px;
   letter-spacing: 0.2px;
 }
 
 .container p{
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   color: var(--muted);
   font-size: 13px;
 }
 
 /* =========================
-   CARD
+   GRID STRUCTURE (imagen)
+   - Arriba: izquierda grande, derecha sidebar
+   - Abajo: sección completa
+========================= */
+.admin-grid{
+  display: grid;
+  grid-template-columns: 1.9fr 1fr; /* izquierda más grande */
+  gap: var(--gap);
+  align-items: start;
+}
+
+.left-col{ min-width: 0; }
+.right-col{ min-width: 0; }
+
+.full-row{
+  grid-column: 1 / -1;
+}
+
+/* Si NO tienes .admin-grid en HTML,
+   igual los cards se verán bien,
+   pero te recomiendo envolver las 2 cards
+   en un div class="admin-grid". */
+
+/* =========================
+   CARD (más pulido)
 ========================= */
 .card{
-  margin-top: 14px;
-  padding: 18px 18px;
-  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   border: 1px solid var(--outline-2);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
+  padding: 18px 18px;
 }
+
+.card + .card{ margin-top: 14px; }
 
 .card h3{
   margin: 0 0 12px;
   font-size: 15px;
-  letter-spacing: 0.2px;
+  letter-spacing: .2px;
 }
 
+.card .card-subtitle{
+  margin: -6px 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* =========================
+   FORM STYLES
+========================= */
 label{
   display: block;
   margin: 10px 0 6px;
   font-size: 12px;
-  font-weight: 700;
-  color: color-mix(in srgb, var(--text) 82%, var(--muted));
+  font-weight: 800;
+  color: color-mix(in srgb, var(--text) 85%, var(--muted));
 }
 
-/* =========================
-   INPUTS / SELECT
-========================= */
-input, select{
+input, select, textarea{
   width: 100%;
-  padding: 11px 12px;
+  padding: 12px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--outline);
   background: color-mix(in srgb, var(--surface-2) 75%, var(--surface));
   color: var(--text);
   outline: none;
-
   font-size: 13px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .08s ease;
 }
 
-input::placeholder{ color: color-mix(in srgb, var(--muted) 85%, transparent); }
+textarea{ resize: vertical; min-height: 92px; }
 
-input:focus, select:focus{
+input::placeholder, textarea::placeholder{
+  color: color-mix(in srgb, var(--muted) 85%, transparent);
+}
+
+input:focus, select:focus, textarea:focus{
   border-color: color-mix(in srgb, var(--primary) 55%, var(--outline));
   box-shadow: var(--focus);
-  background: color-mix(in srgb, var(--primary-container) 18%, var(--surface));
+  background: color-mix(in srgb, var(--primary-container) 16%, var(--surface));
 }
 
-select{
-  cursor: pointer;
+.form-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-row-3{
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 920px){
+  .form-row, .form-row-3{ grid-template-columns: 1fr; }
 }
 
 /* =========================
-   PRIMARY BUTTON
+   PRIMARY BUTTONS
 ========================= */
-#btnCrear{
-  margin-top: 10px;
+#btnCrear,
+#btnCrearRegistrador{
+  margin-top: 14px;
   width: 100%;
-  padding: 12px 14px;
+  padding: 13px 14px;
   border: none;
   border-radius: var(--radius-pill);
   background: var(--primary);
   color: var(--on-primary);
-  font-weight: 800;
+  font-weight: 900;
   font-size: 13px;
-  letter-spacing: 0.2px;
-
+  letter-spacing: .2px;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(11, 87, 208, 0.28);
-  transition: transform 0.08s ease, filter 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 14px 30px rgba(11, 87, 208, 0.25);
+  transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
 }
 
-#btnCrear:hover{
+#btnCrear:hover,
+#btnCrearRegistrador:hover{
   transform: translateY(-1px);
-  filter: brightness(1.05);
-  box-shadow: 0 14px 30px rgba(11, 87, 208, 0.34);
+  filter: brightness(1.04);
+  box-shadow: 0 18px 44px rgba(11, 87, 208, 0.30);
 }
 
-#btnCrear:active{ transform: translateY(0px); }
+#btnCrear:active,
+#btnCrearRegistrador:active{
+  transform: translateY(0px);
+}
 
-#btnCrear:focus-visible{
+#btnCrear:focus-visible,
+#btnCrearRegistrador:focus-visible{
   outline: none;
-  box-shadow: var(--focus), 0 14px 30px rgba(11, 87, 208, 0.34);
+  box-shadow: var(--focus), 0 18px 44px rgba(11, 87, 208, 0.30);
 }
 
 /* =========================
-   STATUS MESSAGE
+   STATUS MESSAGES
 ========================= */
-#msg{
+#msg, #regMsg, #usersMsg{
   margin-top: 10px;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 13px;
   color: var(--muted);
   min-height: 18px;
 }
 
-/* Si luego en JS le pones clases, ya quedan listas */
-#msg.ok{ color: #16a34a; }
-#msg.error{ color: var(--danger); }
+#msg.ok, #regMsg.ok, #usersMsg.ok{ color: var(--ok); }
+#msg.error, #regMsg.error, #usersMsg.error{ color: var(--danger); }
 
 /* =========================
-   RESPONSIVE
+   RIGHT SIDEBAR “REGISTRADORES”
+   (como en la imagen)
 ========================= */
+.sidebar-title{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+
+.sidebar-title .icon{
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  border: 1px solid var(--outline-2);
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--surface-3) 60%, var(--surface));
+}
+
+/* =========================
+   LISTA REGISTRADORES (cards)
+========================= */
+#listaRegistradores{
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reg-item{
+  border: 1px solid var(--outline-2);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-2) 85%, var(--surface));
+  padding: 12px 12px;
+}
+
+.reg-row{
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.reg-main{ min-width: 0; }
+
+.reg-name{
+  font-weight: 950;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.reg-cargo{
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.reg-meta{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.reg-switch{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  user-select: none;
+}
+
+.reg-switch input[type="checkbox"]{
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.reg-actions{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.btn-mini{
+  appearance: none;
+  border: 1px solid var(--outline);
+  background: color-mix(in srgb, var(--surface) 80%, var(--surface-2));
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.btn-mini:hover{
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--primary-container) 24%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--outline));
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.10);
+}
+
+.btn-mini:active{ transform: translateY(0px); }
+
+.btn-mini.danger{
+  border-color: color-mix(in srgb, var(--danger) 50%, var(--outline));
+  color: color-mix(in srgb, var(--danger) 92%, var(--text));
+  background: color-mix(in srgb, var(--danger-bg) 60%, var(--surface));
+}
+
+.btn-mini.danger:hover{
+  border-color: color-mix(in srgb, var(--danger) 70%, var(--outline));
+  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.18);
+}
+
+/* Editor inline (registradores) */
+.reg-edit{
+  margin-top: 10px;
+  border-top: 1px dashed var(--outline-2);
+  padding-top: 10px;
+}
+
+.reg-edit label{ margin-top: 8px; }
+
+.reg-edit input, .reg-edit select{
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+}
+
+/* =========================
+   USERS SECTION (abajo)
+========================= */
+.users-section-title{
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.users-section-subtitle{
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Lista de usuarios */
+.user-list{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.user-item{
+  background: color-mix(in srgb, var(--surface-2) 85%, var(--surface));
+  border: 1px solid var(--outline-2);
+  border-radius: var(--radius-lg);
+  padding: 12px 12px;
+}
+
+.user-row{
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.user-info{
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.user-line{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.user-name{
+  font-weight: 950;
+  font-size: 13px;
+}
+
+.user-email{
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.user-badges{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--outline-2);
+  background: color-mix(in srgb, var(--surface) 70%, var(--surface-2));
+  font-size: 12px;
+  font-weight: 900;
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+}
+
+.badge.primary{
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--outline));
+  background: color-mix(in srgb, var(--primary-container) 26%, var(--surface));
+}
+
+.badge.ok{
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--outline));
+  background: color-mix(in srgb, var(--ok-bg) 75%, var(--surface));
+}
+
+.badge.warn{
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--outline));
+  background: color-mix(in srgb, var(--warn-bg) 75%, var(--surface));
+}
+
+.badge.danger{
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--outline));
+  background: color-mix(in srgb, var(--danger-bg) 75%, var(--surface));
+  color: color-mix(in srgb, var(--danger) 92%, var(--text));
+}
+
+.user-actions{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Bloque de edición de usuario (si lo muestras con JS) */
+.user-edit{
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--outline-2);
+  display: grid;
+  gap: 10px;
+}
+
+.user-edit .edit-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.user-edit .edit-actions{
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 820px){
+  .user-edit .edit-grid{ grid-template-columns: 1fr; }
+}
+
+/* =========================
+   SMALL HELPERS / DIVIDERS
+========================= */
+.divider{
+  height: 1px;
+  background: var(--outline-2);
+  margin: 14px 0;
+}
+
+.pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--outline-2);
+  background: color-mix(in srgb, var(--surface) 70%, var(--surface-2));
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* =========================
+   CONFIRM MODAL (popup pequeño)
+   - Usa JS para:
+     document.querySelector('.modal-confirm').classList.add('show')
+     y quitar para cerrar.
+========================= */
+/* OVERLAY */
+.modal-confirm {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  z-index: 9999; /* más alto que navbar */
+}
+
+/* MOSTRAR */
+.modal-confirm.show {
+  display: flex;
+}
+
+/* CAJA */
+.modal-confirm .modal-box {
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+  border: 1px solid var(--outline-2);
+  animation: popIn 0.2s ease-out;
+}
+
+/* ANIMACIÓN */
+@keyframes popIn {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+
+.modal-confirm .modal-box h3{
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 950;
+  text-align: center;
+}
+
+.modal-confirm .modal-box p{
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.35;
+}
+
+.modal-confirm .modal-actions{
+  display: flex;
+  gap: 10px;
+}
+
+.modal-confirm .modal-actions button{
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--outline);
+  background: color-mix(in srgb, var(--surface-2) 80%, var(--surface));
+  font-weight: 950;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.modal-confirm .modal-actions button:hover{
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--primary-container) 22%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--outline));
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
+.modal-confirm .modal-actions button:active{
+  transform: translateY(0px);
+}
+
+.modal-confirm .btn-cancel{
+  color: var(--text);
+}
+
+.modal-confirm .btn-confirm{
+  background: var(--danger);
+  border-color: var(--danger);
+  color: black;
+}
+
+.modal-confirm .btn-confirm:hover{
+  background: color-mix(in srgb, var(--danger) 90%, black);
+  border-color: color-mix(in srgb, var(--danger) 90%, black);
+  box-shadow: 0 14px 34px rgba(220, 38, 38, 0.25);
+}
+
+/* =========================
+   RESPONSIVE (layout imagen)
+========================= */
+@media (max-width: 980px){
+  .admin-grid{
+    grid-template-columns: 1fr; /* apila */
+  }
+  .right-col{ order: 2; }
+  .left-col{ order: 1; }
+  .full-row{ order: 3; }
+}
+
 @media (max-width: 640px){
   .navbar{
     padding: 10px 12px;
     gap: 10px;
   }
-  .nav-right{
-    gap: 8px;
-  }
+  .nav-right{ gap: 8px; }
   .nav-btn{
     padding: 8px 10px;
     font-size: 12px;
@@ -310,10 +810,65 @@ select{
     padding: 7px 10px;
     font-size: 14px;
   }
-  .container h1{
-    font-size: 20px;
-  }
-  .card{
-    padding: 16px 14px;
-  }
+  .container h1{ font-size: 21px; }
+  .card{ padding: 16px 14px; }
+  #btnCrear, #btnCrearRegistrador{ padding: 12px 12px; }
 }
+
+/* =========================
+   OPTIONAL: “glass” header strip (como el fondo)
+========================= */
+.hero-strip{
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border: 1px solid var(--outline-3);
+  padding: 14px 16px;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+  margin-bottom: 14px;
+}
+
+/* =========================
+   OPTIONAL: section headings
+========================= */
+.section-header{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.section-header .title{
+  font-weight: 950;
+  font-size: 15px;
+}
+
+.section-header .subtitle{
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* =========================
+   OPTIONAL: icon chips
+========================= */
+.icon-chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--outline-2);
+  background: color-mix(in srgb, var(--surface-3) 55%, var(--surface));
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* =========================
+   OPTIONAL: subtle animations
+========================= */
+@media (prefers-reduced-motion: reduce){
+  *{ transition: none !important; animation: none !important; }
+}
+
+/* =========================
+   END
+========================= */

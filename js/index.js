@@ -1,12 +1,12 @@
 /* =========================================================
    index.js – Dashboard Supervisión (INBOUND/REDES/CORREOS)
-   ✔ Filtro semanal GLOBAL (dependiente de Año/Mes)
-   ✔ Vista ejecutiva (tarjetas clic)
-   ✔ Modal ranking ítems + filtro semanal dentro del modal
-   ✔ Modal limpio para "Motivo/Detalle" (popup + volver)
-   ✔ Tema claro/oscuro + Logout + Accesos rápidos
-   ✔ NUEVO: filtro "Registrado por" dinámico (colección registradores)
-   ✔ NUEVO: botón Admin (insertado por JS) -> admin.html
+    Filtro semanal GLOBAL (dependiente de Año/Mes)
+    Vista ejecutiva (tarjetas clic)
+    Modal ranking ítems + filtro semanal dentro del modal
+    Modal limpio para "Motivo/Detalle" (popup + volver)
+    Tema claro/oscuro + Logout + Accesos rápidos
+    NUEVO: filtro "Registrado por" dinámico (colección registradores)
+    NUEVO: botón Admin (insertado por JS) -> admin.html
    Requiere:
    - js/firebase.js exportando { db }
    - Chart.js cargado en index.html
@@ -57,23 +57,22 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentUser = user;
-
-  const el = document.getElementById("userRoleName");
-  if (el) el.textContent = user.displayName || user.email || "Usuario";
-
-  // detectar si es admin (colección usuarios)
   currentUserIsAdmin = false;
+
   try {
     const snap = await getDoc(doc(db, "usuarios", user.uid));
     if (snap.exists()) {
-      const rol = (snap.data()?.rol || "").toString().toLowerCase();
-      if (rol === "admin") currentUserIsAdmin = true;
+      const rol = (snap.data()?.rol || "").toLowerCase();
+      if (rol === "admin") {
+        currentUserIsAdmin = true;
+      }
     }
   } catch (e) {
-    console.warn("No se pudo leer /usuarios para rol admin:", e);
+    console.warn("Error leyendo rol:", e);
   }
 
-  ensureAdminButton(); // inserta botón si corresponde
+  // ✅ ahora sí
+  ensureAdminButton();
 });
 
 /* ------------------------------
@@ -136,23 +135,27 @@ function getWeeksOfMonth(year, monthIndex) {
    BOTÓN ADMIN (sin tocar HTML)
 ------------------------------ */
 function ensureAdminButton() {
-  const headerRight = document.querySelector(".header-right");
-  if (!headerRight) return;
-
-  // si ya existe, no duplicar
-  if (document.getElementById("btnAdmin")) return;
-
-  // solo mostrar si es admin (si quieres que TODOS lo vean, borra este if)
   if (!currentUserIsAdmin) return;
+
+  const headerRight = document.querySelector(".header-right");
+  if (!headerRight) {
+    // Reintenta cuando el DOM esté listo
+    requestAnimationFrame(ensureAdminButton);
+    return;
+  }
+
+  if (document.getElementById("btnAdmin")) return;
 
   const btn = document.createElement("button");
   btn.id = "btnAdmin";
   btn.className = "btn btn-secondary";
   btn.textContent = "⚙️ Admin";
   btn.type = "button";
-  btn.addEventListener("click", () => (location.href = "admin.html"));
 
-  // insertar antes del logout
+  btn.addEventListener("click", () => {
+    window.location.href = "admin.html";
+  });
+
   const logoutBtn = document.getElementById("btnLogout");
   if (logoutBtn && logoutBtn.parentElement === headerRight) {
     headerRight.insertBefore(btn, logoutBtn);

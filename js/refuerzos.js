@@ -8,9 +8,8 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
-  query
+  query // ✅ FALTABA
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
 import {
   getAuth,
   onAuthStateChanged
@@ -21,9 +20,9 @@ const colRefuerzos = collection(db, "refuerzos_calidad");
 const colUsuarios = collection(db, "usuarios");
 const colRegistradores = collection(db, "registradores");
 
-let responsableActivo = null;
+let responsableActivo = null; // cache global
 
-/* Correos con acceso a este módulo */
+/* Correos con acceso a este módulo (coinciden con tus reglas isSupervisor()) */
 const ALLOWED_SUPERVISORS = [
   "anunez@gefectiva.com",
   "ctorres@gefectiva.com",
@@ -50,7 +49,6 @@ function initQuill() {
     console.warn("Quill no está disponible. Revisa el script CDN y defer.");
     return;
   }
-
   if (quillDetalle) return;
 
   quillDetalle = new window.Quill("#detalleEditor", {
@@ -77,6 +75,15 @@ function getDetalleFromEditor() {
   }
   const ta = document.getElementById("detalle");
   return ta ? (ta.value || "").trim() : "";
+}
+
+function clearDetalleEditor() {
+  if (quillDetalle) {
+    quillDetalle.setText("");
+    return;
+  }
+  const ta = document.getElementById("detalle");
+  if (ta) ta.value = "";
 }
 
 /* ---------------- UTILIDADES DOM ---------------- */
@@ -119,29 +126,17 @@ function formatearFechaHora(fechaISO) {
   return new Date(fechaISO).toLocaleString("es-PE");
 }
 
-/* ---------------- IMG HELPERS (CLAVE PARA EXPORT PDF) ---------------- */
-function htmlImg(url, extraClass = "") {
-  if (!url) return `<div class="pdf-sign-img-empty">Firma no registrada</div>`;
-  // crossOrigin + referrerpolicy: evita que html2canvas "taint" el canvas
-  return `
-    <img
-      class="${extraClass}"
-      src="${url}"
-      crossOrigin="anonymous"
-      referrerpolicy="no-referrer"
-      loading="eager"
-    />
-  `;
-}
-
 /* ---------------- RESPONSABLE (LÍDER DE CALIDAD ACTIVO + FIRMA) ---------------- */
 async function cargarResponsableActivo() {
   try {
     const snap = await getDocs(colRegistradores);
 
     const lider = snap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .find(r => r.activo === true && r.cargo === "Líder de Calidad y Formación");
+      .map(d => ({ id: d.id, ...d.data() })) // ✅ CONSERVA ID
+      .find(r =>
+        r.activo === true &&
+        r.cargo === "Líder de Calidad y Formación"
+      );
 
     if (!lider) {
       alert("No hay un Líder de Calidad activo en registradores");
@@ -153,26 +148,30 @@ async function cargarResponsableActivo() {
         "El Líder de Calidad activo no tiene firma registrada.\n" +
         "Debes subir una firma en Admin."
       );
-      // igual guardamos datos mínimos para que no se rompa el flujo
+      return;
     }
 
     responsableActivo = {
-      registradorId: lider.id,
-      registradoPorNombre: lider.registradoPorNombre || "",
-      cargo: lider.cargo || "",
-      firmaUrl: lider.firmaUrl || ""
+      registradorId: lider.id,                 // ahora existe
+      registradoPorNombre: lider.registradoPorNombre,
+      cargo: lider.cargo,
+      firmaUrl: lider.firmaUrl
     };
 
+    // Input visible
     const inputResp = document.getElementById("responsable");
     if (inputResp) {
-      inputResp.value = `${responsableActivo.registradoPorNombre} - ${responsableActivo.cargo}`.trim();
+      inputResp.value =
+        `${lider.registradoPorNombre} - ${lider.cargo}`;
     }
+
   } catch (e) {
     console.error("Error cargando responsable:", e);
   }
 }
 
-/* ---------------- CARGAR ASESORES (usuarios) ---------------- */
+
+/* ---------------- CARGAR ASESORES (DESDE usuarios) ---------------- */
 async function cargarAsesores() {
   const cont = document.getElementById("asesoresContainer");
   if (!cont) return;
@@ -184,7 +183,9 @@ async function cargarAsesores() {
     const lista = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter(u => u.rol === "agente" && u.activo !== false && u.nombreAsesor)
-      .sort((a, b) => a.nombreAsesor.localeCompare(b.nombreAsesor, "es", { sensitivity: "base" }));
+      .sort((a, b) =>
+        a.nombreAsesor.localeCompare(b.nombreAsesor, "es", { sensitivity: "base" })
+      );
 
     asesoresMap = {};
     cont.innerHTML = "";
@@ -203,7 +204,9 @@ async function cargarAsesores() {
       btn.dataset.id = id;
       btn.innerHTML = `
         <span class="asesor-chip-name">${nombre}</span>
-        <span class="asesor-chip-gc">${gc} ${cargo ? "· " + cargo : ""}</span>
+        <span class="asesor-chip-gc">
+          ${gc} ${cargo ? "· " + cargo : ""}
+        </span>
       `;
       btn.addEventListener("click", () => btn.classList.toggle("selected"));
       cont.appendChild(btn);
@@ -221,15 +224,15 @@ async function cargarAsesores() {
   }
 }
 
-/* ---------------- CARGAR REFUERZOS (SIN DUPLICADO + ORDEN FECHA) ---------------- */
+/* ---------------- CARGAR REFUERZOS ---------------- */
 async function cargarRefuerzos() {
   setLoading(true, "Cargando refuerzos…");
   try {
     const snap = await getDocs(colRefuerzos);
+    refuerzosCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // ✅ (IMPORTANTE) Solo 1 map (antes tenías 2)
     refuerzosCache = snap.docs.map(d => {
-      const data = d.data() || {};
+      const data = d.data();
       return {
         id: d.id,
         ...data,
@@ -238,12 +241,11 @@ async function cargarRefuerzos() {
         responsableCargo: data.responsableCargo || ""
       };
     });
-
-    // ✅ Orden por fecha (más reciente primero)
+    
     refuerzosCache.sort((a, b) => {
       const fa = a.fechaRefuerzo ? new Date(a.fechaRefuerzo).getTime() : 0;
       const fb = b.fechaRefuerzo ? new Date(b.fechaRefuerzo).getTime() : 0;
-      return fb - fa;
+      return fb - fa; // 🔥 más reciente primero
     });
 
     renderTabla();
@@ -289,6 +291,7 @@ function filtrarLista() {
       return true;
     });
   }
+
   return lista;
 }
 
@@ -329,7 +332,6 @@ function renderTabla() {
 
     let estadoClase = "estado-pend";
     let estadoTexto = "Pendiente de firma";
-
     if (incompleto) {
       estadoClase = "estado-incomp";
       estadoTexto = "Datos incompletos";
@@ -342,8 +344,8 @@ function renderTabla() {
     const firmasArr = Array.isArray(r.firmas) ? r.firmas : [];
     const totalA = asesoresArr.length;
     const firmadas = firmasArr.filter(f => f && f.url).length;
-
     const resumenFirmas = totalA ? `${firmadas}/${totalA} firmas` : (r.firmaNombre || "—");
+
     const firmaFecha = r.firmaFecha
       ? new Date(r.firmaFecha).toLocaleString("es-PE")
       : (totalA ? "Pendiente" : "");
@@ -360,11 +362,17 @@ function renderTabla() {
           <div><b>${resumenFirmas}</b></div>
           <div style="color:var(--muted);">${firmaFecha}</div>
         </td>
-        <td><span class="estado-pill ${estadoClase}">${estadoTexto}</span></td>
+        <td>
+          <span class="estado-pill ${estadoClase}">${estadoTexto}</span>
+        </td>
         <td>
           <div class="actions">
-            <button class="btn-xs primary" type="button" data-action="verPdf" data-id="${r.id}">📄 Ver PDF</button>
-            <button class="btn-xs success" type="button" data-action="copiarLink" data-id="${r.id}">✍️ Link firma</button>
+            <button class="btn-xs primary" type="button" data-action="verPdf" data-id="${r.id}">
+              📄 Ver PDF
+            </button>
+            <button class="btn-xs success" type="button" data-action="copiarLink" data-id="${r.id}">
+              ✍️ Link firma
+            </button>
           </div>
         </td>
       </tr>
@@ -385,16 +393,24 @@ async function guardarRefuerzo() {
     return;
   }
 
-  const responsable = `${responsableActivo.registradoPorNombre} - ${responsableActivo.cargo}`.trim();
+  const responsable = `${responsableActivo.registradoPorNombre} - ${responsableActivo.cargo}`;
+
   const detalle = getDetalleFromEditor().trim();
 
   const chipsSeleccionados = Array.from(document.querySelectorAll(".asesor-chip.selected"));
-  const asesoresSeleccionados = chipsSeleccionados.map(chip => {
-    const id = chip.dataset.id;
-    const info = asesoresMap[id];
-    if (!info) return null;
-    return { asesorId: id, nombre: info.nombre, gc: info.gc || "", cargo: info.cargo || "" };
-  }).filter(Boolean);
+  const asesoresSeleccionados = chipsSeleccionados
+    .map(chip => {
+      const id = chip.dataset.id;
+      const info = asesoresMap[id];
+      if (!info) return null;
+      return {
+        asesorId: id,
+        nombre: info.nombre,
+        gc: info.gc || "",
+        cargo: info.cargo || ""
+      };
+    })
+    .filter(Boolean);
 
   const publico = asesoresSeleccionados.map(a => a.nombre).join(", ");
 
@@ -422,18 +438,22 @@ async function guardarRefuerzo() {
     canal,
     publico,
     asesores: asesoresSeleccionados,
+
     responsable,
     responsableId: responsableActivo.registradorId || "",
     responsableNombre: responsableActivo.registradoPorNombre || "",
     responsableCargo: responsableActivo.cargo || "",
     responsableFirmaUrl: responsableActivo.firmaUrl || "",
+
     objetivo,
     detalle,
+
     firmado: false,
     firmaNombre: "",
     firmaFecha: null,
     agenteNombre: "",
     firmas: firmasIniciales,
+
     createdAt: serverTimestamp()
   };
 
@@ -451,7 +471,26 @@ async function guardarRefuerzo() {
   }
 }
 
-/* ---------------- LIMPIAR FORM ---------------- */
+/* ---------------- EDITOR TEXTO BÁSICO (CSP SAFE) ---------------- */
+function initEditorBasico() {
+  const editor = document.getElementById("detalleEditor");
+  const hidden = document.getElementById("detalle");
+  const toolbar = document.querySelector(".editor-toolbar");
+  if (!editor || !hidden || !toolbar) return;
+
+  toolbar.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const cmd = btn.dataset.cmd;
+    editor.focus();
+    document.execCommand(cmd, false, null);
+  });
+
+  editor.addEventListener("input", () => {
+    hidden.value = editor.innerHTML;
+  });
+}
+
 function limpiarFormulario() {
   setToday();
 
@@ -459,12 +498,14 @@ function limpiarFormulario() {
   const tema = document.getElementById("tema");
   const canal = document.getElementById("canal");
   const objetivo = document.getElementById("objetivo");
+
   if (tipo) tipo.value = "";
   if (tema) tema.value = "";
   if (canal) canal.value = "";
   if (objetivo) objetivo.value = "";
 
   const hidden = document.getElementById("detalle");
+
   if (quillDetalle) {
     quillDetalle.setContents([]);
     if (hidden) hidden.value = "";
@@ -477,7 +518,7 @@ function limpiarFormulario() {
   document.querySelectorAll(".asesor-chip.selected").forEach(ch => ch.classList.remove("selected"));
 }
 
-/* ---------------- PDF: TARJETAS FIRMAS (CON CORS) ---------------- */
+/* ---------------- PDF: TARJETAS DE FIRMAS ---------------- */
 function construirTarjetasFirmas(ref) {
   const asesores = Array.isArray(ref.asesores) ? ref.asesores : [];
   const firmas = Array.isArray(ref.firmas) ? ref.firmas : [];
@@ -492,7 +533,7 @@ function construirTarjetasFirmas(ref) {
       <div class="pdf-sign-card">
         <div class="pdf-sign-card-header">
           <div>
-            <div class="pdf-sign-name">${a.nombre || ""}</div>
+            <div class="pdf-sign-name">${a.nombre}</div>
             <div class="pdf-sign-gc">
               ${a.gc ? "GC: " + a.gc : ""}
               ${a.cargo ? "<br/>" + a.cargo : ""}
@@ -502,15 +543,12 @@ function construirTarjetasFirmas(ref) {
             ${tieneFirma ? "Firmado" : "Pendiente"}
           </div>
         </div>
-
         <div class="pdf-sign-img ${tieneFirma ? "" : "pdf-sign-img-empty"}">
-          ${tieneFirma ? htmlImg(f.url) : "Sin firma registrada"}
+          ${tieneFirma ? `<img src="${f.url}" />` : "Sin firma registrada"}
         </div>
-
         <div class="pdf-sign-date">
           ${tieneFirma ? "Firmado el: " + fechaFirmaTxt : ""}
         </div>
-
         <div style="margin-top:4px;">
           <b>Compromiso:</b><br />
           ${compromiso}
@@ -537,9 +575,13 @@ function renderPdfContent(ref) {
     <div class="pdf-header">
       <div class="pdf-title-block">
         <div class="pdf-main-title">REFUERZO / CAPACITACIÓN</div>
-        <div class="pdf-subtitle">Registro formal de acciones de Calidad & Formación – Financiera Efectiva.</div>
+        <div class="pdf-subtitle">
+          Registro formal de acciones de Calidad & Formación – Financiera Efectiva.
+        </div>
       </div>
-      <div><div class="pdf-badge-fe">Calidad & Formación FE</div></div>
+      <div>
+        <div class="pdf-badge-fe">Calidad & Formación FE</div>
+      </div>
     </div>
 
     <div class="pdf-section-body">
@@ -583,13 +625,21 @@ function renderPdfContent(ref) {
         <div class="pdf-sign-resp">
           <div class="pdf-sign-resp-title">Responsable de Calidad</div>
           <div class="pdf-sign-img">
-            ${ref.responsableFirmaUrl ? htmlImg(ref.responsableFirmaUrl) : `<div class="pdf-sign-img-empty">Firma no registrada</div>`}
+            ${
+              ref.responsableFirmaUrl && ref.responsableFirmaUrl.startsWith("https")
+                ? `<img 
+                      src="${ref.responsableFirmaUrl}" 
+                      crossorigin="anonymous"
+                      referrerpolicy="no-referrer"
+                  />`
+                : `<div class="pdf-sign-img-empty">Firma no registrada</div>`
+            }
           </div>
+
           <div class="pdf-sign-resp-line"></div>
           <div><strong>${ref.responsableNombre || ""}</strong></div>
           <div class="pdf-sign-resp-role">${ref.responsableCargo || ""}</div>
         </div>
-
         <div class="pdf-sign-grid">
           ${construirTarjetasFirmas(ref)}
         </div>
@@ -601,7 +651,6 @@ function renderPdfContent(ref) {
 /* ---------------- MODAL PDF ---------------- */
 function abrirModalPdf(id) {
   pdfActualId = id;
-
   const modal = document.getElementById("pdfModal");
   const title = document.getElementById("pdfModalTitle");
   if (!modal || !title) return;
@@ -624,7 +673,7 @@ function cerrarModalPdf() {
   if (modal) modal.style.display = "none";
 }
 
-/* ---------------- DESCARGAR PDF (GARANTIZA IMÁGENES CARGADAS) ---------------- */
+/* ---------------- DESCARGAR PDF ---------------- */
 async function descargarPdfActual() {
   if (!pdfActualId) {
     alert("No hay refuerzo seleccionado");
@@ -637,23 +686,23 @@ async function descargarPdfActual() {
   try {
     setLoading(true, "Generando PDF…");
 
-    // ✅ Espera imágenes reales (naturalHeight != 0)
-    const imgs = Array.from(element.querySelectorAll("img"));
-    await Promise.all(imgs.map(img => new Promise(resolve => {
-      if (img.complete && img.naturalHeight !== 0) return resolve();
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
-    })));
+    const imgs = element.querySelectorAll("img");
+    await Promise.all(
+      Array.from(imgs).map(img =>
+        new Promise(resolve => {
+          if (img.complete && img.naturalHeight !== 0) {
+            resolve();
+          } else {
+            img.onload = img.onerror = resolve;
+          }
+        })
+      )
+    );
 
     const opt = {
       margin: 10,
       filename: `refuerzo_${pdfActualId}.pdf`,
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: "#ffffff"
-      },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
     };
 
@@ -684,21 +733,25 @@ async function copiarLinkFirma(id) {
 const THEME_KEY = "fe_refuerzos_theme";
 
 function applyTheme(theme) {
+  const body = document.body;
   const themeBtn = document.getElementById("themeToggle");
   if (!themeBtn) return;
 
   if (theme === "dark") {
-    document.body.classList.add("dark");
+    body.classList.add("dark");
     themeBtn.textContent = "☀️ Modo claro";
   } else {
-    document.body.classList.remove("dark");
+    body.classList.remove("dark");
     themeBtn.textContent = "🌙 Modo oscuro";
   }
 }
 
-/* ---------------- INICIALIZACIÓN UI ---------------- */
+/* ---------------- INICIALIZACIÓN CON AUTH ---------------- */
 function initUIEvents() {
   initQuill();
+
+  const btnIrBuscador = document.getElementById("btnIrBuscador");
+  if (btnIrBuscador) btnIrBuscador.addEventListener("click", () => (window.location.href = "index.html"));
 
   const btnGuardar = document.getElementById("btnGuardar");
   const btnLimpiar = document.getElementById("btnLimpiar");
@@ -741,11 +794,9 @@ function initUIEvents() {
     tablaRefuerzos.addEventListener("click", e => {
       const btn = e.target.closest("button[data-action]");
       if (!btn) return;
-
       const action = btn.dataset.action;
       const id = btn.dataset.id;
       if (!id) return;
-
       if (action === "verPdf") abrirModalPdf(id);
       if (action === "copiarLink") copiarLinkFirma(id);
     });
@@ -754,7 +805,6 @@ function initUIEvents() {
   const themeBtn = document.getElementById("themeToggle");
   const savedTheme = localStorage.getItem(THEME_KEY) || "light";
   applyTheme(savedTheme);
-
   if (themeBtn) {
     themeBtn.addEventListener("click", () => {
       const next = document.body.classList.contains("dark") ? "light" : "dark";
@@ -769,9 +819,10 @@ async function initRefuerzos() {
   await cargarResponsableActivo();
   await cargarAsesores();
   await cargarRefuerzos();
+  initEditorBasico();
 }
 
-/* ---------------- PROTECCIÓN AUTH + ROL ---------------- */
+/* Protección con Auth + rol */
 onAuthStateChanged(auth, async user => {
   if (!user) {
     window.location.href = "login.html";
@@ -786,7 +837,6 @@ onAuthStateChanged(auth, async user => {
   }
 
   initUIEvents();
-
   try {
     await initRefuerzos();
   } catch (e) {

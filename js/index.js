@@ -56,34 +56,29 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  currentUser = user;
-  currentUserIsAdmin = false;
+  const elUser =
+    document.getElementById("userRoleName") ||
+    document.getElementById("userEmail") ||
+    document.getElementById("userName");
 
-   const elUser =
-     document.getElementById("userRoleName") ||
-     document.getElementById("userEmail") ||
-     document.getElementById("userName");
-
-   if (elUser) {
-     elUser.textContent = user?.email || user?.displayName || "Usuario";
-   } else {
-     console.warn("No existe el elemento para mostrar usuario (id userRoleName/userEmail/userName).");
-   }
-
-
-  try {
-    const snap = await getDoc(doc(db, "usuarios", user.uid));
-    if (snap.exists()) {
-      const rol = (snap.data()?.rol || "").toLowerCase();
-      if (rol === "admin") {
-        currentUserIsAdmin = true;
-      }
-    }
-  } catch (e) {
-    console.warn("Error leyendo rol:", e);
+  if (elUser) {
+    elUser.textContent = user.email || "Usuario";
   }
-
 });
+
+function ensureAdminButton() {
+  const headerRight = document.querySelector(".header-right");
+  if (!headerRight) return;
+  if (document.getElementById("btnAdmin")) return;
+
+  const btn = document.createElement("button");
+  btn.id = "btnAdmin";
+  btn.className = "btn secondary";
+  btn.textContent = "⚙️ Admin";
+  btn.dataset.nav = "admin.html";
+
+  headerRight.insertBefore(btn, document.getElementById("btnTheme"));
+}
 
 /* ------------------------------
    HELPERS
@@ -801,20 +796,17 @@ function wireEvents() {
   });
 
   // accesos rápidos
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    const nav = btn.dataset.nav;
-    const ext = btn.dataset.external;
-    if (nav) {
-      location.href = nav;
-      return;
-    }
-    if (ext) {
-      window.open(ext, "_blank");
-      return;
-    }
-  });
+ document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+
+  const nav = btn.dataset.nav;
+  const ext = btn.dataset.external;
+
+  if (nav) location.href = nav;
+  if (ext) window.open(ext, "_blank");
+});
+
 
   // logout
   document.getElementById("btnLogout")?.addEventListener("click", async () => {

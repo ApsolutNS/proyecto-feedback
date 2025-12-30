@@ -644,57 +644,89 @@ function verDetalleEnModal(id) {
    - lo muestra en popup (iframe) y deja descargar
    ===================================================================== */
 async function generarPdfDesdeDetalleModal() {
-  ensureModalsExist();
+  // 1. Verificar librerías (CSP-safe)
+  if (typeof window.html2canvas !== "function") {
+    alert("html2canvas no está cargado.");
+    return;
+  }
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert("jsPDF no está cargado.");
+    return;
+  }
 
-  if (!assertPdfLibs()) return;
-
-  const area = document.getElementById("pdfExportArea");
-  if (!area) {
+  // 2. Obtener área exportable
+  const exportArea = document.getElementById("pdfExportArea");
+  if (!exportArea) {
     alert("No se encontró el contenido para exportar.");
     return;
   }
 
   try {
-    // 🔥 esperar 2 frames reales (DOM + render)
+    // 3. Forzar repaint real (evita PDF en blanco)
     await new Promise((r) => requestAnimationFrame(r));
     await new Promise((r) => requestAnimationFrame(r));
 
-    // esperar imágenes
-    await waitImages(area);
+    // 4. Esperar imágenes (Firebase Storage)
+    const images = exportArea.querySelectorAll("img");
+    await Promise.all(
+      Array.from(images).map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete && img.naturalHeight !== 0) return resolve();
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // no bloquear
+          })
+      )
+    );
 
-    const canvas = await window.html2canvas(area, {
+    // 5. Captura con html2canvas (SIN document.write)
+    const canvas = await window.html2canvas(exportArea, {
       scale: 2,
       useCORS: true,
+      allowTaint: false,
       backgroundColor: "#ffffff",
       logging: false,
+      imageTimeout: 15000,
     });
 
-    const imgData = canvas.toDataURL("image/png");
+    // 6. Crear PDF
     const { jsPDF } = window.jspdf;
-
     const pdf = new jsPDF("p", "mm", "a4");
+
     const pageWidth = pdf.internal.pageSize.getWidth() - 20;
-    const pageHeight = (canvas.height * pageWidth) / canvas.width;
+    const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
-    pdf.addImage(imgData, "PNG", 10, 10, pageWidth, pageHeight);
+    const imgData = canvas.toDataURL("image/png", 1.0);
+    pdf.addImage(imgData, "PNG", 10, 10, pageWidth, imgHeight);
 
-    const fileName = currentFeedbackId
-      ? `feedback_${currentFeedbackId}.pdf`
-      : "feedback.pdf";
+    // 7. Crear Blob + ObjectURL
+    const blob = pdf.output("blob");
+    const url = URL.createObjectURL(blob);
 
-    const pdfBlob = pdf.output("blob");
-    const pdfUrl = URL.createObjectURL(pdfBlob);
+    // 8. Mostrar en modal (iframe)
+    const pdfIframe = document.getElementById("pdfIframe");
+    const pdfModal = document.getElementById("pdfModal");
+    const pdfDownloadLink = document.getElementById("pdfDownloadLink");
 
-    _pdfObjectUrl = pdfUrl;
+    if (pdfIframe && pdfModal) {
+      pdfIframe.src = url;
+      pdfModal.style.display = "block";
+    }
 
-    // 🔥 mostrar SIEMPRE el modal PDF
-    openPdfModal(pdfUrl, fileName);
+    // 9. Link descarga
+    if (pdfDownloadLink) {
+      pdfDownloadLink.href = url;
+      pdfDownloadLink.download = currentFeedbackId
+        ? `feedback_${currentFeedbackId}.pdf`
+        : "feedback.pdf";
+    }
 
-  } catch (err) {
-    console.error("Error generando PDF:", err);
+  } catch (error) {
+    console.error("❌ Error exportando PDF:", error);
     alert("No se pudo generar el PDF. Revisa la consola.");
   }
 }
+
 
 
 /* -------------------- Esperar carga de imágenes -------------------- */

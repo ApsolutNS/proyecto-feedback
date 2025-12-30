@@ -59,6 +59,9 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   currentUserIsAdmin = false;
 
+   const el = document.getElementById("userRoleName");
+   if (el) el.textContent = user.email || "Usuario";
+
   try {
     const snap = await getDoc(doc(db, "usuarios", user.uid));
     if (snap.exists()) {
@@ -135,51 +138,27 @@ function getWeeksOfMonth(year, monthIndex) {
    BOTÓN ADMIN (sin tocar HTML)
 ------------------------------ */
 function ensureAdminButton() {
-  // evitar duplicados
+  const headerRight = document.querySelector(".header-right");
+  if (!headerRight) return;
   if (document.getElementById("btnAdmin")) return;
-
   if (!currentUserIsAdmin) return;
 
-  const tryInsert = () => {
-    const headerRight = document.querySelector(".header-right");
-    if (!headerRight) return false;
+  const btn = document.createElement("button");
+  btn.id = "btnAdmin";
+  btn.className = "btn btn-secondary";
+  btn.textContent = "⚙️ Admin";
 
-    if (document.getElementById("btnAdmin")) return true;
+  // 🔥 ESTA ES LA CLAVE
+  btn.dataset.nav = "admin.html";
 
-    const btn = document.createElement("button");
-    btn.id = "btnAdmin";
-    btn.className = "btn btn-secondary";
-    btn.textContent = "⚙️ Admin";
-    btn.type = "button";
-
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      window.location.href = "admin.html";
-    });
-
-    const logoutBtn = document.getElementById("btnLogout");
-    if (logoutBtn && logoutBtn.parentElement === headerRight) {
-      headerRight.insertBefore(btn, logoutBtn);
-    } else {
-      headerRight.appendChild(btn);
-    }
-
-    return true;
-  };
-
-  // intento inmediato
-  if (tryInsert()) return;
-
-  // observar DOM si aún no existe
-  const observer = new MutationObserver(() => {
-    if (tryInsert()) observer.disconnect();
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
+  const logoutBtn = document.getElementById("btnLogout");
+  if (logoutBtn && logoutBtn.parentElement === headerRight) {
+    headerRight.insertBefore(btn, logoutBtn);
+  } else {
+    headerRight.appendChild(btn);
+  }
 }
+
 
 /* ------------------------------
    FIREBASE LOAD

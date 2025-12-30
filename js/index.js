@@ -144,37 +144,6 @@ function getWeeksOfMonth(year, monthIndex) {
 }
 
 /* ------------------------------
-   BOTÓN ADMIN (sin tocar HTML)
------------------------------- */
-function ensureAdminButton() {
-  const headerRight = document.querySelector(".header-right");
-  if (!headerRight) return;
-
-  // evitar duplicado
-  if (document.getElementById("btnAdmin")) return;
-
-  if (!currentUserIsAdmin) return;
-
-  const btn = document.createElement("button");
-  btn.id = "btnAdmin";
-  btn.className = "btn btn-secondary";
-  btn.type = "button";
-  btn.textContent = "⚙️ Admin";
-
-  // ✅ NAVEGACIÓN DIRECTA (NO dataset, NO delegado)
-  btn.addEventListener("click", () => {
-    window.location.href = "/admin.html";
-  });
-
-  const logoutBtn = document.getElementById("btnLogout");
-  if (logoutBtn && logoutBtn.parentElement === headerRight) {
-    headerRight.insertBefore(btn, logoutBtn);
-  } else {
-    headerRight.appendChild(btn);
-  }
-}
-
-/* ------------------------------
    FIREBASE LOAD
 ------------------------------ */
 async function loadRegistros() {

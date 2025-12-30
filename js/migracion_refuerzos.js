@@ -51,3 +51,4 @@ btn.addEventListener("click", async () => {
     btn.disabled = false;
   }
 });
+alert("Migración completa. Recarga la página de Refuerzos.");

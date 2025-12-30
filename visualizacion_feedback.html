@@ -93,8 +93,25 @@
       </div>
     </section>
   </div>
+<!-- MODAL PDF -->
+<div id="pdfModal" class="pdf-modal" style="display:none;">
+  <div class="pdf-modal-backdrop"></div>
+
+  <div class="pdf-modal-content">
+    <div class="pdf-modal-header">
+      <h3>Vista previa del PDF</h3>
+      <button id="pdfModalClose" type="button">✖</button>
+    </div>
+
+    <iframe
+      id="pdfIframe"
+      style="width:100%; height:80vh; border:none;"
+    ></iframe>
+  </div>
+</div>
 
   <!-- JS principal (MÓDULO) -->
   <script type="module" src="js/visualizacion_feedback.js"></script>
 </body>
 </html>
+
